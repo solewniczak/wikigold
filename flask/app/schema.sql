@@ -1,20 +1,20 @@
 CREATE TABLE `dump` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `name` varchar(255) COLLATE utf8_bin NOT NULL,
+    `name` varchar(255) NOT NULL,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `article` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `title` varchar(255) COLLATE utf8_bin NOT NULL,
-    `parser_name` varchar(255) COLLATE utf8_bin NOT NULL,
+    `title` varchar(255) NOT NULL,
+    `parser_name` varchar(255) NOT NULL,
     `dump_id` int(11) NULL,
     CONSTRAINT `fk_article_dump`
         FOREIGN KEY (`dump_id`) REFERENCES dump (`id`)
         ON DELETE CASCADE
         ON UPDATE RESTRICT,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `line` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -25,32 +25,32 @@ CREATE TABLE `line` (
         ON DELETE CASCADE
         ON UPDATE RESTRICT,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `token` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `nr` int(11) NOT NULL,
-    `token` varchar(255) COLLATE utf8_bin NOT NULL,
+    `token` varchar(255) NOT NULL,
     `line_id` int(11) NOT NULL,
     CONSTRAINT `fk_token_line`
         FOREIGN KEY (`line_id`) REFERENCES line (`id`)
         ON DELETE CASCADE
         ON UPDATE RESTRICT,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `edl` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `method` varchar(255) COLLATE utf8_bin NOT NULL,
-    `params` varchar(1024) COLLATE utf8_bin NOT NULL,
-    `author` varchar(255) COLLATE utf8_bin NOT NULL,
+    `method` varchar(255) NOT NULL,
+    `params` varchar(1024) NOT NULL,
+    `author` varchar(255) NOT NULL,
     `article_id` int(11) NOT NULL,
     CONSTRAINT `fk_edl_article`
         FOREIGN KEY (`article_id`) REFERENCES article (`id`)
         ON DELETE CASCADE
         ON UPDATE RESTRICT,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 
 CREATE TABLE `decision` (
@@ -66,11 +66,11 @@ CREATE TABLE `decision` (
         ON DELETE CASCADE
         ON UPDATE RESTRICT,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `label` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `label` varchar(255) COLLATE utf8_bin NOT NULL,
+    `label` varchar(255) NOT NULL,
     `counter` int(11) NOT NULL DEFAULT 0,
     `article_id` int(11) NOT NULL,
     CONSTRAINT `fk_edl_article`
@@ -78,4 +78,4 @@ CREATE TABLE `label` (
         ON DELETE CASCADE
         ON UPDATE RESTRICT,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;

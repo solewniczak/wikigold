@@ -11,7 +11,7 @@ def create_app(test_config=None):
         MYSQL_HOST=os.getenv('MYSQL_HOST'),
         MYSQL_USER=os.getenv('MYSQL_USER'),
         MYSQL_PASSWORD=os.getenv('MYSQL_PASSWORD'),
-        MYSQL_DATABESE=os.getenv('MYSQL_DATABASE')
+        MYSQL_DATABASE=os.getenv('MYSQL_DATABASE')
     )
 
     if test_config is not None:
@@ -28,5 +28,8 @@ def create_app(test_config=None):
             return f"Hello from {app_name} running in a Docker container behind Nginx!"
 
         return "Hello from Flask"
+
+    from . import db
+    db.init_app(app)
 
     return app
