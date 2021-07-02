@@ -1,4 +1,4 @@
-import mariadb
+import mysql.connector
 
 import click
 from flask import current_app, g
@@ -7,7 +7,7 @@ from flask.cli import with_appcontext
 
 def get_db():
     if 'db' not in g:
-        g.db = mariadb.connect(
+        g.db = mysql.connector.connect(
             host=current_app.config['MYSQL_HOST'],
             user=current_app.config['MYSQL_USER'],
             password=current_app.config['MYSQL_PASSWORD'],
@@ -27,10 +27,9 @@ def close_db(e=None):
 def init_db():
     db = get_db()
 
-    with db.cursor() as cursor:
-        with current_app.open_resource('schema.sql') as f:
-            cursor.executemany(f.read().decode('utf8'))
-    db.commit()
+    cursor = db.cursor()
+    with current_app.open_resource('schema.sql') as f:
+        cursor.execute(f.read().decode('utf8'))
 
 
 @click.command('init-db')

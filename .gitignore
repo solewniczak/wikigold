@@ -1,4 +1,6 @@
 flask/venv/
+flask/instance/
+dumps/
 .idea
 
 *.pyc
