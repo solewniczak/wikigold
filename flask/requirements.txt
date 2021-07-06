@@ -1,10 +1,17 @@
+beautifulsoup4==4.9.3
 click==8.0.1
 Flask==2.0.1
 itsdangerous==2.0.1
 Jinja2==3.0.1
+joblib==1.0.1
 MarkupSafe==2.0.1
+mwparserfromhell==0.6.2
 mysql-connector-python==8.0.25
+nltk==3.6.2
 protobuf==3.17.3
+regex==2021.7.6
 six==1.16.0
+soupsieve==2.2.1
+tqdm==4.61.2
 uWSGI==2.0.19.1
 Werkzeug==2.0.1

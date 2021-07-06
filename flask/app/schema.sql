@@ -1,13 +1,13 @@
 CREATE TABLE `dumps` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `name` varchar(255) NOT NULL,
+    `name` varchar(256) NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `articles` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `title` varchar(255) NOT NULL,
-    `parser_name` varchar(255) NOT NULL,
+    `title` varchar(256) NOT NULL,
+    `parser_name` varchar(256) NOT NULL,
     `dump_id` int(11) NULL,
     CONSTRAINT `fk_articles_dumps`
         FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`)
@@ -30,7 +30,7 @@ CREATE TABLE `lines` (
 CREATE TABLE `tokens` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `nr` int(11) NOT NULL,
-    `token` varchar(255) NOT NULL,
+    `token` varchar(1024) NOT NULL,
     `line_id` int(11) NOT NULL,
     CONSTRAINT `fk_tokens_lines`
         FOREIGN KEY (`line_id`) REFERENCES `lines` (`id`)
@@ -41,9 +41,9 @@ CREATE TABLE `tokens` (
 
 CREATE TABLE `edls` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `method` varchar(255) NOT NULL,
+    `method` varchar(256) NOT NULL,
     `params` varchar(1024) NOT NULL,
-    `author` varchar(255) NOT NULL,
+    `author` varchar(256) NOT NULL,
     `article_id` int(11) NOT NULL,
     CONSTRAINT `fk_edls_articles`
         FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`)
@@ -84,12 +84,7 @@ CREATE TABLE `tokens_decisions` (
 
 CREATE TABLE `labels` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `label` varchar(255) NOT NULL,
+    `label` varchar(256) NOT NULL,
     `counter` int(11) NOT NULL DEFAULT 0,
-    `article_id` int(11) NOT NULL,
-    CONSTRAINT `fk_labels_articles`
-        FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
