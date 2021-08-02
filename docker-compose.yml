@@ -5,7 +5,7 @@ services:
   flask:
     build: ./flask
     container_name: flask
-    restart: always
+#    restart: always
     environment:
       - APP_NAME=MyFlaskApp
     expose:
@@ -14,13 +14,13 @@ services:
   nginx:
     build: ./nginx
     container_name: nginx
-    restart: always
+#    restart: always
     ports:
       - "80:80"
 
   db:
     image: mariadb:10.6.2
-    restart: always
+#    restart: always
     ports:
       - "3306:3306"
     volumes:
@@ -30,7 +30,7 @@ services:
 
   adminer:
     image: adminer
-    restart: always
+#    restart: always
     ports:
       - 8080:8080
 

@@ -3,7 +3,6 @@ from collections import Counter, defaultdict
 
 from tqdm import tqdm
 from DumpParser.mwparserfromhelllinks import MWParserFromHellLinks
-from nltk.tokenize import word_tokenize
 
 
 class DumpParser:
@@ -50,11 +49,8 @@ class DumpParser:
                             self.link_titles[link_text].add(link['title'])
                             self.links_titles_freq[link['title']] += 1
 
-                        lines = []
                         strip_code = wikicode.get_wikicode().strip_code()
-                        for line in strip_code.split('\n'):
-                            tokens = word_tokenize(line)
-                            lines.append(tokens)
+                        lines = strip_code.split('\n')
                         yield title, lines
 
                     root.clear()
