@@ -2,6 +2,7 @@ flask/venv/
 flask/instance/
 dumps/
 .idea
+.~lock.*#
 
 *.pyc
 __pycache__/
