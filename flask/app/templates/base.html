@@ -1,23 +1,37 @@
 <!doctype html>
-<title>{% block title %}{% endblock %} - Flaskr</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<nav>
-  <h1>Wikigold</h1>
-  <ul>
-    {% if g.username %}
-      <li><span>{{ g.username }}</span>
-      <li><a href="{{ url_for('auth.logout') }}">Log Out</a>
-    {% else %}
-      <li><a href="{{ url_for('auth.login') }}">Log In</a>
-    {% endif %}
-  </ul>
-</nav>
-<section class="content">
-  <header>
-    {% block header %}{% endblock %}
-  </header>
-  {% for message in get_flashed_messages() %}
-    <div class="flash">{{ message }}</div>
-  {% endfor %}
-  {% block content %}{% endblock %}
-</section>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="{{ url_for('static', filename='bootstrap-5.0.2-dist/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <title>{% block title %}{% endblock %} - Wikigold</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Wikigold</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            {% if g.username %}
+              <span class="navbar-text">{{ g.username }}</span>
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="{{ url_for('auth.logout') }}">Log Out</a>
+              </li>
+            {% else %}
+              <a class="nav-link active" aria-current="page" href="{{ url_for('auth.login') }}">Log In</a>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+    {% block content %}{% endblock %}
+    <script src="{{ url_for('static', filename='bootstrap-5.0.2-dist/js/bootstrap.min.js') }}"></script>
+  </body>
+</html>
