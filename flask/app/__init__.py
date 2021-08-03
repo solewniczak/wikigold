@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, request
 
 
 def create_app(test_config=None):
@@ -11,7 +11,8 @@ def create_app(test_config=None):
         MYSQL_HOST=os.getenv('MYSQL_HOST'),
         MYSQL_USER=os.getenv('MYSQL_USER'),
         MYSQL_PASSWORD=os.getenv('MYSQL_PASSWORD'),
-        MYSQL_DATABASE=os.getenv('MYSQL_DATABASE')
+        MYSQL_DATABASE=os.getenv('MYSQL_DATABASE'),
+        BASEURL=os.getenv('BASEURL')
     )
 
     if test_config is None:
@@ -51,5 +52,7 @@ def create_app(test_config=None):
     app.register_blueprint(wiki.bp)
     app.add_url_rule('/', endpoint='index')
 
+    from . import api
+    app.register_blueprint(api.bp)
 
     return app

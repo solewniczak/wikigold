@@ -10,7 +10,7 @@
 
     <title>{% block title %}{% endblock %} - Wikigold</title>
   </head>
-  <body>
+  <body id="{% block pageId %}{% endblock %}">
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
       <div class="container-fluid">
         <a class="navbar-brand" href="{{ url_for('index') }}">Wikigold</a>
@@ -33,5 +33,19 @@
     </nav>
     {% block content %}{% endblock %}
     <script src="{{ url_for('static', filename='bootstrap-5.0.2-dist/js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+      window.addEventListener('load', (event) => {
+        let baseURL = {{config.get('BASEURL')|tojson}};
+        if (!baseURL) {
+          baseURL = window.location.origin;
+        }
+        const app = new App(baseURL);
+        const currentPageId = document.querySelector("body").id;
+        if (typeof app[currentPageId] === "function") {
+            app[currentPageId]();
+        }
+      });
+    </script>
   </body>
 </html>

@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% block pageId %}index{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row">
@@ -7,8 +9,8 @@
         Lorem ipsum.
       </div>
       <div class="col">
-          <form class="d-flex">
-            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+          <form class="d-flex" id="searchForm">
+            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="title">
             <button class="btn btn-outline-success" type="submit">Search</button>
           </form>
       </div>

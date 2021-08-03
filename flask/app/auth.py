@@ -4,8 +4,6 @@ from flask import (
     Blueprint, g, redirect, render_template, request, session, url_for
 )
 
-from app.db import get_db
-
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 
@@ -13,8 +11,6 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 def login():
     if request.method == 'POST':
         username = request.form['username']
-        db = get_db()
-
         session.clear()
         session['username'] = username
         return redirect(url_for('index'))
