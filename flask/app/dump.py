@@ -51,16 +51,6 @@ def import_dump_command(dir, tag):
     db.commit()
     cursor.close()
 
-    # db = get_db()
-    # with db.cursor() as cursor:
-    #     add_dump = "INSERT INTO dumps (name) VALUES (%s)"
-    #     data_dump = (tag, )
-    #     cursor.execute(add_dump, data_dump)
-    #
-    #
-    #
-    #     db.commit()
-
 
 def init_app(app):
     app.cli.add_command(import_dump_command)

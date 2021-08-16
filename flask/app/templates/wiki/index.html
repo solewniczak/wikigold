@@ -6,13 +6,68 @@
 <div class="container">
     <div class="row">
       <div class="col-9">
-        Lorem ipsum.
+          <article></article>
       </div>
       <div class="col">
-          <form class="d-flex" id="searchForm">
-            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="title">
-            <button class="btn btn-outline-success" type="submit">Search</button>
+          <form class="mb-3" id="searchForm">
+              <div class="row">
+                  <div class="col-8">
+                    <input class="form-control me-2" type="search" placeholder="Search" name="title">
+                  </div>
+                  <div class="col">
+                      <button class="btn btn-outline-success" type="submit">Search</button>
+                  </div>
+              </div>
           </form>
+          <form class="mb-3" id="algorithmSelector">
+            <div class="row">
+                <div class="col-7">
+                    <select class="form-select" name="algorithm">
+                      <option value="">Select algorithm</option>
+                      <option value="exact">Exact match</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <button class="btn btn-outline-success" type="submit">Get Labels</button>
+                </div>
+            </div>
+          </form>
+          <div class="mb-3" id="ngramsDisplay">
+              <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="oneGrams">
+                  <label class="form-check-label" for="oneGrams">
+                    1-grams
+                  </label>
+              </div>
+               <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="twoGrams">
+                  <label class="form-check-label" for="twoGrams">
+                    2-grams
+                  </label>
+              </div>
+               <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="threeGrams">
+                  <label class="form-check-label" for="threeGrams">
+                    3-grams
+                  </label>
+              </div>
+               <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="fourGrams">
+                  <label class="form-check-label" for="fourGrams">
+                    4-grams
+                  </label>
+              </div>
+               <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="fiveGrams">
+                  <label class="form-check-label" for="fiveGrams">
+                    5-grams
+                  </label>
+              </div>
+          </div>
+          <h2>Your decisions</h2>
+          <div id="decisionsList">
+          </div>
+          <button class="btn btn-outline-success">Save decisions</button>
       </div>
     </div>
 </div>

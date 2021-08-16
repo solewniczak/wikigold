@@ -51,6 +51,7 @@ class DumpParser:
 
                         strip_code = wikicode.get_wikicode().strip_code()
                         lines = strip_code.split('\n')
+                        lines = list(map(lambda line: ' '.join(line.split()), lines))  # normalize whitespaces
                         yield title, lines
 
                     root.clear()
