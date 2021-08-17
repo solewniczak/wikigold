@@ -37,10 +37,11 @@
     <script>
       window.addEventListener('load', (event) => {
         let baseURL = {{config.get('BASEURL')|tojson}};
+        let maxNgrams = {{config.get('MAX_NGRAMS')|tojson}};
         if (!baseURL) {
           baseURL = window.location.origin;
         }
-        const app = new App(baseURL);
+        const app = new App(baseURL, maxNgrams);
         const currentPageId = document.querySelector("body").id;
         if (typeof app[currentPageId] === "function") {
             app[currentPageId]();

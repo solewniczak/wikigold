@@ -1,5 +1,5 @@
 from app.db import get_db
-from flask import g
+from flask import current_app, g
 
 
 def get_labels_dict():
@@ -18,13 +18,16 @@ def get_labels_dict():
     return g.labels_dict
 
 
-def get_labels_exact(lines, params):
+def get_labels_exact(lines):
     labels_dict = get_labels_dict()
 
     labels = []
-    for ngrams in range(1, params['max_ngram']+1):
+    for ngrams in range(1, current_app.config['MAX_NGRAMS']+1):
         for line_nr, line in enumerate(lines):
             for label_nr, label in enumerate(line):
+                if label_nr+ngrams > len(line):  # cannot construct ngram of length "ngrams" starting from "label"
+                    break
+                label = ' '.join(line[label_nr:label_nr+ngrams])  # construct the label
                 if label in labels_dict:
                     labels.append({
                         'line': line_nr,

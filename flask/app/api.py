@@ -66,16 +66,13 @@ def get_article(id):
 
 @bp.route('/candidateLabels/<int:article_id>', methods=('GET',))
 def get_candidate_labels(article_id):
-    db = get_db()
-
     if 'algorithm' not in request.args:
         abort(400, "algorithm not given")
 
     lines = get_lines(article_id)
-    params = {'max_ngram': 2}
 
     if request.args['algorithm'] == 'exact':
-        labels = get_labels_exact(lines, params)
+        labels = get_labels_exact(lines)
     else:
         abort(400, "unknown algorithm")
 
