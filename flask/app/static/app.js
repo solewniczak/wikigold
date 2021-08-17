@@ -2,18 +2,6 @@ class App {
     constructor(baseURL, maxNgrams) {
         this.baseURL = baseURL;
         this.maxNgrams = maxNgrams;
-        this.colors = ['#00FF00', '#0000FF', '#FF0000', '#01FFFE', '#FFA6FE',
-            '#FFDB66', '#006401', '#010067', '#95003A', '#007DB5', '#FF00F6',
-            '#FFEEE8', '#774D00', '#90FB92', '#0076FF', '#D5FF00', '#FF937E',
-            '#6A826C', '#FF029D', '#FE8900', '#7A4782', '#7E2DD2', '#85A900',
-            '#FF0056', '#A42400', '#00AE7E', '#683D3B', '#BDC6FF', '#263400',
-            '#BDD393', '#00B917', '#9E008E', '#001544', '#C28C9F', '#FF74A3',
-            '#01D0FF', '#004754', '#E56FFE', '#788231', '#0E4CA1', '#91D0CB',
-            '#BE9970', '#968AE8', '#BB8800', '#43002C', '#DEFF74', '#00FFC6',
-            '#FFE502', '#620E00', '#008F9C', '#98FF52', '#7544B1', '#B500FF',
-            '#00FF78', '#FF6E41', '#005F39', '#6B6882', '#5FAD4E', '#A75740',
-            '#A5FFD2', '#FFB167', '#009BFF', '#E85EBE'
-        ];
     }
     index() {
         let that = this;
@@ -36,24 +24,18 @@ class App {
                         const p = document.createElement("p");
                         line.forEach(token => {
                             let span = document.createElement("span");
-                            span.className = "main"
-                            span.style.borderColor = that.colors[0];
+                            span.classList.add("main");
                             p.append(span);
 
                             let space = document.createElement("span");
-                            space.style.borderColor = that.colors[0];
                             p.append(space);
 
                             for (let i = 1; i < that.maxNgrams; i++) {
                                 let nextSpan = document.createElement("span");
-                                nextSpan.style.paddingBottom = i*3 + "px";
-                                nextSpan.style.borderColor = that.colors[i];
                                 span.append(nextSpan);
                                 span = nextSpan;
 
                                 let nextSpace = document.createElement("span");
-                                nextSpace.style.paddingBottom = i*3 + "px";
-                                nextSpace.style.borderColor = that.colors[i];
                                 space.append(nextSpace);
                                 space = nextSpace;
                             }
@@ -102,14 +84,32 @@ class App {
                             for (let i = 1; i < label.ngrams; i++){
                                 span = span.firstChild;
                             }
-                            span.style.borderBottomWidth = "1px";
-                            span.style.borderBottomStyle = "solid";
+                            span.classList.add("ngram_link");
+                            span.classList.add("ngram_link_" + label.ngrams);
                         });
                     });
                 })
                 .catch(error => {
                     console.error('error:', error);
                 });
+        });
+
+        const ngramsDisplayCheckboxes = document.querySelectorAll("#ngramsDisplay input");
+        ngramsDisplayCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener("change", event => {
+                let ngram = event.target.value;
+                if (event.target.checked) {
+                    // show links
+                    document.querySelectorAll(".ngram_link_" + ngram).forEach(ngramSpan => {
+                        ngramSpan.classList.add("ngram_link");
+                    });
+                } else {
+                    // hide links
+                    document.querySelectorAll(".ngram_link_" + ngram).forEach(ngramSpan => {
+                        ngramSpan.classList.remove("ngram_link");
+                    });
+                }
+            });
         });
     }
 }

@@ -8,6 +8,8 @@
     <!-- Bootstrap CSS -->
     <link href="{{ url_for('static', filename='bootstrap-5.0.2-dist/css/bootstrap.min.css') }}" rel="stylesheet">
 
+    {% block meta %}{% endblock %}
+
     <title>{% block title %}{% endblock %} - Wikigold</title>
   </head>
   <body id="{% block pageId %}{% endblock %}">
