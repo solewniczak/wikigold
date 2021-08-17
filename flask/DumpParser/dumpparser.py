@@ -9,7 +9,7 @@ class DumpParser:
     def __init__(self):
         self.parser_name = 'DumpParser v0.0.1'
         self.links_labels = Counter()
-        self.link_titles = defaultdict(set)
+        self.link_titles = defaultdict(Counter)
         self.links_titles_freq = Counter()
         self.titles_redirects = {}
 
@@ -46,7 +46,7 @@ class DumpParser:
                         for link in wikicode.get_links():
                             link_text = link['text']
                             self.links_labels[link_text] += 1
-                            self.link_titles[link_text].add(link['title'])
+                            self.link_titles[link_text][link['title']] += 1
                             self.links_titles_freq[link['title']] += 1
 
                         strip_code = wikicode.get_wikicode().strip_code()
