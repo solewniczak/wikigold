@@ -43,14 +43,16 @@ def import_dump_command(dir, tag):
 
 
     sql_add_article = "INSERT INTO `articles` (`title`, `dump_id`) VALUES (%s, %s)"
+    dict_articles_ids = {}
     sql_add_line = "INSERT INTO `lines` (`article_id`, `nr`, `content`) VALUES (%s, %s, %s)"
-    for title, lines in dump_parser.parse_xml(pages_meta_current_filepath, all_titles_in_ns0, all_titles_count):
+    for title, lines in dump_parser.parse_xml(pages_meta_current_filepath, all_titles_in_ns0, all_titles_count, early_stopping=1000):
         if len(title) > title_maximum_length:
             print(f"title: '{title}' exceeds maximum title length ({title_maximum_length}). skipping")
             break
         data_article = (title, dump_id)
         cursor.execute(sql_add_article, data_article)
         article_id = cursor.lastrowid
+        dict_articles_ids[title] = article_id
         for line_nr, content in enumerate(lines):
             if len(content) > line_content_maximum_length:
                 print(f"line: '{content}' exceeds maximum line length ({line_content_maximum_length}). skipping")
@@ -68,10 +70,13 @@ def import_dump_command(dir, tag):
         dict_labels_ids[label] = label_id
 
     # save labels_titles
-    sql_add_label_article = "INSERT INTO `labels_titles` (`label_id`, `title`, `counter`) VALUES (%s, %s, %s)"
+    sql_add_label_article = "INSERT INTO `labels_articles` (`label_id`, `title`, `article_id`, `counter`) VALUES (%s, %s, %s, %s)"
     for label, titles in dump_parser.link_titles.items():
         for title, counter in titles.items():
-            data_label_article = (dict_labels_ids[label], title, counter)
+            article_id = None
+            if title in dict_articles_ids:
+                article_id = dict_articles_ids[title]
+            data_label_article = (dict_labels_ids[label], title, article_id, counter)
             cursor.execute(sql_add_label_article, data_label_article)
 
     # update article counters

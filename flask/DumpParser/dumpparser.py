@@ -39,6 +39,7 @@ class DumpParser:
                         title = page.find('xmlns:title', namespaces).text.strip().replace(' ', '_')
                         redirect_to = redirect.attrib['title'].strip().replace(' ', '_')
                         self.titles_redirects[title] = redirect_to
+                        yield title, []
                     else:
                         title = page.find('xmlns:title', namespaces).text
                         wikitext = page.find('xmlns:revision/xmlns:text', namespaces).text.strip()

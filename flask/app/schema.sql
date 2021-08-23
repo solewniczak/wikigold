@@ -7,25 +7,21 @@ CREATE TABLE `dumps` (
 
 CREATE TABLE `articles` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `title` VARCHAR(256) NOT NULL,
+    `title` VARCHAR(256) NOT NULL UNIQUE,  # Each title should appear only once in this table
     `dump_id` INT UNSIGNED NULL,
     `counter` INT UNSIGNED NOT NULL DEFAULT 0,
-    CONSTRAINT `fk_articles_dumps`
-        FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
+    FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE INDEX articles_ix_title ON articles(title);
 
 CREATE TABLE `lines` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `nr` INT UNSIGNED NOT NULL,
     `content` TEXT NOT NULL,
     `article_id` INT UNSIGNED NOT NULL,
-    CONSTRAINT `fk_lines_articles`
-        FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
+    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -35,10 +31,7 @@ CREATE TABLE `edls` (
     `params` VARCHAR(1024) NOT NULL,
     `author` VARCHAR(256) NOT NULL,
     `article_id` INT UNSIGNED NOT NULL,
-    CONSTRAINT `fk_edls_articles`
-        FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
+    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -48,14 +41,8 @@ CREATE TABLE `decisions` (
     `source_line_id` INT UNSIGNED NOT NULL,
     `start` INT UNSIGNED NOT NULL,
     `length` INT UNSIGNED NOT NULL,
-    CONSTRAINT `fk_decisions_lines`
-        FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
-    CONSTRAINT `fk_decisions_edls`
-        FOREIGN KEY (`edl_id`) REFERENCES `edls` (`id`)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
+    FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`),
+    FOREIGN KEY (`edl_id`) REFERENCES `edls` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -64,14 +51,8 @@ CREATE TABLE `decisions_articles` (
     `decision_id` INT UNSIGNED NOT NULL,
     `article_id` INT UNSIGNED NOT NULL,
     `decision` BOOLEAN NULL,
-    CONSTRAINT `fk_decisions_articles_decisions`
-        FOREIGN KEY (`decision_id`) REFERENCES `decisions` (`id`)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
-    CONSTRAINT `fk_decisions_articles_articles`
-        FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
+    FOREIGN KEY (`decision_id`) REFERENCES `decisions` (`id`),
+    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -82,14 +63,13 @@ CREATE TABLE `labels` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
-CREATE TABLE `labels_titles` (
+CREATE TABLE `labels_articles` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `label_id` INT UNSIGNED NOT NULL,
     `title` VARCHAR(256) NOT NULL,
+    `article_id` INT UNSIGNED NULL,  # we can have links to not existing articles
     `counter` INT UNSIGNED NOT NULL DEFAULT 0,
-    CONSTRAINT `fk_labels_articles_labels`
-        FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
+    FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`),
+    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
