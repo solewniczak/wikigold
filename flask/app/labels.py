@@ -2,22 +2,6 @@ from app.db import get_db
 from flask import current_app, g
 
 
-def get_labels_dict():
-    if 'labels_dict' not in g:
-        db = get_db()
-        cursor = db.cursor(dictionary=True)
-        sql = "SELECT `label`, `counter` FROM `labels`"
-        cursor.execute(sql)
-        labels_dict = {}
-        for row in cursor:
-            labels_dict[row['label']] = row['counter']
-        cursor.close()
-
-        g.labels_dict = labels_dict
-
-    return g.labels_dict
-
-
 def get_label_titles_dict():
     if 'label_titles_dict' not in g:
         db = get_db()
@@ -31,20 +15,22 @@ def get_label_titles_dict():
         cursor.execute(sql)
         label_titles_dict = {}
         for row in cursor:
-            if row['label'] in label_titles_dict:
+            if row['label'] not in label_titles_dict:
                 label_titles_dict[row['label']] = {
                     'counter': row['label_counter'],
                     'titles': [{
                         'title': row['title'],
                         'label_title_counter': row['label_title_counter'],
-                        'article_counter': row['article_counter']
+                        'article_counter': row['article_counter'],
+                        'decision': None
                     }]
                 }
             else:
                 label_titles_dict[row['label']]['titles'].append({
                     'title': row['title'],
                     'label_title_counter': row['label_title_counter'],
-                    'article_counter': row['article_counter']
+                    'article_counter': row['article_counter'],
+                    'decision': None
                 })
         cursor.close()
 
@@ -54,7 +40,6 @@ def get_label_titles_dict():
 
 
 def get_labels_exact(lines):
-    labels_dict = get_labels_dict()
     label_titles_dict = get_label_titles_dict()
 
     labels = []
@@ -64,12 +49,13 @@ def get_labels_exact(lines):
                 if label_nr + ngrams > len(line):  # cannot construct ngram of length "ngrams" starting from "label"
                     break
                 label = ' '.join(line[label_nr:label_nr + ngrams])  # construct the label
-                if label in labels_dict:
+                if label in label_titles_dict:
                     labels.append({
                         'line': line_nr,
                         'start': label_nr,
                         'ngrams': ngrams,
-                        'dst': labels_dict[label]
+                        'counter': label_titles_dict[label]['counter'],
+                        'titles': label_titles_dict[label]['titles']
                     })
 
     return labels

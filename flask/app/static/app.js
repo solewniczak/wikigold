@@ -1,4 +1,5 @@
 class App {
+    'use strict';
     constructor(baseURL, maxNgrams) {
         this.baseURL = baseURL;
         this.maxNgrams = maxNgrams;
@@ -42,7 +43,7 @@ class App {
                             const spanContent = document.createTextNode(token);
                             span.append(spanContent);
                             const spaceContent = document.createTextNode(" ");
-                            space.append(spaceContent)
+                            space.append(spaceContent);
                         });
                         article.append(p);
                     });
@@ -67,6 +68,7 @@ class App {
                 .then(response => response.json())
                 .then(result => {
                     console.log('success:', result);
+                    that.edl = result;
                     result.forEach(label => {
                         const line = article.querySelectorAll("p")[label.line];
                         let span = line.querySelectorAll("span.main")[label.start];
@@ -86,6 +88,28 @@ class App {
                             }
                             span.classList.add("ngram_link");
                             span.classList.add("ngram_link_" + label.ngrams);
+
+                            let popoverHtml = '<form><div class="row g-3 align-items-center">';
+                            label.titles.forEach(article => {
+                                popoverHtml += '<div class="col-auto">';
+                                popoverHtml += '<label for="inputPassword6" class="col-form-label">' + article.title +'</label>';
+                                popoverHtml += '</div>';
+                                popoverHtml += '<div class="col-auto">';
+                                popoverHtml += '<input class="form-check-input" type="checkbox">';
+                                popoverHtml += '</div>';
+                                popoverHtml += '<div class="col-auto">';
+                                popoverHtml += '<input class="form-check-input" type="checkbox">';
+                                popoverHtml += '</div>';
+                            });
+                            popoverHtml += '</div></form>';
+                            console.log(popoverHtml);
+
+                            // create popovers
+                            const popover = new bootstrap.Popover(span, {
+                                "html": true,
+                                "content": popoverHtml,
+                                "placement": "bottom"
+                            });
                         });
                     });
                 })
@@ -94,10 +118,23 @@ class App {
                 });
         });
 
+        const ngramLinks = document.querySelectorAll(".ngram_link");
+        ngramLinks.forEach(ngramLink => {
+            ngramLink.addEventListener("click", event => {
+                const ngramLink = event.target;
+                // const decisionMenu = document.createElement("div");
+                // decisionMenu.id = "decisionMenu";
+                // decisionMenu.style.position = "absolute";
+                //
+                // decisionMenu.textContent = 'Mongo!';
+                // document.append(decisionMenu);
+            });
+        });
+
         const ngramsDisplayCheckboxes = document.querySelectorAll("#ngramsDisplay input");
         ngramsDisplayCheckboxes.forEach(checkbox => {
             checkbox.addEventListener("change", event => {
-                let ngram = event.target.value;
+                const ngram = event.target.value;
                 if (event.target.checked) {
                     // show links
                     document.querySelectorAll(".ngram_link_" + ngram).forEach(ngramSpan => {
