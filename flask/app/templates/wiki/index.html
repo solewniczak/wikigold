@@ -10,6 +10,7 @@
         --ngram_color_3: #FF0000;
         --ngram_color_4: #01FFFE;
         --ngram_color_5: #FFA6FE;
+        --popover-width:  440px;
     }
 
     .ngram_link {
@@ -39,8 +40,9 @@
         border-bottom-color: var(--ngram_color_5);
     }
 
-    #decisionsMenu {
-        border: 2px solid #000;
+    .popover {
+        max-width: var(--popover-width);
+        width: var(--popover-width);
     }
 </style>
 {% endblock %}

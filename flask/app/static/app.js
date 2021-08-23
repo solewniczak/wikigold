@@ -22,7 +22,6 @@ class App {
     }
     index() {
         const that = this;
-        const article = document.querySelector("article");
         const searchForm = document.querySelector("#searchForm");
         const algorithmSelector = document.querySelector("#algorithmSelector");
 
@@ -53,18 +52,21 @@ class App {
             that.indexRunAlgorithm(algorithm);
         });
 
-        const ngramLinks = document.querySelectorAll(".ngram_link");
-        ngramLinks.forEach(ngramLink => {
-            ngramLink.addEventListener("click", event => {
-                const ngramLink = event.target;
-                // const decisionMenu = document.createElement("div");
-                // decisionMenu.id = "decisionMenu";
-                // decisionMenu.style.position = "absolute";
-                //
-                // decisionMenu.textContent = 'Mongo!';
-                // document.append(decisionMenu);
-            });
+        // modify EDL on user decision
+        document.addEventListener("click",event => {
+            if (event.target && event.target.name === "decisionMenuOption") {
+                const edlId = event.target.dataset.wikigoldLabel;
+                console.log(edlId);
+            }
         });
+
+        // const decisionMenuRadios = document.querySelectorAll(".decisionMenu input[type=radio]");
+        // decisionMenuRadios.forEach(decisionMenuRadio => {
+        //     decisionMenuRadio.addEventListener("click", event => {
+        //         const decisionMenuRadio = event.target;
+        //         console.log(decisionMenuCheckbox);
+        //     });
+        // });
 
         const ngramsDisplayCheckboxes = document.querySelectorAll("#ngramsDisplay input");
         ngramsDisplayCheckboxes.forEach(checkbox => {
@@ -147,7 +149,7 @@ class App {
             .then(result => {
                 console.log('success:', result);
                 that.edl = result;
-                result.forEach(label => {
+                that.edl.forEach((label, label_index) => {
                     const line = article.querySelectorAll("p")[label.line];
                     let span = line.querySelectorAll("span.main")[label.start];
                     const showBorder = [span];
@@ -167,26 +169,36 @@ class App {
                         span.classList.add("ngram_link");
                         span.classList.add("ngram_link_" + label.ngrams);
 
-                        let popoverHtml = '<form><div class="row g-3 align-items-center">';
+                        let popoverHtml = '<div class="row">' +
+                            '<div class="col-4"></div>' +
+                            '<div class="col-2 text-center">Correct</div>' +
+                            '<div class="col-3 text-center">Incorrect</div>' +
+                            '<div class="col-3 text-center">Don\'t known</div>' +
+                            '</div>';
                         label.titles.forEach(article => {
-                            popoverHtml += '<div class="col-auto">';
-                            popoverHtml += '<label for="inputPassword6" class="col-form-label">' + article.title +'</label>';
-                            popoverHtml += '</div>';
-                            popoverHtml += '<div class="col-auto">';
-                            popoverHtml += '<input class="form-check-input" type="checkbox">';
-                            popoverHtml += '</div>';
-                            popoverHtml += '<div class="col-auto">';
-                            popoverHtml += '<input class="form-check-input" type="checkbox">';
-                            popoverHtml += '</div>';
+                            popoverHtml += '<div class="row">' +
+                                    '<div class="col-4">' +
+                                    '<label for="decisionMenuOption" class="col-form-label">' + article.title +'</label>' +
+                                    '</div>' +
+                                    '<div class="col-2 text-center">' +
+                                    '<input class="form-check-input" name="decisionMenuOption" value="0" data-wikigold-label="' + label_index + '" type="radio">' +
+                                    '</div>' +
+                                    '<div class="col-3 text-center">' +
+                                    '<input class="form-check-input" name="decisionMenuOption" value="1" data-wikigold-label="' + label_index + '" type="radio">' +
+                                    '</div>' +
+                                    '<div class="col-3 text-center">' +
+                                    '<input class="form-check-input" name="decisionMenuOption" value="2" data-wikigold-label="' + label_index + '" type="radio">' +
+                                    '</div>' +
+                                '</div>';
                         });
-                        popoverHtml += '</div></form>';
-                        console.log(popoverHtml);
 
                         // create popovers
                         const popover = new bootstrap.Popover(span, {
                             "html": true,
+                            "sanitize": false,
                             "content": popoverHtml,
-                            "placement": "bottom"
+                            "placement": "bottom",
+                            "trigger": "click"
                         });
                     });
                 });
