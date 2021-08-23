@@ -27,6 +27,15 @@ def import_dump_command(dir, tag):
     cursor = db.cursor()
     dump_parser = DumpParser()
 
+    sql_charter_maximum_length = '''SELECT character_maximum_length FROM information_schema.columns 
+                                    WHERE table_name = %s AND column_name = %s'''
+    cursor.execute(sql_charter_maximum_length, ('articles', 'title'))
+    title_maximum_length = cursor.fetchone()[0]
+
+    cursor.execute(sql_charter_maximum_length, ('lines', 'content'))
+    line_content_maximum_length = cursor.fetchone()[0]
+
+
     sql_add_dump = "INSERT INTO dumps (name, parser) VALUES (%s, %s)"
     data_dump = (tag, dump_parser.parser_name)
     cursor.execute(sql_add_dump, data_dump)
@@ -36,10 +45,16 @@ def import_dump_command(dir, tag):
     sql_add_article = "INSERT INTO `articles` (`title`, `dump_id`) VALUES (%s, %s)"
     sql_add_line = "INSERT INTO `lines` (`article_id`, `nr`, `content`) VALUES (%s, %s, %s)"
     for title, lines in dump_parser.parse_xml(pages_meta_current_filepath, all_titles_in_ns0, all_titles_count):
+        if len(title) > title_maximum_length:
+            print(f"title: '{title}' exceeds maximum title length ({title_maximum_length}). skipping")
+            break
         data_article = (title, dump_id)
         cursor.execute(sql_add_article, data_article)
         article_id = cursor.lastrowid
         for line_nr, content in enumerate(lines):
+            if len(content) > line_content_maximum_length:
+                print(f"line: '{content}' exceeds maximum line length ({line_content_maximum_length}). skipping")
+                break
             data_line = (article_id, line_nr, content)
             cursor.execute(sql_add_line, data_line)
 
