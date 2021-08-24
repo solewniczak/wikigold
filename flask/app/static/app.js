@@ -1,5 +1,5 @@
+'use strict';
 class App {
-    'use strict';
     constructor(baseURL, maxNgrams) {
         this.baseURL = baseURL;
         this.maxNgrams = maxNgrams;
@@ -54,19 +54,14 @@ class App {
 
         // modify EDL on user decision
         document.addEventListener("click",event => {
-            if (event.target && event.target.name === "decisionMenuOption") {
-                const edlId = event.target.dataset.wikigoldLabel;
-                console.log(edlId);
+            if (event.target && event.target.classList.contains("decisionMenuOption")) {
+                const radio = event.target;
+                const labelIndex = radio.dataset.wikigoldLabel;
+                const articleIndex = radio.dataset.wikigoldArticle;
+                const value = radio.value;
+                that.edl[labelIndex].titles[articleIndex].decision = value;
             }
         });
-
-        // const decisionMenuRadios = document.querySelectorAll(".decisionMenu input[type=radio]");
-        // decisionMenuRadios.forEach(decisionMenuRadio => {
-        //     decisionMenuRadio.addEventListener("click", event => {
-        //         const decisionMenuRadio = event.target;
-        //         console.log(decisionMenuCheckbox);
-        //     });
-        // });
 
         const ngramsDisplayCheckboxes = document.querySelectorAll("#ngramsDisplay input");
         ngramsDisplayCheckboxes.forEach(checkbox => {
@@ -175,31 +170,67 @@ class App {
                             '<div class="col-3 text-center">Incorrect</div>' +
                             '<div class="col-3 text-center">Don\'t known</div>' +
                             '</div>';
-                        label.titles.forEach(article => {
-                            popoverHtml += '<div class="row">' +
+                        label.titles.forEach((article, article_index) => {
+                            popoverHtml += '<div class="row decisionMenuRow">' +
                                     '<div class="col-4">' +
                                     '<label for="decisionMenuOption" class="col-form-label">' + article.title +'</label>' +
                                     '</div>' +
                                     '<div class="col-2 text-center">' +
-                                    '<input class="form-check-input" name="decisionMenuOption" value="0" data-wikigold-label="' + label_index + '" type="radio">' +
+                                    '<input class="form-check-input decisionMenuOption" ' +
+                                            'name="decisionMenuOption_' + label_index + '_' + article_index + '" ' +
+                                            'value="0" data-wikigold-label="' + label_index + '" ' +
+                                            'data-wikigold-article="' + article_index + '" type="radio">' +
                                     '</div>' +
                                     '<div class="col-3 text-center">' +
-                                    '<input class="form-check-input" name="decisionMenuOption" value="1" data-wikigold-label="' + label_index + '" type="radio">' +
+                                    '<input class="form-check-input decisionMenuOption" ' +
+                                            'name="decisionMenuOption_' + label_index + '_' + article_index + '" ' +
+                                            'value="1" data-wikigold-label="' + label_index + '" ' +
+                                            'data-wikigold-article="' + article_index + '" type="radio">' +
                                     '</div>' +
                                     '<div class="col-3 text-center">' +
-                                    '<input class="form-check-input" name="decisionMenuOption" value="2" data-wikigold-label="' + label_index + '" type="radio">' +
+                                    '<input class="form-check-input decisionMenuOption" ' +
+                                            'name="decisionMenuOption_' + label_index + '_' + article_index + '" ' +
+                                            'value="2" data-wikigold-label="' + label_index + '" ' +
+                                            'data-wikigold-article="' + article_index + '" type="radio">' +
                                     '</div>' +
                                 '</div>';
                         });
 
                         // create popovers
                         const popover = new bootstrap.Popover(span, {
+                            "title": label.name,
                             "html": true,
                             "sanitize": false,
                             "content": popoverHtml,
                             "placement": "bottom",
-                            "trigger": "click"
+                            "trigger": "manual",
+                            "template": '<div class="popover ngram_popover_' + label.ngrams + '" role="tooltip">' +
+                                '<div class="popover-arrow"></div>' +
+                                '<h3 class="popover-header"></h3>' +
+                                '<div class="popover-body"></div>' +
+                                '</div>'
                         });
+
+                        // only one popover at time - stop event propagation
+                        span.addEventListener('click', event => {
+                            // check if ngram is active
+                            if (span.classList.contains('ngram_link')) {
+                                event.stopPropagation();
+                                popover.toggle();
+                            }
+                        });
+                        // fill the values of form with the EDL
+                        span.addEventListener('shown.bs.popover', event => {
+                            const decisions = that.edl[label_index];
+                            const popoverElement = popover.getTipElement();
+                            popoverElement.querySelectorAll(".decisionMenuRow").forEach((articleRow, articleIndex) => {
+                                const decision = decisions.titles[articleIndex].decision;
+                                if (decision !== null) {
+                                    articleRow.querySelector('input[value="' + decision + '"]').checked = true;
+                                }
+                            });
+                        });
+
                     });
                 });
             })

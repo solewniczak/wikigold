@@ -45,7 +45,7 @@ def import_dump_command(dir, tag):
     sql_add_article = "INSERT INTO `articles` (`title`, `dump_id`) VALUES (%s, %s)"
     dict_articles_ids = {}
     sql_add_line = "INSERT INTO `lines` (`article_id`, `nr`, `content`) VALUES (%s, %s, %s)"
-    for title, lines in dump_parser.parse_xml(pages_meta_current_filepath, all_titles_in_ns0, all_titles_count, early_stopping=1000):
+    for title, lines in dump_parser.parse_xml(pages_meta_current_filepath, all_titles_in_ns0, all_titles_count, early_stopping=None):
         if len(title) > title_maximum_length:
             print(f"title: '{title}' exceeds maximum title length ({title_maximum_length}). skipping")
             break

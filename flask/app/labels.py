@@ -51,6 +51,7 @@ def get_labels_exact(lines):
                 label = ' '.join(line[label_nr:label_nr + ngrams])  # construct the label
                 if label in label_titles_dict:
                     labels.append({
+                        'name': label,
                         'line': line_nr,
                         'start': label_nr,
                         'ngrams': ngrams,
