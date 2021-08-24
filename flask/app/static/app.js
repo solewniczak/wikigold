@@ -1,4 +1,3 @@
-'use strict';
 class App {
     constructor(baseURL, maxNgrams) {
         this.baseURL = baseURL;
@@ -20,7 +19,11 @@ class App {
             });
         }
     }
-    index() {
+}
+
+class Index extends App {
+    constructor(baseURL, maxNgrams) {
+        super(baseURL, maxNgrams);
         const that = this;
         const searchForm = document.querySelector("#searchForm");
         const algorithmSelector = document.querySelector("#algorithmSelector");
@@ -29,11 +32,11 @@ class App {
         if ('title' in that.get) {
             const title = that.get['title'];
             searchForm.querySelector("input[name=title]").value = title;
-            that.indexLoadArticle(title).then(() => {
+            that.loadArticle(title).then(() => {
                 if ('algorithm' in that.get) {
                     const algorithm = that.get['algorithm'];
                     algorithmSelector.querySelector("select[name=algorithm]").value = algorithm;
-                    that.indexRunAlgorithm(algorithm);
+                    that.runAlgorithm(algorithm);
                 }
             });
         }
@@ -42,14 +45,14 @@ class App {
             event.preventDefault();
             const formData = new FormData(searchForm);
             const title = formData.get('title');
-            that.indexLoadArticle(title);
+            that.loadArticle(title);
         });
 
         algorithmSelector.addEventListener("submit", event => {
             event.preventDefault();
             const formData = new FormData(algorithmSelector);
             const algorithm = formData.get('algorithm');
-            that.indexRunAlgorithm(algorithm);
+            that.runAlgorithm(algorithm);
         });
 
         // modify EDL on user decision
@@ -58,8 +61,7 @@ class App {
                 const radio = event.target;
                 const labelIndex = radio.dataset.wikigoldLabel;
                 const articleIndex = radio.dataset.wikigoldArticle;
-                const value = radio.value;
-                that.edl[labelIndex].titles[articleIndex].decision = value;
+                that.edl[labelIndex].titles[articleIndex].decision = radio.value;
             }
         });
 
@@ -82,7 +84,7 @@ class App {
         });
     }
 
-    indexLoadArticle(title) {
+    loadArticle(title) {
         const that = this;
         const article = document.querySelector("article");
         const requestURL = new URL('/api/article', that.baseURL);
@@ -128,7 +130,7 @@ class App {
             });
     }
 
-    indexRunAlgorithm(algorithm) {
+    runAlgorithm(algorithm) {
         const that = this;
         const article = document.querySelector("article");
 
