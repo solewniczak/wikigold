@@ -13,49 +13,37 @@ class Index extends App {
         const searchForm = document.querySelector("#searchForm");
         const algorithmSelector = document.querySelector("#algorithmSelector");
 
-        // parse that.get.params to json
-        // if (that.url.searchParams.has('params')) {
-        //     that.get.params = JSON.parse(that.url.searchParams.get('params'));
-        // } else {
-        //     that.get.params = {};
-        // }
-
-        // load article from get parameter
-        if (that.url.searchParams.has('title')) {
-            const title = that.url.searchParams.get('title');
-            searchForm.querySelector("input[name=title]").value = title;
-            that.loadArticle(title).then(() => {
-                if (that.url.searchParams.has('algorithm')) {
-                    const algorithm = that.url.searchParams.get('algorithm');
-                    algorithmSelector.querySelector("select[name=algorithm]").value = algorithm;
-                    return that.runAlgorithm(algorithm);
-                }
-            });
+        if (that.url.searchParams.has('articleId')) {
+            const articleId = that.url.searchParams.get('articleId');
+            that.loadArticleById(articleId)
+                .then(() => that.runAlgorithm());
         }
 
         searchForm.addEventListener("submit", event => {
             event.preventDefault();
             const formData = new FormData(searchForm);
             const title = formData.get('title');
-            // update URL
-            that.url.searchParams.set('title', title);
-            that.url.searchParams.delete('algorithm');
-            that.url.searchParams.delete('params');
-            window.history.replaceState('', '', that.url.href);
-            algorithmSelector.querySelector("select[name=algorithm]").value = '';
-
-            that.loadArticle(title);
+            that.loadArticleByTitle(title)
+                .then(result => {
+                    that.url.searchParams.set('articleId', result.id);
+                    that.url.searchParams.delete('algorithm');
+                    that.url.searchParams.delete('params');
+                    window.history.replaceState('', '', that.url.href);
+                });
         });
 
         algorithmSelector.addEventListener("submit", event => {
             event.preventDefault();
             const formData = new FormData(algorithmSelector);
             const algorithm = formData.get('algorithm');
-            // update URL
+            formData.delete('algorithm');
+            const params = Object.fromEntries(formData);
+
             that.url.searchParams.set('algorithm', algorithm);
+            that.url.searchParams.set('params', JSON.stringify(params));
             window.history.replaceState('', '', that.url.href);
 
-            that.runAlgorithm(algorithm);
+            that.runAlgorithm();
         });
 
         // modify EDL on user decision
@@ -87,61 +75,77 @@ class Index extends App {
         });
     }
 
-    loadArticle(title) {
+    loadArticleByTitle(title) {
         const that = this;
-        const article = document.querySelector("article");
+
         const requestURL = new URL('/api/article', that.baseURL);
         requestURL.searchParams.append('title', title);
-
         return fetch(requestURL.href, {
             method: 'GET'
         })
             .then(response => response.json())
-            .then(result => {
-                console.log('success:', result);
-                article.replaceChildren(); // remove old paragraphs
-                article.dataset.id = result.id;
-                result.lines.forEach(line => {
-                    const p = document.createElement("p");
-                    line.forEach(token => {
-                        let span = document.createElement("span");
-                        span.classList.add("main");
-                        p.append(span);
-
-                        let space = document.createElement("span");
-                        p.append(space);
-
-                        for (let i = 1; i < that.maxNgrams; i++) {
-                            let nextSpan = document.createElement("span");
-                            span.append(nextSpan);
-                            span = nextSpan;
-
-                            let nextSpace = document.createElement("span");
-                            space.append(nextSpace);
-                            space = nextSpace;
-                        }
-                        const spanContent = document.createTextNode(token);
-                        span.append(spanContent);
-                        const spaceContent = document.createTextNode(" ");
-                        space.append(spaceContent);
-                    });
-                    article.append(p);
-                });
-            })
-            .catch(error => {
-                console.error('error:', error);
-            });
+            .then(result => that.loadArticleFromResult(result));
     }
 
-    runAlgorithm(algorithm) {
+    loadArticleById(articleId) {
+        const that = this;
+
+        const requestURL = new URL('/api/article/' + articleId, that.baseURL);
+        return fetch(requestURL.href, {
+            method: 'GET'
+        })
+            .then(response => response.json())
+            .then(result => that.loadArticleFromResult(result));
+    }
+
+    loadArticleFromResult(result) {
         const that = this;
         const article = document.querySelector("article");
 
-        if (algorithm === '') {
-            return;
-        }
-        const requestURL = new URL('/api/candidateLabels/' + article.dataset.id, that.baseURL);
+        article.replaceChildren(); // remove old paragraphs
+        article.dataset.id = result.id;
+        result.lines.forEach(line => {
+            const p = document.createElement("p");
+            line.forEach(token => {
+                let span = document.createElement("span");
+                span.classList.add("main");
+                p.append(span);
+
+                let space = document.createElement("span");
+                p.append(space);
+
+                for (let i = 1; i < that.maxNgrams; i++) {
+                    let nextSpan = document.createElement("span");
+                    span.append(nextSpan);
+                    span = nextSpan;
+
+                    let nextSpace = document.createElement("span");
+                    space.append(nextSpace);
+                    space = nextSpace;
+                }
+                const spanContent = document.createTextNode(token);
+                span.append(spanContent);
+                const spaceContent = document.createTextNode(" ");
+                space.append(spaceContent);
+            });
+            article.append(p);
+        });
+        return result;
+    }
+
+    runAlgorithm() {
+        const that = this;
+        const article = document.querySelector("article");
+
+        const articleId = that.url.searchParams.get('articleId');
+        const algorithm = that.url.searchParams.get('algorithm');
+        const params = that.url.searchParams.get('params');
+
+        if (!articleId || !algorithm) return;
+
+        const requestURL = new URL('/api/candidateLabels/' + articleId, that.baseURL);
         requestURL.searchParams.append('algorithm', algorithm);
+        requestURL.searchParams.append('params', params);
         return fetch(requestURL.href, {
             method: 'GET'
         })
@@ -238,9 +242,6 @@ class Index extends App {
 
                     });
                 });
-            })
-            .catch(error => {
-                console.error('error:', error);
             });
     }
 }
