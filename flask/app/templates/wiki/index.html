@@ -5,39 +5,39 @@
 {% block meta %}
 <style>
     :root {
-        --ngram_color_1: #00FF00;
-        --ngram_color_2: #0000FF;
-        --ngram_color_3: #FF0000;
-        --ngram_color_4: #01FFFE;
-        --ngram_color_5: #FFA6FE;
+        --ngram-color-1: #00FF00;
+        --ngram-color-2: #0000FF;
+        --ngram-color-3: #FF0000;
+        --ngram-color-4: #01FFFE;
+        --ngram-color-5: #FFA6FE;
         --popover-width:  440px;
     }
 
-    .ngram_link {
+    .ngram-link {
         border-bottom-width: 2px;
         border-bottom-style: solid;
         cursor: pointer;
     }
 
-    .ngram_link_1 {
+    .ngram-link-1 {
         padding-bottom: 0;
-        border-bottom-color: var(--ngram_color_1);
+        border-bottom-color: var(--ngram-color-1);
     }
-    .ngram_link_2 {
+    .ngram-link-2 {
         padding-bottom: 3px;
-        border-bottom-color: var(--ngram_color_2);
+        border-bottom-color: var(--ngram-color-2);
     }
-    .ngram_link_3 {
+    .ngram-link-3 {
         padding-bottom: 6px;
-        border-bottom-color: var(--ngram_color_3);
+        border-bottom-color: var(--ngram-color-3);
     }
-    .ngram_link_4 {
+    .ngram-link-4 {
         padding-bottom: 9px;
-        border-bottom-color: var(--ngram_color_4);
+        border-bottom-color: var(--ngram-color-4);
     }
-    .ngram_link_5 {
+    .ngram-link-5 {
         padding-bottom: 12px;
-        border-bottom-color: var(--ngram_color_5);
+        border-bottom-color: var(--ngram-color-5);
     }
 
     .popover {
@@ -45,24 +45,24 @@
         width: var(--popover-width);
     }
 
-    .ngram_popover_1 {
-        border-color: var(--ngram_color_1);
+    .ngram-popover-1 {
+        border-color: var(--ngram-color-1);
     }
 
-    .ngram_popover_2 {
-        border-color: var(--ngram_color_2);
+    .ngram-popover-2 {
+        border-color: var(--ngram-color-2);
     }
 
-    .ngram_popover_3 {
-        border-color: var(--ngram_color_3);
+    .ngram-popover-3 {
+        border-color: var(--ngram-color-3);
     }
 
-    .ngram_popover_4 {
-        border-color: var(--ngram_color_4);
+    .ngram-popover-4 {
+        border-color: var(--ngram-color-4);
     }
 
-    .ngram_popover_5 {
-        border-color: var(--ngram_color_5);
+    .ngram-popover-5 {
+        border-color: var(--ngram-color-5);
     }
 </style>
 {% endblock %}
@@ -85,7 +85,7 @@
                       </div>
                   </div>
               </form>
-              <form class="mb-3" id="algorithm-selector">
+              <form class="mb-3" id="algorithm-form">
                 <div class="row mb-2">
                     <div class="col-7">
                         <select class="form-select" name="algorithm">
@@ -98,7 +98,7 @@
                     </div>
                 </div>
               <div class="form-check">
-                  <input class="form-check-input" type="checkbox" name="skipstopwords" value="1" id="algorithm-selector-skipstopwords" checked>
+                  <input class="form-check-input" type="checkbox" name="skipstopwords" value="1" id="algorithm-selector-skipstopwords">
                   <label class="form-check-label" for="algorithm-selector-skipstopwords">
                     Skip stop words
                   </label>
@@ -107,8 +107,8 @@
               <div class="mb-3" id="ngramsDisplay">
                   {% for ngram in range(1, config['MAX_NGRAMS']+1) %}
                       <div class="form-check">
-                          <input class="form-check-input" type="checkbox" value="{{ngram}}" id="ngram_check_{{ngram}}" checked>
-                          <label class="form-check-label" for="ngram_check_{{ngram}}" style="border-bottom: 2px solid var(--ngram_color_{{ngram}});">
+                          <input class="form-check-input" type="checkbox" value="{{ngram}}" id="ngram-check-{{ngram}}" checked>
+                          <label class="form-check-label" for="ngram-check-{{ngram}}" style="border-bottom: 2px solid var(--ngram-color-{{ngram}});">
                             {{ngram}}-grams
                           </label>
                       </div>

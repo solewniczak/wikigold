@@ -70,11 +70,11 @@ def get_candidate_labels(article_id):
     if 'algorithm' not in request.args:
         abort(400, "algorithm not given")
 
-    algorithm = json.loads(request.args['algorithm'])
+    params = json.loads(request.args['algorithm'])
     lines = get_lines(article_id)
 
-    if algorithm['algorithm'] == 'exact':
-        labels = get_labels_exact(lines)
+    if params['algorithm'] == 'exact':
+        labels = get_labels_exact(lines, params)
     else:
         abort(400, "unknown algorithm")
 

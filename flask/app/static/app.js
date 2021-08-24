@@ -11,12 +11,17 @@ class Index extends App {
         super(baseUrl, maxNgrams);
         const that = this;
         const searchForm = document.querySelector("#search-form");
-        const algorithmSelector = document.querySelector("#algorithm-selector");
+        const algorithmForm = document.querySelector("#algorithm-form");
 
         if (that.url.searchParams.has('article')) {
             const articleId = that.url.searchParams.get('article');
             that.loadArticleById(articleId)
-                .then(() => that.runAlgorithm());
+                .then(result => {
+                    searchForm.querySelector("input[name=title]").value = result.title;
+                    const algorithm = JSON.parse(that.url.searchParams.get('algorithm'));
+                    that.fillAlgorithmForm(algorithm);
+                    that.runAlgorithm(algorithm);
+                });
         }
 
         searchForm.addEventListener("submit", event => {
@@ -31,15 +36,15 @@ class Index extends App {
                 });
         });
 
-        algorithmSelector.addEventListener("submit", event => {
+        algorithmForm.addEventListener("submit", event => {
             event.preventDefault();
-            const formData = new FormData(algorithmSelector);
+            const formData = new FormData(algorithmForm);
             const algorithm = Object.fromEntries(formData);
 
             that.url.searchParams.set('algorithm', JSON.stringify(algorithm));
             window.history.replaceState('', '', that.url.href);
 
-            that.runAlgorithm();
+            that.runAlgorithm(algorithm);
         });
 
         // modify EDL on user decision
@@ -58,13 +63,13 @@ class Index extends App {
                 const ngram = event.target.value;
                 if (event.target.checked) {
                     // show links
-                    document.querySelectorAll(".ngram_link_" + ngram).forEach(ngramSpan => {
-                        ngramSpan.classList.add("ngram_link");
+                    document.querySelectorAll(".ngram-link-" + ngram).forEach(ngramSpan => {
+                        ngramSpan.classList.add("ngram-link");
                     });
                 } else {
                     // hide links
-                    document.querySelectorAll(".ngram_link_" + ngram).forEach(ngramSpan => {
-                        ngramSpan.classList.remove("ngram_link");
+                    document.querySelectorAll(".ngram-link-" + ngram).forEach(ngramSpan => {
+                        ngramSpan.classList.remove("ngram-link");
                     });
                 }
             });
@@ -129,23 +134,34 @@ class Index extends App {
         return result;
     }
 
-    runAlgorithm() {
+    fillAlgorithmForm(algorithm) {
+        const that = this;
+        const algorithmForm = document.querySelector("#algorithm-form");
+        Object.entries(algorithm).forEach(([key, value]) => {
+            const formElement = algorithmForm.querySelector('[name=' + key + ']');
+            if (formElement.tagName === 'SELECT') {
+                formElement.value = value;
+            } else if (formElement.tagName === 'INPUT' && formElement.getAttribute('type') === 'checkbox') {
+                formElement.checked = true;
+            }
+        });
+    }
+
+    runAlgorithm(algorithm) {
         const that = this;
         const article = document.querySelector("article");
 
         const articleId = that.url.searchParams.get('article');
-        const algorithm = that.url.searchParams.get('algorithm');
 
-        if (!articleId || !algorithm) return;
+        if (!articleId) return;
 
         const requestURL = new URL('/api/candidateLabels/' + articleId, that.baseUrl);
-        requestURL.searchParams.append('algorithm', algorithm);
+        requestURL.searchParams.append('algorithm', JSON.stringify(algorithm));
         return fetch(requestURL.href, {
             method: 'GET'
         })
             .then(response => response.json())
             .then(result => {
-                console.log('success:', result);
                 that.edl = result;
                 that.edl.forEach((label, labelIndex) => {
                     const line = article.querySelectorAll("p")[label.line];
@@ -164,8 +180,8 @@ class Index extends App {
                         for (let i = 1; i < label.ngrams; i++){
                             span = span.firstChild;
                         }
-                        span.classList.add("ngram_link");
-                        span.classList.add("ngram_link_" + label.ngrams);
+                        span.classList.add("ngram-link");
+                        span.classList.add("ngram-link-" + label.ngrams);
 
                         let popoverHtml = '<div class="row">' +
                             '<div class="col-4"></div>' +
@@ -207,7 +223,7 @@ class Index extends App {
                             "content": popoverHtml,
                             "placement": "bottom",
                             "trigger": "manual",
-                            "template": '<div class="popover ngram_popover_' + label.ngrams + '" role="tooltip">' +
+                            "template": '<div class="popover ngram-popover-' + label.ngrams + '" role="tooltip">' +
                                 '<div class="popover-arrow"></div>' +
                                 '<h3 class="popover-header"></h3>' +
                                 '<div class="popover-body"></div>' +
@@ -217,7 +233,7 @@ class Index extends App {
                         // only one popover at time - stop event propagation
                         span.addEventListener('click', event => {
                             // check if ngram is active
-                            if (span.classList.contains('ngram_link')) {
+                            if (span.classList.contains('ngram-link')) {
                                 event.stopPropagation();
                                 popover.toggle();
                             }
