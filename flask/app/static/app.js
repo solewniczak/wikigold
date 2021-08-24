@@ -2,22 +2,7 @@ class App {
     constructor(baseURL, maxNgrams) {
         this.baseURL = baseURL;
         this.maxNgrams = maxNgrams;
-        this.get = {};
-        // https://stackoverflow.com/questions/12049620/how-to-get-get-variables-value-in-javascript
-        if (document.location.toString().indexOf('?') !== -1) {
-            const query = document.location
-                   .toString()
-                   // get the query string
-                   .replace(/^.*?\?/, '')
-                   // and remove any existing hash string (thanks, @vrijdenker)
-                   .replace(/#.*$/, '')
-                   .split('&');
-
-            query.forEach(uriElement => {
-                const uriElementDecoded = decodeURIComponent(uriElement).split('=');
-                this.get[uriElementDecoded[0]] = uriElementDecoded[1];
-            });
-        }
+        this.url =  new URL(document.location);
     }
 }
 
@@ -28,15 +13,22 @@ class Index extends App {
         const searchForm = document.querySelector("#searchForm");
         const algorithmSelector = document.querySelector("#algorithmSelector");
 
+        // parse that.get.params to json
+        // if (that.url.searchParams.has('params')) {
+        //     that.get.params = JSON.parse(that.url.searchParams.get('params'));
+        // } else {
+        //     that.get.params = {};
+        // }
+
         // load article from get parameter
-        if ('title' in that.get) {
-            const title = that.get['title'];
+        if (that.url.searchParams.has('title')) {
+            const title = that.url.searchParams.get('title');
             searchForm.querySelector("input[name=title]").value = title;
             that.loadArticle(title).then(() => {
-                if ('algorithm' in that.get) {
-                    const algorithm = that.get['algorithm'];
+                if (that.url.searchParams.has('algorithm')) {
+                    const algorithm = that.url.searchParams.get('algorithm');
                     algorithmSelector.querySelector("select[name=algorithm]").value = algorithm;
-                    that.runAlgorithm(algorithm);
+                    return that.runAlgorithm(algorithm);
                 }
             });
         }
@@ -45,6 +37,13 @@ class Index extends App {
             event.preventDefault();
             const formData = new FormData(searchForm);
             const title = formData.get('title');
+            // update URL
+            that.url.searchParams.set('title', title);
+            that.url.searchParams.delete('algorithm');
+            that.url.searchParams.delete('params');
+            window.history.replaceState('', '', that.url.href);
+            algorithmSelector.querySelector("select[name=algorithm]").value = '';
+
             that.loadArticle(title);
         });
 
@@ -52,6 +51,10 @@ class Index extends App {
             event.preventDefault();
             const formData = new FormData(algorithmSelector);
             const algorithm = formData.get('algorithm');
+            // update URL
+            that.url.searchParams.set('algorithm', algorithm);
+            window.history.replaceState('', '', that.url.href);
+
             that.runAlgorithm(algorithm);
         });
 

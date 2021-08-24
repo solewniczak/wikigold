@@ -48,7 +48,6 @@
           index: Index
         };
         const currentPageId = document.querySelector("body").id;
-
         if (currentPageId in constructorMap) {
           new constructorMap[currentPageId](baseURL, maxNgrams);
         }
