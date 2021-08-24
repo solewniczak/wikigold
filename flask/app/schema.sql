@@ -27,8 +27,7 @@ CREATE TABLE `lines` (
 
 CREATE TABLE `edls` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `method` VARCHAR(256) NOT NULL,
-    `params` VARCHAR(1024) NOT NULL,
+    `algorithm` JSON NOT NULL,
     `author` VARCHAR(256) NOT NULL,
     `article_id` INT UNSIGNED NOT NULL,
     FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
@@ -50,7 +49,7 @@ CREATE TABLE `decisions_articles` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `decision_id` INT UNSIGNED NOT NULL,
     `article_id` INT UNSIGNED NOT NULL,
-    `decision` BOOLEAN NULL,
+    `decision` TINYINT UNSIGNED NULL,
     FOREIGN KEY (`decision_id`) REFERENCES `decisions` (`id`),
     FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
     PRIMARY KEY (`id`)

@@ -1,4 +1,5 @@
 import functools
+import json
 
 from flask import (
     Blueprint, jsonify, request, abort, url_for, redirect
@@ -69,9 +70,10 @@ def get_candidate_labels(article_id):
     if 'algorithm' not in request.args:
         abort(400, "algorithm not given")
 
+    algorithm = json.loads(request.args['algorithm'])
     lines = get_lines(article_id)
 
-    if request.args['algorithm'] == 'exact':
+    if algorithm['algorithm'] == 'exact':
         labels = get_labels_exact(lines)
     else:
         abort(400, "unknown algorithm")

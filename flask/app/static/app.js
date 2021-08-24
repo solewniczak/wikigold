@@ -1,20 +1,20 @@
 class App {
-    constructor(baseURL, maxNgrams) {
-        this.baseURL = baseURL;
+    constructor(baseUrl, maxNgrams) {
+        this.baseUrl = baseUrl;
         this.maxNgrams = maxNgrams;
         this.url =  new URL(document.location);
     }
 }
 
 class Index extends App {
-    constructor(baseURL, maxNgrams) {
-        super(baseURL, maxNgrams);
+    constructor(baseUrl, maxNgrams) {
+        super(baseUrl, maxNgrams);
         const that = this;
-        const searchForm = document.querySelector("#searchForm");
-        const algorithmSelector = document.querySelector("#algorithmSelector");
+        const searchForm = document.querySelector("#search-form");
+        const algorithmSelector = document.querySelector("#algorithm-selector");
 
-        if (that.url.searchParams.has('articleId')) {
-            const articleId = that.url.searchParams.get('articleId');
+        if (that.url.searchParams.has('article')) {
+            const articleId = that.url.searchParams.get('article');
             that.loadArticleById(articleId)
                 .then(() => that.runAlgorithm());
         }
@@ -25,9 +25,8 @@ class Index extends App {
             const title = formData.get('title');
             that.loadArticleByTitle(title)
                 .then(result => {
-                    that.url.searchParams.set('articleId', result.id);
+                    that.url.searchParams.set('article', result.id);
                     that.url.searchParams.delete('algorithm');
-                    that.url.searchParams.delete('params');
                     window.history.replaceState('', '', that.url.href);
                 });
         });
@@ -35,12 +34,9 @@ class Index extends App {
         algorithmSelector.addEventListener("submit", event => {
             event.preventDefault();
             const formData = new FormData(algorithmSelector);
-            const algorithm = formData.get('algorithm');
-            formData.delete('algorithm');
-            const params = Object.fromEntries(formData);
+            const algorithm = Object.fromEntries(formData);
 
-            that.url.searchParams.set('algorithm', algorithm);
-            that.url.searchParams.set('params', JSON.stringify(params));
+            that.url.searchParams.set('algorithm', JSON.stringify(algorithm));
             window.history.replaceState('', '', that.url.href);
 
             that.runAlgorithm();
@@ -78,7 +74,7 @@ class Index extends App {
     loadArticleByTitle(title) {
         const that = this;
 
-        const requestURL = new URL('/api/article', that.baseURL);
+        const requestURL = new URL('/api/article', that.baseUrl);
         requestURL.searchParams.append('title', title);
         return fetch(requestURL.href, {
             method: 'GET'
@@ -90,7 +86,7 @@ class Index extends App {
     loadArticleById(articleId) {
         const that = this;
 
-        const requestURL = new URL('/api/article/' + articleId, that.baseURL);
+        const requestURL = new URL('/api/article/' + articleId, that.baseUrl);
         return fetch(requestURL.href, {
             method: 'GET'
         })
@@ -137,15 +133,13 @@ class Index extends App {
         const that = this;
         const article = document.querySelector("article");
 
-        const articleId = that.url.searchParams.get('articleId');
+        const articleId = that.url.searchParams.get('article');
         const algorithm = that.url.searchParams.get('algorithm');
-        const params = that.url.searchParams.get('params');
 
         if (!articleId || !algorithm) return;
 
-        const requestURL = new URL('/api/candidateLabels/' + articleId, that.baseURL);
+        const requestURL = new URL('/api/candidateLabels/' + articleId, that.baseUrl);
         requestURL.searchParams.append('algorithm', algorithm);
-        requestURL.searchParams.append('params', params);
         return fetch(requestURL.href, {
             method: 'GET'
         })
@@ -153,7 +147,7 @@ class Index extends App {
             .then(result => {
                 console.log('success:', result);
                 that.edl = result;
-                that.edl.forEach((label, label_index) => {
+                that.edl.forEach((label, labelIndex) => {
                     const line = article.querySelectorAll("p")[label.line];
                     let span = line.querySelectorAll("span.main")[label.start];
                     const showBorder = [span];
@@ -179,28 +173,28 @@ class Index extends App {
                             '<div class="col-3 text-center">Incorrect</div>' +
                             '<div class="col-3 text-center">Don\'t known</div>' +
                             '</div>';
-                        label.titles.forEach((article, article_index) => {
+                        label.titles.forEach((article, articleIndex) => {
                             popoverHtml += '<div class="row decisionMenuRow">' +
                                     '<div class="col-4">' +
                                     '<label for="decisionMenuOption" class="col-form-label">' + article.title +'</label>' +
                                     '</div>' +
                                     '<div class="col-2 text-center">' +
                                     '<input class="form-check-input decisionMenuOption" ' +
-                                            'name="decisionMenuOption_' + label_index + '_' + article_index + '" ' +
-                                            'value="0" data-wikigold-label="' + label_index + '" ' +
-                                            'data-wikigold-article="' + article_index + '" type="radio">' +
+                                            'name="decisionMenuOption_' + labelIndex + '_' + articleIndex + '" ' +
+                                            'value="0" data-wikigold-label="' + labelIndex + '" ' +
+                                            'data-wikigold-article="' + articleIndex + '" type="radio">' +
                                     '</div>' +
                                     '<div class="col-3 text-center">' +
                                     '<input class="form-check-input decisionMenuOption" ' +
-                                            'name="decisionMenuOption_' + label_index + '_' + article_index + '" ' +
-                                            'value="1" data-wikigold-label="' + label_index + '" ' +
-                                            'data-wikigold-article="' + article_index + '" type="radio">' +
+                                            'name="decisionMenuOption_' + labelIndex + '_' + articleIndex + '" ' +
+                                            'value="1" data-wikigold-label="' + labelIndex + '" ' +
+                                            'data-wikigold-article="' + articleIndex + '" type="radio">' +
                                     '</div>' +
                                     '<div class="col-3 text-center">' +
                                     '<input class="form-check-input decisionMenuOption" ' +
-                                            'name="decisionMenuOption_' + label_index + '_' + article_index + '" ' +
-                                            'value="2" data-wikigold-label="' + label_index + '" ' +
-                                            'data-wikigold-article="' + article_index + '" type="radio">' +
+                                            'name="decisionMenuOption_' + labelIndex + '_' + articleIndex + '" ' +
+                                            'value="2" data-wikigold-label="' + labelIndex + '" ' +
+                                            'data-wikigold-article="' + articleIndex + '" type="radio">' +
                                     '</div>' +
                                 '</div>';
                         });
@@ -230,7 +224,7 @@ class Index extends App {
                         });
                         // fill the values of form with the EDL
                         span.addEventListener('shown.bs.popover', event => {
-                            const decisions = that.edl[label_index];
+                            const decisions = that.edl[labelIndex];
                             const popoverElement = popover.getTipElement();
                             popoverElement.querySelectorAll(".decisionMenuRow").forEach((articleRow, articleIndex) => {
                                 const decision = decisions.titles[articleIndex].decision;

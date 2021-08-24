@@ -39,17 +39,17 @@
     <script>
       'use strict';
       window.addEventListener('load', (event) => {
-        let baseURL = {{config.get('BASEURL')|tojson}};
+        let baseUrl = {{config.get('BASEURL')|tojson}};
         const maxNgrams = {{config.get('MAX_NGRAMS')|tojson}};
-        if (!baseURL) {
-          baseURL = window.location.origin;
+        if (!baseUrl) {
+          baseUrl = window.location.origin;
         }
         const constructorMap = {
           index: Index
         };
         const currentPageId = document.querySelector("body").id;
         if (currentPageId in constructorMap) {
-          new constructorMap[currentPageId](baseURL, maxNgrams);
+          new constructorMap[currentPageId](baseUrl, maxNgrams);
         }
       });
     </script>
