@@ -1,3 +1,5 @@
+import json
+
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for
 )
@@ -12,4 +14,7 @@ bp = Blueprint('wiki', __name__)
 @bp.route('/')
 @login_required
 def index():
-    return render_template('wiki/index.html')
+    algorithm = {'algorithm': ''}
+    if 'algorithm' in request.args:
+        algorithm = json.loads(request.args['algorithm'])
+    return render_template('wiki/index.html', algorithm=algorithm)

@@ -18,9 +18,10 @@ class Index extends App {
             that.loadArticleById(articleId)
                 .then(result => {
                     searchForm.querySelector("input[name=title]").value = result.title;
-                    const algorithm = JSON.parse(that.url.searchParams.get('algorithm'));
-                    that.fillAlgorithmForm(algorithm);
-                    that.runAlgorithm(algorithm);
+                    if (that.url.searchParams.has('algorithm')) {
+                        const algorithm = JSON.parse(that.url.searchParams.get('algorithm'));
+                        that.runAlgorithm(algorithm);
+                    }
                 });
         }
 
@@ -134,19 +135,6 @@ class Index extends App {
         return result;
     }
 
-    fillAlgorithmForm(algorithm) {
-        const that = this;
-        const algorithmForm = document.querySelector("#algorithm-form");
-        Object.entries(algorithm).forEach(([key, value]) => {
-            const formElement = algorithmForm.querySelector('[name=' + key + ']');
-            if (formElement.tagName === 'SELECT') {
-                formElement.value = value;
-            } else if (formElement.tagName === 'INPUT' && formElement.getAttribute('type') === 'checkbox') {
-                formElement.checked = true;
-            }
-        });
-    }
-
     runAlgorithm(algorithm) {
         const that = this;
         const article = document.querySelector("article");
@@ -178,7 +166,7 @@ class Index extends App {
                     let span = line.querySelectorAll("span.ngram")[label.start];
                     const showBorder = [span];
                     // collect spans which should be bordered
-                    for (let i = 1; i < label.ngrams; i++){
+                    for (let i = 1; i < label.ngrams; i++) {
                         span = span.nextSibling;  // space node
                         showBorder.push(span)
                         span = span.nextSibling; // next token
@@ -187,7 +175,7 @@ class Index extends App {
 
                     // select correct level for each span
                     showBorder.forEach(span => {
-                        for (let i = 1; i < label.ngrams; i++){
+                        for (let i = 1; i < label.ngrams; i++) {
                             span = span.firstChild;
                         }
                         span.classList.add("ngram-link");

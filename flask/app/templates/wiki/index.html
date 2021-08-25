@@ -89,8 +89,8 @@
                 <div class="row mb-2">
                     <div class="col-7">
                         <select class="form-select" name="algorithm">
-                          <option value="">Select algorithm</option>
-                          <option value="exact">Exact match</option>
+                          <option value="" {{ 'selected' if algorithm['algorithm'] == '' }}>Select algorithm</option>
+                          <option value="exact" {{ 'selected' if algorithm['algorithm'] == 'exact' }}>Exact match</option>
                         </select>
                     </div>
                     <div class="col">
@@ -98,7 +98,8 @@
                     </div>
                 </div>
               <div class="form-check">
-                  <input class="form-check-input" type="checkbox" name="skipstopwords" value="1" id="algorithm-selector-skipstopwords">
+                  <input class="form-check-input" type="checkbox" name="skipstopwords" value="1"
+                         id="algorithm-selector-skipstopwords" {{ 'checked' if 'skipstopwords' in algorithm }}>
                   <label class="form-check-label" for="algorithm-selector-skipstopwords">
                     Skip stop words
                   </label>
