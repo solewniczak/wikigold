@@ -50,11 +50,10 @@ class Index extends App {
 
         // modify EDL on user decision
         document.addEventListener("click",event => {
-            if (event.target && event.target.classList.contains("decisionMenuOption")) {
+            if (event.target && 'wikigoldLabel' in event.target.dataset) {
                 const radio = event.target;
                 const labelIndex = radio.dataset.wikigoldLabel;
-                const articleIndex = radio.dataset.wikigoldArticle;
-                that.edl[labelIndex].titles[articleIndex].decision = radio.value;
+                that.edl[labelIndex].decision = radio.value;
             }
         });
 
@@ -150,6 +149,7 @@ class Index extends App {
         })
             .then(response => response.json())
             .then(result => {
+                console.log(result);
                 that.edl = result;
                 // remove old links
                 article.querySelectorAll("span").forEach(span => {
@@ -181,37 +181,30 @@ class Index extends App {
                         span.classList.add("ngram-link");
                         span.classList.add("ngram-link-" + label.ngrams);
 
-                        let popoverHtml = '<div class="row">' +
-                            '<div class="col-4"></div>' +
-                            '<div class="col-2 text-center">Correct</div>' +
-                            '<div class="col-3 text-center">Incorrect</div>' +
-                            '<div class="col-3 text-center">Don\'t known</div>' +
-                            '</div>';
-                        label.titles.forEach((article, articleIndex) => {
-                            popoverHtml += '<div class="row decisionMenuRow">' +
-                                    '<div class="col-4">' +
-                                    '<label for="decisionMenuOption" class="col-form-label">' + article.title +'</label>' +
-                                    '</div>' +
-                                    '<div class="col-2 text-center">' +
-                                    '<input class="form-check-input decisionMenuOption" ' +
-                                            'name="decisionMenuOption_' + labelIndex + '_' + articleIndex + '" ' +
-                                            'value="0" data-wikigold-label="' + labelIndex + '" ' +
-                                            'data-wikigold-article="' + articleIndex + '" type="radio">' +
-                                    '</div>' +
-                                    '<div class="col-3 text-center">' +
-                                    '<input class="form-check-input decisionMenuOption" ' +
-                                            'name="decisionMenuOption_' + labelIndex + '_' + articleIndex + '" ' +
-                                            'value="1" data-wikigold-label="' + labelIndex + '" ' +
-                                            'data-wikigold-article="' + articleIndex + '" type="radio">' +
-                                    '</div>' +
-                                    '<div class="col-3 text-center">' +
-                                    '<input class="form-check-input decisionMenuOption" ' +
-                                            'name="decisionMenuOption_' + labelIndex + '_' + articleIndex + '" ' +
-                                            'value="2" data-wikigold-label="' + labelIndex + '" ' +
-                                            'data-wikigold-article="' + articleIndex + '" type="radio">' +
-                                    '</div>' +
-                                '</div>';
+                        let popoverHtml = '<table class="table table-sm">';
+                        label.titles.forEach(article => {
+                            popoverHtml += '<tr>' +
+                                    '<td class="align-middle">' +
+                                    '<label class="col-form-label">' + article.title +'</label>' +
+                                    '</td>' +
+                                    '<td class="align-middle">' +
+                                    '<input type="radio" class="form-check-input" name="correct_'+labelIndex+'" ' +
+                                            'value="' + article.article_id + '" ' +
+                                            'data-wikigold-label="' + labelIndex + '">' +
+                                    '</td>' +
+                                '</tr>';
                         });
+                        popoverHtml += '<tr>' +
+                                    '<td class="align-middle">' +
+                                    '<label class="col-form-label"><em>none</em></label>' +
+                                    '</td>' +
+                                    '<td class="align-middle">' +
+                                    '<input type="radio" class="form-check-input decisionMenuOption" ' +
+                                            'name="correct_' + labelIndex + '" ' +
+                                            'value="" data-wikigold-label="' + labelIndex + '">' +
+                                    '</td>' +
+                                '</tr>';
+                        popoverHtml += '</table>';
 
                         // create popovers
                         const popover = new bootstrap.Popover(span, {
@@ -238,14 +231,10 @@ class Index extends App {
                         });
                         // fill the values of form with the EDL
                         span.addEventListener('shown.bs.popover', event => {
-                            const decisions = that.edl[labelIndex];
-                            const popoverElement = popover.getTipElement();
-                            popoverElement.querySelectorAll(".decisionMenuRow").forEach((articleRow, articleIndex) => {
-                                const decision = decisions.titles[articleIndex].decision;
-                                if (decision !== null) {
-                                    articleRow.querySelector('input[value="' + decision + '"]').checked = true;
-                                }
-                            });
+                            if ('decision' in label) {
+                                const popoverElement = popover.getTipElement();
+                                popoverElement.querySelector('input[type=radio][value="'+label.decision+'"]').checked = true;
+                            }
                         });
 
                     });

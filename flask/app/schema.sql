@@ -40,18 +40,10 @@ CREATE TABLE `decisions` (
     `source_line_id` INT UNSIGNED NOT NULL,
     `start` INT UNSIGNED NOT NULL,
     `length` INT UNSIGNED NOT NULL,
+    `destination_article_id` INT UNSIGNED NULL,
     FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`),
     FOREIGN KEY (`edl_id`) REFERENCES `edls` (`id`),
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
-CREATE TABLE `decisions_articles` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `decision_id` INT UNSIGNED NOT NULL,
-    `article_id` INT UNSIGNED NOT NULL,
-    `decision` TINYINT UNSIGNED NULL,
-    FOREIGN KEY (`decision_id`) REFERENCES `decisions` (`id`),
-    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
+    FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 

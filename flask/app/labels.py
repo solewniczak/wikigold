@@ -8,10 +8,10 @@ def get_label_titles_dict():
         db = get_db()
         cursor = db.cursor(dictionary=True)
         sql = '''SELECT `labels`.`label`, `labels`.`counter` AS `label_counter`,
-                `labels_articles`.`title`, `labels_articles`.`counter` AS `label_title_counter`,
+                `labels_articles`.`article_id`, `labels_articles`.`title`, `labels_articles`.`counter` AS `label_title_counter`,
                 `articles`.`counter` AS `article_counter` 
-                FROM `labels` LEFT JOIN `labels_articles` ON `labels`.`id` = `labels_articles`.`label_id`
-                                LEFT JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`'''
+                FROM `labels` JOIN `labels_articles` ON `labels`.`id` = `labels_articles`.`label_id`
+                                JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`'''
 
         cursor.execute(sql)
         label_titles_dict = {}
@@ -20,18 +20,18 @@ def get_label_titles_dict():
                 label_titles_dict[row['label']] = {
                     'counter': row['label_counter'],
                     'titles': [{
+                        'article_id': row['article_id'],
                         'title': row['title'],
                         'label_title_counter': row['label_title_counter'],
-                        'article_counter': row['article_counter'],
-                        'decision': None
+                        'article_counter': row['article_counter']
                     }]
                 }
             else:
                 label_titles_dict[row['label']]['titles'].append({
+                    'article_id': row['article_id'],
                     'title': row['title'],
                     'label_title_counter': row['label_title_counter'],
-                    'article_counter': row['article_counter'],
-                    'decision': None
+                    'article_counter': row['article_counter']
                 })
         cursor.close()
 
