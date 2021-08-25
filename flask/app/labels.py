@@ -40,15 +40,9 @@ def get_label_titles_dict():
     return g.label_titles_dict
 
 
-def get_labels_exact(lines, params):
+def get_labels_exact(lines, algorithm_normalized_json):
     label_titles_dict = get_label_titles_dict()
     stops = set(stopwords.words('english'))
-
-    # params parsing
-    if 'skipstopwords' not in params:
-        params['skipstopwords'] = False
-    else:
-        params['skipstopwords'] = bool(int(params['skipstopwords']))
 
     labels = []
     for ngrams in range(1, current_app.config['MAX_NGRAMS'] + 1):
@@ -57,7 +51,7 @@ def get_labels_exact(lines, params):
                 if label_nr + ngrams > len(line):  # cannot construct ngram of length "ngrams" starting from "label"
                     break
                 label = ' '.join(line[label_nr:label_nr + ngrams])  # construct the label
-                if params['skipstopwords'] and label in stops:
+                if algorithm_normalized_json['skipstopwords'] and label in stops:
                     break
                 if label in label_titles_dict:
                     labels.append({

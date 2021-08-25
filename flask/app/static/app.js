@@ -53,7 +53,33 @@ class Index extends App {
             if (event.target && 'wikigoldLabel' in event.target.dataset) {
                 const radio = event.target;
                 const labelIndex = radio.dataset.wikigoldLabel;
-                that.edl[labelIndex].decision = radio.value;
+                const label = that.edl[labelIndex];
+                // update decision locally
+                label.decision = radio.value;
+
+                // send decision to server
+                const article = that.url.searchParams.get('article');
+                const line_nr = label.line;
+                const start = label.start;
+                const length = label.ngrams;
+                const algorithm = that.url.searchParams.get('algorithm');
+
+                const requestURL = new URL('/api/decision', that.baseUrl);
+                const data = {  article: article,
+                                algorithm: algorithm,
+                                source_article_id: article,
+                                source_line_nr: line_nr,
+                                start: start,
+                                length: length,
+                                decision_article_id: radio.value}
+                return fetch(requestURL.href, {
+                    method: 'POST',
+                    body: new URLSearchParams(data),
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log(result);
+                    });
             }
         });
 
