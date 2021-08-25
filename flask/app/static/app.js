@@ -109,7 +109,7 @@ class Index extends App {
             const p = document.createElement("p");
             line.forEach(token => {
                 let span = document.createElement("span");
-                span.classList.add("main");
+                span.classList.add("ngram");
                 p.append(span);
 
                 let space = document.createElement("span");
@@ -163,9 +163,19 @@ class Index extends App {
             .then(response => response.json())
             .then(result => {
                 that.edl = result;
+                // remove old links
+                article.querySelectorAll("span").forEach(span => {
+                    if (span.classList.contains("ngram")) {
+                        span.className = "ngram";
+                    } else {
+                        span.className = "";
+                    }
+                    // remove events
+                    span.replaceWith(span.cloneNode(true));
+                });
                 that.edl.forEach((label, labelIndex) => {
                     const line = article.querySelectorAll("p")[label.line];
-                    let span = line.querySelectorAll("span.main")[label.start];
+                    let span = line.querySelectorAll("span.ngram")[label.start];
                     const showBorder = [span];
                     // collect spans which should be bordered
                     for (let i = 1; i < label.ngrams; i++){
