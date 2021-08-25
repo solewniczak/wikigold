@@ -77,18 +77,48 @@ def normalize_algorithm_json(algorithm):
     return json.dumps(algorithm_parsed, sort_keys=True), algorithm_parsed
 
 
+def get_user_edl(algorithm_normalized_json_key, article_id):
+    db = get_db()
+    author = g.username
+
+    cursor = db.cursor(dictionary=True)
+
+    # check if EDL exists
+    sql = '''SELECT `lines`.`nr` AS `source_line_nr`, `start`, `length`, `destination_article_id`
+                FROM `decisions` JOIN `lines` ON `decisions`.`source_line_id` = `lines`.`id`
+                JOIN `edls` ON `decisions`.`edl_id` = `edls`.`id`
+                WHERE `edls`.`algorithm`=%s AND `edls`.`author`=%s AND `edls`.`article_id`=%s'''
+    data = (algorithm_normalized_json_key, author, article_id)
+    cursor.execute(sql, data)
+
+    decisions_dict = {}
+    for row in cursor:
+        source_line_nr = row['source_line_nr']
+        start = row['start']
+        length = row['length']
+        destination_article_id = row['destination_article_id']
+        decisions_dict[source_line_nr, start, length] = destination_article_id
+    return decisions_dict
+
+
 @bp.route('/candidateLabels/<int:article_id>', methods=('GET',))
 def get_candidate_labels(article_id):
     if 'algorithm' not in request.args:
         abort(400, "algorithm not given")
 
-    _, algorithm_normalized_json = normalize_algorithm_json(request.args['algorithm'])
+    algorithm_normalized_json_key, algorithm_normalized_json = normalize_algorithm_json(request.args['algorithm'])
     lines = get_lines(article_id)
 
     if algorithm_normalized_json['algorithm'] == 'exact':
         labels = get_labels_exact(lines, algorithm_normalized_json)
     else:
         abort(400, "unknown algorithm")
+
+    # applay saved decisions
+    decisions_dict = get_user_edl(algorithm_normalized_json_key, article_id)
+    for label in labels:
+        if (label['line'], label['start'], label['ngrams']) in decisions_dict:
+            label['decision'] = decisions_dict[(label['line'], label['start'], label['ngrams'])]
 
     return jsonify(labels)
 
@@ -97,19 +127,21 @@ def get_candidate_labels(article_id):
 def post_decision():
     db = get_db()
 
-    algorithm_key, _ = normalize_algorithm_json(request.form['algorithm'])
+    algorithm_normalized_json_key, _ = normalize_algorithm_json(request.form['algorithm'])
     author = g.username
     article_id = request.form['source_article_id']
     source_line_nr = request.form['source_line_nr']
     start = request.form['start']
     length = request.form['length']
     decision_article_id = request.form['decision_article_id']
+    if decision_article_id == '':
+        decision_article_id = None
 
     cursor = db.cursor(dictionary=True)
 
     # check if EDL exists
     sql_select_edl = "SELECT `id` FROM `edls` WHERE `algorithm`=%s AND `author`=%s AND `article_id`=%s"
-    data_edl = (algorithm_key, author, article_id)
+    data_edl = (algorithm_normalized_json_key, author, article_id)
     cursor.execute(sql_select_edl, data_edl)
     edl = cursor.fetchone()
 

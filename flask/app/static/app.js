@@ -54,8 +54,12 @@ class Index extends App {
                 const radio = event.target;
                 const labelIndex = radio.dataset.wikigoldLabel;
                 const label = that.edl[labelIndex];
+
                 // update decision locally
                 label.decision = radio.value;
+
+                // TODO: mark tag as resolved
+
 
                 // send decision to server
                 const article = that.url.searchParams.get('article');
@@ -206,6 +210,9 @@ class Index extends App {
                         }
                         span.classList.add("ngram-link");
                         span.classList.add("ngram-link-" + label.ngrams);
+                        if ('decision' in label) {
+                            span.classList.add("ngram-link-resolved");
+                        }
 
                         let popoverHtml = '<table class="table table-sm">';
                         label.titles.forEach(article => {
@@ -258,8 +265,12 @@ class Index extends App {
                         // fill the values of form with the EDL
                         span.addEventListener('shown.bs.popover', event => {
                             if ('decision' in label) {
+                                let value = label.decision;
+                                if (value === null) {
+                                    value = ''
+                                }
                                 const popoverElement = popover.getTipElement();
-                                popoverElement.querySelector('input[type=radio][value="'+label.decision+'"]').checked = true;
+                                popoverElement.querySelector('input[type=radio][value="'+value+'"]').checked = true;
                             }
                         });
 

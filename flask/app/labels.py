@@ -1,3 +1,5 @@
+import re
+
 from app.db import get_db
 from flask import current_app, g
 from nltk.corpus import stopwords
@@ -51,8 +53,10 @@ def get_labels_exact(lines, algorithm_normalized_json):
                 if label_nr + ngrams > len(line):  # cannot construct ngram of length "ngrams" starting from "label"
                     break
                 label = ' '.join(line[label_nr:label_nr + ngrams])  # construct the label
+                # remove punctation
+                label = re.sub(r'[^\w\s]', '', label)
                 if algorithm_normalized_json['skipstopwords'] and label in stops:
-                    break
+                    continue
                 if label in label_titles_dict:
                     labels.append({
                         'name': label,
