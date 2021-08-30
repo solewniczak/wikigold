@@ -58,8 +58,7 @@ class Index extends App {
                 // update decision locally
                 label.decision = radio.value;
 
-                // TODO: mark tag as resolved
-
+                that.markLabelAsResolved(labelIndex);
 
                 // send decision to server
                 const article = that.url.searchParams.get('article');
@@ -103,6 +102,33 @@ class Index extends App {
                     });
                 }
             });
+        });
+    }
+
+    markLabelAsResolved(labelIndex) {
+        // that.ngrams_labels = {};
+        const that = this;
+        const label_ngrams = that.labels_ngrams[labelIndex];
+        label_ngrams.ngrams.forEach((ngramIndex, i) => {
+            const article = document.querySelector("article");
+            const line = article.querySelectorAll("p")[label_ngrams.line];
+            const ngram = line.querySelectorAll("span.ngram")[ngramIndex];
+
+            // select correct span level
+            let span = ngram;
+            for (let i = 1; i < label_ngrams.ngrams.length; i++) {
+                span = span.firstChild;
+            }
+            span.classList.add('ngram-link-resolved');
+
+            // not our last element - add class to a space
+            if (i < label_ngrams.ngrams.length-1) {
+                let span = ngram.nextSibling;
+                for (let i = 1; i < label_ngrams.ngrams.length; i++) {
+                    span = span.firstChild;
+                }
+                span.classList.add('ngram-link-resolved');
+            }
         });
     }
 
@@ -181,6 +207,26 @@ class Index extends App {
             .then(result => {
                 console.log(result);
                 that.edl = result;
+                that.ngrams_labels = {};
+                that.labels_ngrams = {};
+                that.edl.forEach((label, labelIndex) => {
+                    that.labels_ngrams[labelIndex] = {line: label.line, ngrams: []};
+                    for (let i = label.start; i < label.start+label.ngrams; i++) {
+                        that.labels_ngrams[labelIndex].ngrams.push(i);
+                    }
+
+                    if (!(label.line in that.ngrams_labels)) {
+                        that.ngrams_labels[label.line] = {};
+                    }
+                    for (let i = label.start; i < label.start+label.ngrams; i++) {
+                        if (!(i in that.ngrams_labels[label.line])) {
+                        that.ngrams_labels[label.line][i] = [];
+                        }
+                        that.ngrams_labels[label.line][i].push(labelIndex);
+                    }
+                });
+
+
                 // remove old links
                 article.querySelectorAll("span").forEach(span => {
                     if (span.classList.contains("ngram")) {
