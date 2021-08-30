@@ -45,20 +45,45 @@ class Index extends App {
             that.url.searchParams.set('algorithm', JSON.stringify(algorithm));
             window.history.replaceState('', '', that.url.href);
 
-            that.runAlgorithm(algorithm);
+            that.runAlgorithm(algorithm)
+                .then(that.applyNgramsDisplaySettings);
         });
 
         // modify EDL on user decision
         document.addEventListener("click",event => {
             if (event.target && 'wikigoldLabel' in event.target.dataset) {
-                const radio = event.target;
-                const labelIndex = radio.dataset.wikigoldLabel;
+                const checkbox = event.target;
+                const labelIndex = Number(checkbox.dataset.wikigoldLabel);
                 const label = that.edl[labelIndex];
 
-                // update decision locally
-                label.decision = radio.value;
+                let checkbox_value = checkbox.value;
+                if (!checkbox.checked) {
+                    checkbox_value = -1;
+                }
 
-                that.markLabelAsResolved(labelIndex);
+                // uncheck previous decisions
+                document.querySelectorAll('input[name=' + checkbox.name + ']').forEach(checkboxInGroup => {
+                    if (checkbox !== checkboxInGroup) {
+                        checkboxInGroup.checked = false;
+                    }
+                });
+
+                // update decision locally
+                that.removeLabelClass(labelIndex, 'ngram-link-resolved');
+                that.removeLabelClass(labelIndex, 'ngram-link-none');
+                that.removeClassFromOverlappingLabels(labelIndex, 'ngram-link-covered');
+                if (checkbox_value === -1) {
+                    delete label.decision;
+                } else {
+                    that.addLabelClass(labelIndex, 'ngram-link-resolved');
+                    if (checkbox_value === '') {
+                        label.decision = null;
+                        that.addLabelClass(labelIndex, 'ngram-link-none');
+                    } else {
+                        label.decision = checkbox_value;
+                    }
+                    that.addClassToOverlappingLabels(labelIndex, 'ngram-link-covered');
+                }
 
                 // send decision to server
                 const article = that.url.searchParams.get('article');
@@ -74,7 +99,7 @@ class Index extends App {
                                 source_line_nr: line_nr,
                                 start: start,
                                 length: length,
-                                decision_article_id: radio.value}
+                                destination_article_id: checkbox_value}
                 return fetch(requestURL.href, {
                     method: 'POST',
                     body: new URLSearchParams(data),
@@ -88,25 +113,29 @@ class Index extends App {
 
         const ngramsDisplayCheckboxes = document.querySelectorAll("#ngramsDisplay input");
         ngramsDisplayCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener("change", event => {
-                const ngram = event.target.value;
-                if (event.target.checked) {
-                    // show links
-                    document.querySelectorAll(".ngram-link-" + ngram).forEach(ngramSpan => {
-                        ngramSpan.classList.add("ngram-link");
-                    });
-                } else {
-                    // hide links
-                    document.querySelectorAll(".ngram-link-" + ngram).forEach(ngramSpan => {
-                        ngramSpan.classList.remove("ngram-link");
-                    });
-                }
-            });
+            checkbox.addEventListener("change", that.applyNgramsDisplaySettings);
         });
     }
 
-    markLabelAsResolved(labelIndex) {
-        // that.ngrams_labels = {};
+    applyNgramsDisplaySettings() {
+        const ngramsDisplayCheckboxes = document.querySelectorAll("#ngramsDisplay input");
+        ngramsDisplayCheckboxes.forEach(checkbox => {
+            const ngram = checkbox.value;
+            if (checkbox.checked) {
+                // show links
+                document.querySelectorAll(".ngram-link-" + ngram).forEach(ngramSpan => {
+                    ngramSpan.classList.add("ngram-link");
+                });
+            } else {
+                // hide links
+                document.querySelectorAll(".ngram-link-" + ngram).forEach(ngramSpan => {
+                    ngramSpan.classList.remove("ngram-link");
+                });
+            }
+        });
+    }
+
+    processLabelSpans(labelIndex, callback) {
         const that = this;
         const label_ngrams = that.labels_ngrams[labelIndex];
         label_ngrams.ngrams.forEach((ngramIndex, i) => {
@@ -116,18 +145,60 @@ class Index extends App {
 
             // select correct span level
             let span = ngram;
-            for (let i = 1; i < label_ngrams.ngrams.length; i++) {
+            for (let i = 0; i < label_ngrams.ngrams.length; i++) {
                 span = span.firstChild;
             }
-            span.classList.add('ngram-link-resolved');
+            callback(span);
 
             // not our last element - add class to a space
             if (i < label_ngrams.ngrams.length-1) {
                 let span = ngram.nextSibling;
-                for (let i = 1; i < label_ngrams.ngrams.length; i++) {
+                for (let i = 0; i < label_ngrams.ngrams.length; i++) {
                     span = span.firstChild;
                 }
-                span.classList.add('ngram-link-resolved');
+                callback(span);
+            }
+        });
+    }
+
+    addLabelClass(labelIndex, className) {
+        const that = this;
+        that.processLabelSpans(labelIndex, span => {
+            span.classList.add(className);
+        });
+    }
+
+    removeLabelClass(labelIndex, className) {
+        const that = this;
+        this.processLabelSpans(labelIndex, span => {
+            span.classList.remove(className);
+        });
+    }
+
+    processOverlappingLabels(labelIndex, callback) {
+        const that = this;
+        const label_ngrams = that.labels_ngrams[labelIndex];
+        label_ngrams.ngrams.forEach(ngramIndex => {
+            // collect overlapping links
+            const labelIndexes = that.ngrams_labels[label_ngrams.line][ngramIndex];
+            labelIndexes.forEach(callback);
+        });
+    }
+
+    addClassToOverlappingLabels(labelIndex, className) {
+        const that = this;
+        that.processOverlappingLabels(labelIndex, overlappingLabelIndex => {
+            if (labelIndex !== overlappingLabelIndex) {
+                that.addLabelClass(overlappingLabelIndex, className);
+            }
+        });
+    }
+
+    removeClassFromOverlappingLabels(labelIndex, className) {
+        const that = this;
+        that.processOverlappingLabels(labelIndex, overlappingLabelIndex => {
+            if (labelIndex !== overlappingLabelIndex) {
+                that.removeLabelClass(overlappingLabelIndex, className);
             }
         });
     }
@@ -171,7 +242,7 @@ class Index extends App {
                 let space = document.createElement("span");
                 p.append(space);
 
-                for (let i = 1; i < that.maxNgrams; i++) {
+                for (let i = 0; i < that.maxNgrams; i++) {
                     let nextSpan = document.createElement("span");
                     span.append(nextSpan);
                     span = nextSpan;
@@ -226,17 +297,13 @@ class Index extends App {
                     }
                 });
 
-
                 // remove old links
-                article.querySelectorAll("span").forEach(span => {
-                    if (span.classList.contains("ngram")) {
-                        span.className = "ngram";
-                    } else {
-                        span.className = "";
-                    }
+                article.querySelectorAll("span:not(.ngram) ").forEach(span => {
+                    span.className = "";
                     // remove events
                     span.replaceWith(span.cloneNode(true));
                 });
+
                 that.edl.forEach((label, labelIndex) => {
                     const line = article.querySelectorAll("p")[label.line];
                     let span = line.querySelectorAll("span.ngram")[label.start];
@@ -251,13 +318,17 @@ class Index extends App {
 
                     // select correct level for each span
                     showBorder.forEach(span => {
-                        for (let i = 1; i < label.ngrams; i++) {
+                        for (let i = 0; i < label.ngrams; i++) {
                             span = span.firstChild;
                         }
                         span.classList.add("ngram-link");
                         span.classList.add("ngram-link-" + label.ngrams);
                         if ('decision' in label) {
                             span.classList.add("ngram-link-resolved");
+                            if (label.decision === null) {
+                                span.classList.add("ngram-link-none");
+                            }
+                            that.addClassToOverlappingLabels(labelIndex, 'ngram-link-covered');
                         }
 
                         let popoverHtml = '<table class="table table-sm">';
@@ -267,7 +338,7 @@ class Index extends App {
                                     '<label class="col-form-label">' + article.title +'</label>' +
                                     '</td>' +
                                     '<td class="align-middle">' +
-                                    '<input type="radio" class="form-check-input" name="correct_'+labelIndex+'" ' +
+                                    '<input type="checkbox" class="form-check-input" name="correct_'+labelIndex+'" ' +
                                             'value="' + article.article_id + '" ' +
                                             'data-wikigold-label="' + labelIndex + '">' +
                                     '</td>' +
@@ -278,7 +349,7 @@ class Index extends App {
                                     '<label class="col-form-label"><em>none</em></label>' +
                                     '</td>' +
                                     '<td class="align-middle">' +
-                                    '<input type="radio" class="form-check-input decisionMenuOption" ' +
+                                    '<input type="checkbox" class="form-check-input decisionMenuOption" ' +
                                             'name="correct_' + labelIndex + '" ' +
                                             'value="" data-wikigold-label="' + labelIndex + '">' +
                                     '</td>' +
@@ -303,7 +374,7 @@ class Index extends App {
                         // only one popover at time - stop event propagation
                         span.addEventListener('click', event => {
                             // check if ngram is active
-                            if (span.classList.contains('ngram-link')) {
+                            if (span.classList.contains('ngram-link') && !span.classList.contains('ngram-link-covered')) {
                                 event.stopPropagation();
                                 popover.toggle();
                             }
@@ -316,7 +387,7 @@ class Index extends App {
                                     value = ''
                                 }
                                 const popoverElement = popover.getTipElement();
-                                popoverElement.querySelector('input[type=radio][value="'+value+'"]').checked = true;
+                                popoverElement.querySelector('input[type=checkbox][value="'+value+'"]').checked = true;
                             }
                         });
 

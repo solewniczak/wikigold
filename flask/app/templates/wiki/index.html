@@ -5,21 +5,32 @@
 {% block meta %}
 <style>
     :root {
-        --ngram-color-1: #00FF00;
-        --ngram-color-2: #0000FF;
-        --ngram-color-3: #FF0000;
-        --ngram-color-4: #01FFFE;
-        --ngram-color-5: #FFA6FE;
+        --ngram-color-1: rgb(0, 255, 0);
+        --ngram-color-2: rgb(0, 0, 255);
+        --ngram-color-3: rgb(255, 0, 0);
+        --ngram-color-4: rgb(1, 255, 254);
+        --ngram-color-5: rgb(255, 166, 254);
     }
 
     .ngram-link {
-        border-bottom-width: 2px;
-        border-bottom-style: dotted;
+        border-bottom-width: 1px;
+        border-bottom-style: solid;
         cursor: pointer;
     }
 
     .ngram-link.ngram-link-resolved {
-        border-bottom-style: solid;
+        border-bottom-width: 3px;
+    }
+
+    .ngram-link.ngram-link-resolved.ngram-link-none {
+        border-bottom-width: 2px;
+        border-bottom-style: dashed;
+    }
+
+    .ngram-link.ngram-link-covered {
+        border-bottom-width: 2px;
+        border-bottom-style: dotted;
+        cursor: default;
     }
 
     .ngram-link-1 {

@@ -129,13 +129,15 @@ def post_decision():
 
     algorithm_normalized_json_key, _ = normalize_algorithm_json(request.form['algorithm'])
     author = g.username
-    article_id = request.form['source_article_id']
-    source_line_nr = request.form['source_line_nr']
-    start = request.form['start']
-    length = request.form['length']
-    decision_article_id = request.form['decision_article_id']
-    if decision_article_id == '':
-        decision_article_id = None
+    article_id = int(request.form['source_article_id'])
+    source_line_nr = int(request.form['source_line_nr'])
+    start = int(request.form['start'])
+    length = int(request.form['length'])
+    destination_article_id = request.form['destination_article_id']
+    if destination_article_id == '':
+        destination_article_id = None
+    else:
+        destination_article_id = int(destination_article_id)
 
     cursor = db.cursor(dictionary=True)
 
@@ -168,15 +170,21 @@ def post_decision():
     decision = cursor.fetchone()
 
     if decision is None:
-        sql_insert_decision = "INSERT INTO `decisions`" \
-                              "(`edl_id`, `source_line_id`, `start`, `length`, `destination_article_id`)" \
-                              "VALUES (%s, %s, %s, %s, %s)"
-        data_decision += (decision_article_id,)
-        cursor.execute(sql_insert_decision, data_decision)
+        if destination_article_id != -1:
+            sql_insert_decision = "INSERT INTO `decisions`" \
+                                  "(`edl_id`, `source_line_id`, `start`, `length`, `destination_article_id`)" \
+                                  "VALUES (%s, %s, %s, %s, %s)"
+            data_decision += (destination_article_id,)
+            cursor.execute(sql_insert_decision, data_decision)
+    elif destination_article_id == -1:
+        decision_id = decision['id']
+        sql_delete_decision = "DELETE FROM `decisions` WHERE id=%s"
+        data_decision = (decision_id,)
+        cursor.execute(sql_delete_decision, data_decision)
     else:
-        decision_id = cursor.lastrowid
+        decision_id = decision['id']
         sql_update_decision = "UPDATE `decisions` SET `destination_article_id`=%s WHERE `id`=%s"
-        data_decision = (decision_article_id, decision_id)
+        data_decision = (destination_article_id, decision_id)
         cursor.execute(sql_update_decision, data_decision)
 
     db.commit()
