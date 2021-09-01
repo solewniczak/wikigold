@@ -127,16 +127,16 @@ def get_candidate_labels(article_id):
 def post_decision():
     db = get_db()
 
-    algorithm_normalized_json_key, _ = normalize_algorithm_json(request.form['algorithm'])
+    content = request.get_json()
+
+    algorithm_normalized_json_key, _ = normalize_algorithm_json(content['algorithm'])
     author = g.username
-    article_id = int(request.form['source_article_id'])
-    source_line_nr = int(request.form['source_line_nr'])
-    start = int(request.form['start'])
-    length = int(request.form['length'])
-    destination_article_id = request.form['destination_article_id']
-    if destination_article_id == '':
-        destination_article_id = None
-    else:
+    article_id = int(content['source_article_id'])
+    source_line_nr = int(content['source_line_nr'])
+    start = int(content['start'])
+    length = int(content['length'])
+    destination_article_id = content['destination_article_id']
+    if destination_article_id is not None:
         destination_article_id = int(destination_article_id)
 
     cursor = db.cursor(dictionary=True)

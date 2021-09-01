@@ -59,6 +59,8 @@ class Index extends App {
                 let checkbox_value = checkbox.value;
                 if (!checkbox.checked) {
                     checkbox_value = -1;
+                } else if (checkbox.value === '') {
+                    checkbox_value = null;
                 }
 
                 // uncheck previous decisions
@@ -75,12 +77,10 @@ class Index extends App {
                 if (checkbox_value === -1) {
                     delete label.decision;
                 } else {
+                    label.decision = checkbox_value;
                     that.addLabelClass(labelIndex, 'ngram-link-resolved');
-                    if (checkbox_value === '') {
-                        label.decision = null;
+                    if (checkbox_value === null) {
                         that.addLabelClass(labelIndex, 'ngram-link-none');
-                    } else {
-                        label.decision = checkbox_value;
                     }
                     that.addClassToOverlappingLabels(labelIndex, 'ngram-link-covered');
                 }
@@ -102,7 +102,10 @@ class Index extends App {
                                 destination_article_id: checkbox_value}
                 return fetch(requestURL.href, {
                     method: 'POST',
-                    body: new URLSearchParams(data),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
                 })
                     .then(response => response.json())
                     .then(result => {
@@ -114,6 +117,11 @@ class Index extends App {
         const ngramsDisplayCheckboxes = document.querySelectorAll("#ngramsDisplay input");
         ngramsDisplayCheckboxes.forEach(checkbox => {
             checkbox.addEventListener("change", that.applyNgramsDisplaySettings);
+        });
+
+        // tooltips for Wikipedia's articles
+        new bootstrap.Tooltip(document.body, {
+            selector: '[data-bs-toggle="tooltip"]'
         });
     }
 
@@ -334,9 +342,12 @@ class Index extends App {
                         let popoverHtml = '<table class="table table-sm">';
                         label.titles.forEach(article => {
                             popoverHtml += '<tr>' +
-                                    '<td class="align-middle">' +
-                                    '<label class="col-form-label">' + article.title +'</label>' +
-                                    '</td>' +
+                                    '<td class="align-middle"><label class="col-form-label">' +
+                                    '<a href="https://simple.wikipedia.org/wiki/' + article.title + '" target="_blank" ' +
+                                        'data-bs-toggle="tooltip" data-bs-placement="left" title="Tooltip on left">' +
+                                        article.title +
+                                    '</a>' +
+                                    '</label></td>' +
                                     '<td class="align-middle">' +
                                     '<input type="checkbox" class="form-check-input" name="correct_'+labelIndex+'" ' +
                                             'value="' + article.article_id + '" ' +
@@ -362,6 +373,7 @@ class Index extends App {
                             "html": true,
                             "sanitize": false,
                             "content": popoverHtml,
+                            "contanier": "body",
                             "placement": "bottom",
                             "trigger": "manual",
                             "template": '<div class="popover ngram-popover-' + label.ngrams + '" role="tooltip">' +
