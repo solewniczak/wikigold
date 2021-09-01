@@ -11,7 +11,6 @@ class DumpParser:
         self.links_labels = Counter()
         self.link_titles = defaultdict(Counter)
         self.links_titles_freq = Counter()
-        self.titles_redirects = {}
 
     def parse_xml(self, xml_filepath, all_titles_in_ns0, all_titles_count, early_stopping=None):
         xmlns = 'http://www.mediawiki.org/xml/export-0.10/'
@@ -38,8 +37,7 @@ class DumpParser:
                     if redirect is not None:
                         title = page.find('xmlns:title', namespaces).text.strip().replace(' ', '_')
                         redirect_to = redirect.attrib['title'].strip().replace(' ', '_')
-                        self.titles_redirects[title] = redirect_to
-                        yield title, []
+                        yield title, [], redirect_to
                     else:
                         title = page.find('xmlns:title', namespaces).text
                         wikitext = page.find('xmlns:revision/xmlns:text', namespaces).text.strip()
@@ -53,7 +51,7 @@ class DumpParser:
                         strip_code = wikicode.get_wikicode().strip_code()
                         lines = strip_code.split('\n')
                         lines = list(map(lambda line: ' '.join(line.split()), lines))  # normalize whitespaces
-                        yield title, lines
+                        yield title, lines, None
 
                     root.clear()
                     pbar.update(1)

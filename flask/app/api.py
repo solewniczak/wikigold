@@ -49,7 +49,7 @@ def get_article(id):
     db = get_db()
 
     cursor = db.cursor(dictionary=True)
-    sql = '''SELECT `articles`.`id`, `articles`.`title`, `dumps`.`parser`, `dumps`.`name`
+    sql = '''SELECT `articles`.`id`, `articles`.`title`, `dumps`.`parser`, `dumps`.`lang`, `dumps`.`date`
                 FROM `articles` JOIN `dumps` ON `articles`.`dump_id` = `dumps`.`id`
                 WHERE `articles`.`id`=%s'''
     data = (id,)
@@ -149,11 +149,14 @@ def post_decision():
 
     if edl is None:
         # create new EDL
-        sql_insert_edl = "INSERT INTO `edls` (algorithm, author, article_id) VALUES (%s, %s, %s)"
+        sql_insert_edl = "INSERT INTO `edls` (algorithm, author, article_id, `timestamp`) VALUES (%s, %s, %s, NOW())"
         cursor.execute(sql_insert_edl, data_edl)
         edl_id = cursor.lastrowid
     else:
         edl_id = edl['id']
+        sql_update_edl = "UPDATE `edls` SET `timestamp`=NOW() WHERE `id`=%s"
+        data_edl = (edl_id, )
+        cursor.execute(sql_update_edl, data_edl)
 
     # get decision's source_line_id
     sql_select_line = "SELECT `id` FROM `lines` WHERE `nr`=%s AND `article_id`=%s"

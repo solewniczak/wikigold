@@ -11,30 +11,30 @@ def get_label_titles_dict():
         cursor = db.cursor(dictionary=True)
         sql = '''SELECT `labels`.`label`, `labels`.`counter` AS `label_counter`,
                 `labels_articles`.`article_id`, `labels_articles`.`title`, `labels_articles`.`counter` AS `label_title_counter`,
-                `articles`.`counter` AS `article_counter` 
-                FROM `labels` JOIN `labels_articles` ON `labels`.`id` = `labels_articles`.`label_id`
+                `articles`.`counter` AS `article_counter`, `articles`.`caption`, `articles`.`redirect_to_title`
+                FROM `labels`   JOIN `labels_articles` ON `labels`.`id` = `labels_articles`.`label_id`
                                 JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`'''
 
         cursor.execute(sql)
         label_titles_dict = {}
         for row in cursor:
+            title = {
+                'article_id': row['article_id'],
+                'title': row['title'],
+                'label_title_counter': row['label_title_counter'],
+                'article_counter': row['article_counter'],
+                'caption': row['caption'],
+                'redirect_to_title': row['redirect_to_title']
+            }
+            if title['caption'] is not None:
+                title['caption'] = title['caption'].decode('utf-8')
             if row['label'] not in label_titles_dict:
                 label_titles_dict[row['label']] = {
                     'counter': row['label_counter'],
-                    'titles': [{
-                        'article_id': row['article_id'],
-                        'title': row['title'],
-                        'label_title_counter': row['label_title_counter'],
-                        'article_counter': row['article_counter']
-                    }]
+                    'titles': [title]
                 }
             else:
-                label_titles_dict[row['label']]['titles'].append({
-                    'article_id': row['article_id'],
-                    'title': row['title'],
-                    'label_title_counter': row['label_title_counter'],
-                    'article_counter': row['article_counter']
-                })
+                label_titles_dict[row['label']]['titles'].append(title)
         cursor.close()
 
         g.label_titles_dict = label_titles_dict
@@ -54,7 +54,7 @@ def get_labels_exact(lines, algorithm_normalized_json):
                     break
                 label = ' '.join(line[label_nr:label_nr + ngrams])  # construct the label
                 # remove punctation
-                label = re.sub(r'[^\w\s]', '', label)
+                label = re.sub(r'[.,]', '', label)
                 if algorithm_normalized_json['skipstopwords'] and label in stops:
                     continue
                 if label in label_titles_dict:

@@ -121,7 +121,17 @@ class Index extends App {
 
         // tooltips for Wikipedia's articles
         new bootstrap.Tooltip(document.body, {
-            selector: '[data-bs-toggle="tooltip"]'
+            selector: '[data-bs-toggle="tooltip"]',
+            html: true
+        });
+
+        // hide popovers when users clicks not in popover itself
+        document.addEventListener('click', event => {
+            if (event.target && event.target.closest('.popover') === null) {
+                if (that.previousPopover) {
+                    that.previousPopover.hide();
+                }
+            }
         });
     }
 
@@ -237,9 +247,9 @@ class Index extends App {
     loadArticleFromResult(result) {
         const that = this;
         const article = document.querySelector("article");
+        that.article = result;
 
         article.replaceChildren(); // remove old paragraphs
-        article.dataset.id = result.id;
         result.lines.forEach(line => {
             const p = document.createElement("p");
             line.forEach(token => {
@@ -341,10 +351,15 @@ class Index extends App {
 
                         let popoverHtml = '<table class="table table-sm">';
                         label.titles.forEach(article => {
+                            let tooltip = '';
+                            if (article.redirect_to_title) {
+                                tooltip += '<p>Redirects to: ' + article.redirect_to_title + '</p>';
+                            }
+                            tooltip += '<p>' + article.caption + '</p>';
                             popoverHtml += '<tr>' +
                                     '<td class="align-middle"><label class="col-form-label">' +
-                                    '<a href="https://simple.wikipedia.org/wiki/' + article.title + '" target="_blank" ' +
-                                        'data-bs-toggle="tooltip" data-bs-placement="left" title="Tooltip on left">' +
+                                    '<a href="https://' + that.article.lang + '.wikipedia.org/wiki/' + article.title + '" target="_blank" ' +
+                                        'data-bs-toggle="tooltip" data-bs-placement="left" title="' + tooltip + '">' +
                                         article.title +
                                     '</a>' +
                                     '</label></td>' +
@@ -385,10 +400,14 @@ class Index extends App {
 
                         // only one popover at time - stop event propagation
                         span.addEventListener('click', event => {
+                            event.stopPropagation();
+                            if (that.previousPopover) {
+                                that.previousPopover.hide();
+                            }
                             // check if ngram is active
                             if (span.classList.contains('ngram-link') && !span.classList.contains('ngram-link-covered')) {
-                                event.stopPropagation();
-                                popover.toggle();
+                                popover.show();
+                                that.previousPopover = popover;
                             }
                         });
                         // fill the values of form with the EDL
@@ -405,6 +424,7 @@ class Index extends App {
 
                     });
                 });
+
             });
     }
 }

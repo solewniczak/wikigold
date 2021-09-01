@@ -1,16 +1,21 @@
 CREATE TABLE `dumps` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(256) NOT NULL,
+    `lang` VARCHAR(10) NOT NULL,
+    `date` CHAR(8) NOT NULL,
     `parser` VARCHAR(256) NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `articles` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `title` VARCHAR(256) NOT NULL UNIQUE,  # Each title should appear only once in this table
+    `title` VARCHAR(256) NOT NULL,
+    `caption` TEXT NULL,
+    `redirect_to_title` VARCHAR(256) NULL,
+    `redirect_to_id` INT UNSIGNED NULL,
     `dump_id` INT UNSIGNED NULL,
     `counter` INT UNSIGNED NOT NULL DEFAULT 0,
     FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`),
+    FOREIGN KEY (`redirect_to_id`) REFERENCES `articles` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -28,6 +33,7 @@ CREATE TABLE `lines` (
 CREATE TABLE `edls` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `algorithm` JSON NOT NULL,
+    `timestamp` TIMESTAMP NOT NULL,
     `author` VARCHAR(256) NOT NULL,
     `article_id` INT UNSIGNED NOT NULL,
     FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
@@ -63,4 +69,10 @@ CREATE TABLE `labels_articles` (
     FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`),
     FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
     PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE TABLE `config` (
+    `name` VARCHAR(256) NOT NULL,
+    `value` VARCHAR(1024) NOT NULL,
+    PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
