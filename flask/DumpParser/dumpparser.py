@@ -39,7 +39,7 @@ class DumpParser:
                         redirect_to = redirect.attrib['title'].strip().replace(' ', '_')
                         yield title, [], redirect_to
                     else:
-                        title = page.find('xmlns:title', namespaces).text
+                        title = page.find('xmlns:title', namespaces).text.strip().replace(' ', '_')
                         wikitext = page.find('xmlns:revision/xmlns:text', namespaces).text.strip()
                         wikicode = MWParserFromHellLinks(wikitext, all_titles_in_ns0)
                         for link in wikicode.get_links():
@@ -48,9 +48,7 @@ class DumpParser:
                             self.link_titles[link_text][link['title']] += 1
                             self.links_titles_freq[link['title']] += 1
 
-                        strip_code = wikicode.get_wikicode().strip_code()
-                        lines = strip_code.split('\n')
-                        lines = list(map(lambda line: ' '.join(line.split()), lines))  # normalize whitespaces
+                        lines = wikicode.get_lines()
                         yield title, lines, None
 
                     root.clear()

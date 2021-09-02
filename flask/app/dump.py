@@ -35,6 +35,9 @@ def import_dump_command(dir, tag):
     cursor.execute(sql_charter_maximum_length, ('lines', 'content'))
     line_content_maximum_length = cursor.fetchone()[0]
 
+    cursor.execute(sql_charter_maximum_length, ('labels', 'label'))
+    label_maximum_length = cursor.fetchone()[0]
+
     tag_split = tag.split('-')
     lang = tag_split[0][:-4] # remove "wiki" from lang
     dump_date = tag_split[1]
@@ -53,7 +56,7 @@ def import_dump_command(dir, tag):
     sql_add_line = "INSERT INTO `lines` (`article_id`, `nr`, `content`) VALUES (%s, %s, %s)"
     for title, lines, redirect_to in dump_parser.parse_xml(pages_meta_current_filepath, all_titles_in_ns0, all_titles_count, early_stopping=None):
         if len(title) > title_maximum_length:
-            print(f"title: '{title[:256]}...' exceeds maximum title length ({title_maximum_length}). skipping")
+            print(f"title: '{title[:title_maximum_length]}...' exceeds maximum title length ({title_maximum_length}). skipping")
             continue
 
         if redirect_to is None:
@@ -80,6 +83,11 @@ def import_dump_command(dir, tag):
     sql_add_label = "INSERT INTO `labels` (`label`, `counter`) VALUES (%s, %s)"
     dict_labels_ids = {}
     for label, counter in dump_parser.links_labels.items():
+        if len(label) > label_maximum_length:
+            print(
+                f"label: {label[:label_maximum_length]}...' exceeds maximum label length ({label_maximum_length}). skipping")
+            continue
+
         data_label = (label, counter)
         cursor.execute(sql_add_label, data_label)
         label_id = cursor.lastrowid
