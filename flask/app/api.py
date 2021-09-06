@@ -1,5 +1,5 @@
-import functools
 import json
+from datetime import datetime
 
 from flask import (
     Blueprint, g, jsonify, request, abort, url_for, redirect
@@ -149,13 +149,14 @@ def post_decision():
 
     if edl is None:
         # create new EDL
-        sql_insert_edl = "INSERT INTO `edls` (algorithm, author, article_id, `timestamp`) VALUES (%s, %s, %s, NOW())"
+        sql_insert_edl = "INSERT INTO `edls` (algorithm, author, article_id, `timestamp`) VALUES (%s, %s, %s, %s)"
+        data_edl += (datetime.now().isoformat(), )
         cursor.execute(sql_insert_edl, data_edl)
         edl_id = cursor.lastrowid
     else:
         edl_id = edl['id']
-        sql_update_edl = "UPDATE `edls` SET `timestamp`=NOW() WHERE `id`=%s"
-        data_edl = (edl_id, )
+        sql_update_edl = "UPDATE `edls` SET `timestamp`=%s WHERE `id`=%s"
+        data_edl = (datetime.now().isoformat(), edl_id)
         cursor.execute(sql_update_edl, data_edl)
 
     # get decision's source_line_id

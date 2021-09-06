@@ -12,7 +12,7 @@
 
     <title>{% block title %}{% endblock %} - Wikigold</title>
   </head>
-  <body id="{% block pageId %}{% endblock %}">
+  <body id="{{ active_page }}">
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
       <div class="container-fluid">
         <a class="navbar-brand" href="{{ url_for('index') }}">Wikigold</a>
@@ -20,14 +20,22 @@
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+                <a class="nav-link {% if active_page == 'index' %} active {% endif %}" href="{{ url_for('index') }}">Resolver</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_page == 'edls' %} active {% endif %}" href="{{ url_for('wiki.edls') }}">EDLs</a>
+            </li>
+          </ul>
           <ul class="navbar-nav">
             {% if g.username %}
               <span class="navbar-text">{{ g.username }}</span>
               <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="{{ url_for('auth.logout') }}">Log Out</a>
+                <a class="nav-link active" href="{{ url_for('auth.logout') }}">Log Out</a>
               </li>
             {% else %}
-              <a class="nav-link active" aria-current="page" href="{{ url_for('auth.login') }}">Log In</a>
+              <a class="nav-link active" href="{{ url_for('auth.login') }}">Log In</a>
             {% endif %}
           </ul>
         </div>
