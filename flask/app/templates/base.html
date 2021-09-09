@@ -16,7 +16,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
       <div class="container-fluid">
         <a class="navbar-brand" href="{{ url_for('index') }}">Wikigold</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
@@ -29,8 +29,8 @@
             </li>
           </ul>
           <ul class="navbar-nav">
-            {% if g.username %}
-              <span class="navbar-text">{{ g.username }}</span>
+            {% if g.user %}
+              <span class="navbar-text">{{ g.user['username'] }}</span>
               <li class="nav-item">
                 <a class="nav-link active" href="{{ url_for('auth.logout') }}">Log Out</a>
               </li>
@@ -41,6 +41,11 @@
         </div>
       </div>
     </nav>
+    <div class="container">
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+    {% endfor %}
+    </div>
     {% block content %}{% endblock %}
     <script src="{{ url_for('static', filename='bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>

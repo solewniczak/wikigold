@@ -79,7 +79,7 @@ def normalize_algorithm_json(algorithm):
 
 def get_user_edl(algorithm_normalized_json_key, article_id):
     db = get_db()
-    author = g.username
+    user_id = g.user['id']
 
     cursor = db.cursor(dictionary=True)
 
@@ -87,8 +87,8 @@ def get_user_edl(algorithm_normalized_json_key, article_id):
     sql = '''SELECT `lines`.`nr` AS `source_line_nr`, `start`, `length`, `destination_article_id`
                 FROM `decisions` JOIN `lines` ON `decisions`.`source_line_id` = `lines`.`id`
                 JOIN `edls` ON `decisions`.`edl_id` = `edls`.`id`
-                WHERE `edls`.`algorithm`=%s AND `edls`.`author`=%s AND `edls`.`article_id`=%s'''
-    data = (algorithm_normalized_json_key, author, article_id)
+                WHERE `edls`.`algorithm`=%s AND `edls`.`user_id`=%s AND `edls`.`article_id`=%s'''
+    data = (algorithm_normalized_json_key, user_id, article_id)
     cursor.execute(sql, data)
 
     decisions_dict = {}
@@ -130,7 +130,7 @@ def post_decision():
     content = request.get_json()
 
     algorithm_normalized_json_key, _ = normalize_algorithm_json(content['algorithm'])
-    author = g.username
+    user_id = g.user['id']
     article_id = int(content['source_article_id'])
     source_line_nr = int(content['source_line_nr'])
     start = int(content['start'])
@@ -142,14 +142,14 @@ def post_decision():
     cursor = db.cursor(dictionary=True)
 
     # check if EDL exists
-    sql_select_edl = "SELECT `id` FROM `edls` WHERE `algorithm`=%s AND `author`=%s AND `article_id`=%s"
-    data_edl = (algorithm_normalized_json_key, author, article_id)
+    sql_select_edl = "SELECT `id` FROM `edls` WHERE `algorithm`=%s AND `user_id`=%s AND `article_id`=%s"
+    data_edl = (algorithm_normalized_json_key, user_id, article_id)
     cursor.execute(sql_select_edl, data_edl)
     edl = cursor.fetchone()
 
     if edl is None:
         # create new EDL
-        sql_insert_edl = "INSERT INTO `edls` (algorithm, author, article_id, `timestamp`) VALUES (%s, %s, %s, %s)"
+        sql_insert_edl = "INSERT INTO `edls` (algorithm, user_id, article_id, `timestamp`) VALUES (%s, %s, %s, %s)"
         data_edl += (datetime.now().isoformat(), )
         cursor.execute(sql_insert_edl, data_edl)
         edl_id = cursor.lastrowid

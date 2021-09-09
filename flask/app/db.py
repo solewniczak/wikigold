@@ -3,6 +3,7 @@ import mysql.connector
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
+from werkzeug.security import generate_password_hash
 
 
 def get_db():
@@ -42,7 +43,18 @@ def init_db():
 
     cursor = db.cursor()
     with current_app.open_resource('schema.sql') as f:
-        cursor.execute(f.read().decode('utf8'))
+        tables = f.read().decode('utf8').split(';')
+
+    for table in tables:
+        if table.strip() != '':
+            cursor.execute(table)
+
+    # create application superuser
+    sql_add_user = "INSERT INTO `users` (`username`, `password`, `superuser`) VALUES (%s, %s, TRUE)"
+    data_user = ('admin', generate_password_hash('admin'))
+    cursor.execute(sql_add_user, data_user)
+    db.commit()
+
     cursor.close()
 
 

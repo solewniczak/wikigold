@@ -30,9 +30,9 @@ def edls():
 
     sql_select_edls = '''SELECT `edls`.`id`, `edls`.`algorithm`, `edls`.`timestamp`, `edls`.`article_id`,
                             `articles`.`title`, `articles`.`caption`
-                            FROM `edls` JOIN articles ON `edls`.`article_id` = `articles`.`id` WHERE `edls`.`author`=%s
+                            FROM `edls` JOIN articles ON `edls`.`article_id` = `articles`.`id` WHERE `edls`.`user_id`=%s
                             ORDER BY timestamp DESC'''
-    data_edls = (g.username, )
+    data_edls = (g.user['id'], )
     cursor.execute(sql_select_edls, data_edls)
     my_edls = cursor.fetchall()
     my_edls_decoded = []
