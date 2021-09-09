@@ -1,31 +1,61 @@
 import os.path
+from bz2 import BZ2Decompressor
+
+from tqdm import tqdm
+import requests
 
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 
 from app.db import get_db
-from DumpParser.dumpparser import DumpParser
+from app.mediawikixml import MediaWikiXml
+import MwParallelParser.parser
+import MwParserFromHellLinks.parser
 
 
 @click.command('import-dump')
-@click.argument('dir', type=click.Path(exists=True))
-@click.argument('tag')
+@click.argument('lang')
+@click.argument('dump_date')
+@click.option('-e', '--early-stopping', type=int, default=-1, help='Stop dump parsing after -e articles. -1 means no '
+                                                                   'early stopping.')
+@click.option('-p', '--parser', type=click.Choice(['MwParallelParser', 'MwParserFromHellLinks'], case_sensitive=False),
+              default='MwParserFromHellLinks')
 @with_appcontext
-def import_dump_command(dir, tag):
-    pages_meta_current_filepath = os.path.join(dir, f'{tag}-pages-meta-current.xml')
-    all_titles_filepath = os.path.join(dir, f'{tag}-all-titles')
-    all_titles_in_ns0_filepath = os.path.join(dir, f'{tag}-all-titles-in-ns0')
+def import_dump_command(lang, dump_date, early_stopping, parser):
 
-    with open(all_titles_filepath) as fp:
-        all_titles_count = sum(1 for line in fp)
+    filename = f'{lang}wiki-{dump_date}-pages-meta-current.xml'
 
-    with open(all_titles_in_ns0_filepath) as fp:
-        all_titles_in_ns0 = [line.rstrip('\n') for line in fp]
+    homedir = os.path.expanduser("~/")
+    if homedir == "~/":
+        raise ValueError('could not find a default download directory')
+
+    download_dir = os.path.join(homedir, 'wikigold_data')
+    if not os.path.exists(download_dir):
+        os.mkdir(download_dir)
+
+    filepath = os.path.join(download_dir, filename)
+
+    if not os.path.exists(filepath):
+        url = f'http://dumps.wikimedia.org/{lang}wiki/{dump_date}/{filename}.bz2'
+        chunk_size = 1024
+        with requests.get(url, stream=True) as request:
+            total_size = int(request.headers['Content-Length'])
+
+            with open(filepath, 'wb') as file:
+                decompressor = BZ2Decompressor()
+                for data in tqdm(iterable=request.iter_content(chunk_size=chunk_size), total=total_size / chunk_size, unit='KB'):
+                    file.write(decompressor.decompress(data))
 
     db = get_db()
     cursor = db.cursor()
-    dump_parser = DumpParser()
+
+    if parser == 'MwParallelParser':
+        parser = MwParallelParser.parser.Parser()
+    elif parser == 'MwParserFromHellLinks':
+        parser = MwParserFromHellLinks.parser.Parser()
+
+    mediawikixml = MediaWikiXml(filepath, parser)
 
     sql_charter_maximum_length = '''SELECT character_maximum_length FROM information_schema.columns 
                                     WHERE table_name = %s AND column_name = %s'''
@@ -38,12 +68,8 @@ def import_dump_command(dir, tag):
     cursor.execute(sql_charter_maximum_length, ('labels', 'label'))
     label_maximum_length = cursor.fetchone()[0]
 
-    tag_split = tag.split('-')
-    lang = tag_split[0][:-4] # remove "wiki" from lang
-    dump_date = tag_split[1]
-
-    sql_add_dump = "INSERT INTO dumps (`lang`, `date`, `parser`) VALUES (%s, %s, %s)"
-    data_dump = (lang, dump_date, dump_parser.parser_name)
+    sql_add_dump = "INSERT INTO dumps (`lang`, `date`, `parser_name`, `parser_version`) VALUES (%s, %s, %s, %s)"
+    data_dump = (lang, dump_date, parser.name, parser.version)
     cursor.execute(sql_add_dump, data_dump)
     dump_id = cursor.lastrowid
 
@@ -54,7 +80,7 @@ def import_dump_command(dir, tag):
     dict_articles_captions = {}
     dict_redirect_articles = {}
     sql_add_line = "INSERT INTO `lines` (`article_id`, `nr`, `content`) VALUES (%s, %s, %s)"
-    for title, lines, redirect_to in dump_parser.parse_xml(pages_meta_current_filepath, all_titles_in_ns0, all_titles_count, early_stopping=None):
+    for title, lines, redirect_to in mediawikixml.parse(early_stopping=early_stopping):
         if len(title) > title_maximum_length:
             print(f"title: '{title[:title_maximum_length]}...' exceeds maximum title length ({title_maximum_length}). skipping")
             continue
@@ -82,7 +108,7 @@ def import_dump_command(dir, tag):
     # save labels
     sql_add_label = "INSERT INTO `labels` (`label`, `counter`) VALUES (%s, %s)"
     dict_labels_ids = {}
-    for label, counter in dump_parser.links_labels.items():
+    for label, counter in mediawikixml.links_labels.items():
         if len(label) > label_maximum_length:
             print(
                 f"label: {label[:label_maximum_length]}...' exceeds maximum label length ({label_maximum_length}). skipping")
@@ -95,7 +121,7 @@ def import_dump_command(dir, tag):
 
     # save labels_titles
     sql_add_label_article = "INSERT INTO `labels_articles` (`label_id`, `title`, `article_id`, `counter`) VALUES (%s, %s, %s, %s)"
-    for label, titles in dump_parser.link_titles.items():
+    for label, titles in mediawikixml.link_titles.items():
         for title, counter in titles.items():
             article_id = None
             if title in dict_articles_ids:
@@ -105,7 +131,7 @@ def import_dump_command(dir, tag):
 
     # update article counters
     sql_update_article_counter = "UPDATE `articles` SET `counter`=%s WHERE `title`=%s AND `dump_id`=%s"
-    for title, counter in dump_parser.links_titles_freq.items():
+    for title, counter in mediawikixml.links_titles_freq.items():
         data_article = (counter, title, dump_id)
         cursor.execute(sql_update_article_counter, data_article)
 

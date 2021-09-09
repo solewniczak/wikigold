@@ -1,7 +1,7 @@
 CREATE TABLE `users` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `username` VARCHAR(255) UNIQUE NOT NULL,
-  `password` CHAR(128) NOT NULL,
+  `password` CHAR(120) NOT NULL,
   `superuser` BOOLEAN DEFAULT FALSE,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
@@ -16,7 +16,8 @@ CREATE TABLE `dumps` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `lang` CHAR(10) NOT NULL,
     `date` CHAR(8) NOT NULL,
-    `parser` CHAR(64) NOT NULL,
+    `parser_name` CHAR(30) NOT NULL,
+    `parser_version` CHAR(30) NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 

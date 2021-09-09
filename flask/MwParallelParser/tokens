@@ -1,0 +1,35 @@
+NOWIKI>nowiki                        <nowiki>(?=.*</nowiki>)
+NOWIKI_END<                          </nowiki>
+CODE>code                            <code>
+CODE_END<                            </code>
+HR                                   \n[ \t]*-{4,}[ \t]*(?=\n)
+HEADER>header                        ^[ \t]*={2,}(?=[^\n]*={2,}[ \t]*\n)
+HEADER_END<                          ={2,}[ \t]*(?=\n)
+EMPHASIZE                            '{2,5}
+REF                                  <ref[^>]*>
+REF_END                              </ref>
+LIST                                 ^[:#;*]+[ \t]*
+DOUBLEBRACES>doublebraces            \{\{
+DOUBLEBRACES_END<                    \}\}
+GENERICLINK                          (?:http|https)://[[:alnum:]\-._~:/?#@!$&'()*+,;=]*
+TITLEDLINK                           \[(?:http|https)://[[:alnum:]\-._~:/?#@!$&'()*+,;=]*[^\]<>]*\]
+WIKILINK                             \[{2}
+WIKILINK_END                         \]{2}
+COMMENT>comment                      <!--
+COMMENT_END<                         -->
+TABLE>table                          \n[ \t]*\{\|
+TABLE_END<                           \n[ \t]*\|\}[ \t]*(?=\n)
+BR                                   <br[^>]*/>
+DIV                                  <div[^>]*>
+DIV_END                              </div>
+CENTER                               <center>
+CENTER_END                           </center>
+GALLERY                              <gallery[^>]*>
+GALLERY_END                          </gallery>
+SMALL                                <small>
+SMALL_END                            </small>
+NBSP                                 &nbsp;
+SUP                                  <sup>
+SUP_END                              </sup>
+SUB                                  <sub>
+SUB_END                              </sub>

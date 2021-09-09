@@ -49,7 +49,7 @@ def get_article(id):
     db = get_db()
 
     cursor = db.cursor(dictionary=True)
-    sql = '''SELECT `articles`.`id`, `articles`.`title`, `dumps`.`parser`, `dumps`.`lang`, `dumps`.`date`
+    sql = '''SELECT `articles`.`id`, `articles`.`title`, `dumps`.`parser_name`, `dumps`.`parser_version`, `dumps`.`lang`, `dumps`.`date`
                 FROM `articles` JOIN `dumps` ON `articles`.`dump_id` = `dumps`.`id`
                 WHERE `articles`.`id`=%s'''
     data = (id,)
