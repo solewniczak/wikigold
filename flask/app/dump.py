@@ -106,7 +106,7 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
             dict_redirect_articles[article_id] = redirect_to
 
     # save labels
-    sql_add_label = "INSERT INTO `labels` (`label`, `counter`) VALUES (%s, %s)"
+    sql_add_label = "INSERT INTO `labels` (`label`, `dump_id`, `counter`) VALUES (%s, %s, %s)"
     dict_labels_ids = {}
     for label, counter in mediawikixml.links_labels.items():
         if len(label) > label_maximum_length:
@@ -114,7 +114,7 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
                 f"label: {label[:label_maximum_length]}...' exceeds maximum label length ({label_maximum_length}). skipping")
             continue
 
-        data_label = (label, counter)
+        data_label = (label, dump_id, counter)
         cursor.execute(sql_add_label, data_label)
         label_id = cursor.lastrowid
         dict_labels_ids[label] = label_id
@@ -143,6 +143,15 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
             redirect_to_id = dict_articles_ids[redirect_to_title]
             data_article = (caption, redirect_to_id, article_id)
             cursor.execute(sql_update_article_redirect, data_article)
+
+    # save dump_id in config
+    sql_select_currentdump = "SELECT `value` FROM `config` WHERE `key`='currentdump'"
+    cursor.execute(sql_select_currentdump)
+    currentdump = cursor.fetchone()
+    if currentdump is None:
+        sql_insert_currentdump = "INSERT INTO `config` (`key`, `value`, `type`) VALUES ('currentdump', %s, 'int')"
+        data_config = (dump_id, )
+        cursor.execute(sql_insert_currentdump, data_config)
 
     db.commit()
     cursor.close()

@@ -9,6 +9,7 @@ CREATE TABLE `users` (
 CREATE TABLE `config` (
     `key` VARCHAR(255) NOT NULL,
     `value` VARCHAR(255) NOT NULL,
+    `type` VARCHAR(10) NOT NULL DEFAULT 'string',
     PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -72,7 +73,9 @@ CREATE TABLE `decisions` (
 CREATE TABLE `labels` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `label` VARCHAR(255) NOT NULL,
+    `dump_id` INT UNSIGNED NULL,
     `counter` INT UNSIGNED NOT NULL DEFAULT 0,
+    FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 

@@ -6,6 +6,7 @@ from flask import (
 )
 
 from app.db import get_db
+from app.dbconfig import get_dbconfig
 from app.labels import get_labels_exact
 
 bp = Blueprint('api', __name__, url_prefix='/api')
@@ -16,11 +17,15 @@ def search_article():
     db = get_db()
 
     if 'title' not in request.args:
-        abort(404)
+        abort(400, "title parameter required")
 
     cursor = db.cursor(dictionary=True)
-    sql = 'SELECT `id` FROM `articles` WHERE `title`=%s'
-    data = (request.args['title'],)
+
+    # get current dump
+    currentdump_id = get_dbconfig('currentdump')
+
+    sql = 'SELECT `id` FROM `articles` WHERE `title`=%s AND `dump_id`=%s'
+    data = (request.args['title'], currentdump_id)
     cursor.execute(sql, data)
     article = cursor.fetchone()
     cursor.close()
@@ -98,6 +103,9 @@ def get_user_edl(algorithm_normalized_json_key, article_id):
         length = row['length']
         destination_article_id = row['destination_article_id']
         decisions_dict[source_line_nr, start, length] = destination_article_id
+
+    cursor.close()
+
     return decisions_dict
 
 

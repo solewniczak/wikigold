@@ -4,6 +4,8 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
 
     <!-- Bootstrap CSS -->
     <link href="{{ url_for('static', filename='bootstrap-5.0.2-dist/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -25,8 +27,13 @@
                 <a class="nav-link {% if active_page == 'index' %} active {% endif %}" href="{{ url_for('index') }}">Resolver</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if active_page == 'edls' %} active {% endif %}" href="{{ url_for('wiki.edls') }}">EDLs</a>
+                <a class="nav-link {% if active_page == 'edls' %} active {% endif %}" href="{{ url_for('wikigold.edls') }}">EDLs</a>
             </li>
+            {% if g.user and g.user['superuser'] %}
+            <li class="nav-item">
+                <a class="nav-link {% if active_page == 'admin_config' %} active {% endif %}" href="{{ url_for('admin.config') }}">Config</a>
+            </li>
+            {% endif %}
           </ul>
           <ul class="navbar-nav">
             {% if g.user %}

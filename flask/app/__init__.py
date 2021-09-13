@@ -52,8 +52,11 @@ def create_app(test_config=None):
     from app import auth
     app.register_blueprint(auth.bp)
 
-    from . import wiki
-    app.register_blueprint(wiki.bp)
+    from . import admin
+    app.register_blueprint(admin.bp)
+
+    from . import wikigold
+    app.register_blueprint(wikigold.bp)
     app.add_url_rule('/', endpoint='index')
 
     from . import api

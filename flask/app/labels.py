@@ -4,18 +4,24 @@ from app.db import get_db
 from flask import current_app, g
 from nltk.corpus import stopwords
 
+from app.dbconfig import get_dbconfig
+
 
 def get_label_titles_dict():
     if 'label_titles_dict' not in g:
         db = get_db()
         cursor = db.cursor(dictionary=True)
+        currentdump_id = get_dbconfig('currentdump')
+
         sql = '''SELECT `labels`.`label`, `labels`.`counter` AS `label_counter`,
                 `labels_articles`.`article_id`, `labels_articles`.`title`, `labels_articles`.`counter` AS `label_title_counter`,
                 `articles`.`counter` AS `article_counter`, `articles`.`caption`, `articles`.`redirect_to_title`
                 FROM `labels`   JOIN `labels_articles` ON `labels`.`id` = `labels_articles`.`label_id`
-                                JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`'''
+                                JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
+                WHERE `labels`.`dump_id`=%s'''
 
-        cursor.execute(sql)
+        data = (currentdump_id, )
+        cursor.execute(sql, data)
         label_titles_dict = {}
         for row in cursor:
             title = {

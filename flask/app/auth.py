@@ -2,7 +2,7 @@ import functools
 import mysql.connector
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for
+    Blueprint, flash, g, redirect, render_template, request, abort, session, url_for
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -34,8 +34,7 @@ def register():
             except mysql.connector.IntegrityError:
                 error = f'User {username} is already registered.'
             else:
-                info = 'User registered.'
-                flash(info, 'info')
+                flash('User registered.', 'success')
                 return redirect(url_for("auth.login"))
 
         flash(error, 'danger')
@@ -99,6 +98,17 @@ def login_required(view):
     def wrapped_view(**kwargs):
         if g.user is None:
             return redirect(url_for('auth.login'))
+
+        return view(**kwargs)
+
+    return wrapped_view
+
+
+def superuser(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if not g.user['superuser']:
+            abort(403)
 
         return view(**kwargs)
 

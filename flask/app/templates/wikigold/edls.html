@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 {% set active_page = "edls" %}
 
-{% block pageId %}edls{% endblock %}
-
 {% block content %}
 <div class="container">
     <div class="list-group">
         {% for edl in my_edls %}
             <a href="{{ url_for('index', article=edl['article_id'], algorithm=edl['algorithm']) }}" class="list-group-item list-group-item-action">
             <div class="d-flex w-100 justify-content-between">
-              <h5 class="mb-1">{{ edl['title'] }}</h5>
+              <h5 class="mb-1">{{ edl['title'] }}
+                  <small style="font-weight:normal;font-size:60%;color:#6c757d;">{{ edl['lang'] }}wiki-{{ edl['date'] }} {{ edl['parser_name'] }} {{ edl['parser_version'] }}</small>
+              </h5>
               <small>{{ edl['timedelta'] }} ago</small>
             </div>
             <p class="mb-1">{{ edl['algorithm'] }}</p>
