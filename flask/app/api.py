@@ -7,6 +7,7 @@ from flask import (
 
 from app.db import get_db
 from app.dbconfig import get_dbconfig
+from app.helper import get_lines, normalize_algorithm_json, get_user_decisions
 from app.labels import get_labels_exact
 
 bp = Blueprint('api', __name__, url_prefix='/api')
@@ -36,19 +37,6 @@ def search_article():
     return redirect(url_for('api.get_article', id=article['id']))
 
 
-def get_lines(article_id):
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    sql = "SELECT `id`, `content` FROM `lines` WHERE `article_id`=%s ORDER BY `nr`"
-    data = (article_id,)
-    cursor.execute(sql, data)
-    lines = cursor.fetchall()
-    cursor.close()
-
-    lines = list(map(lambda line: line['content'].decode('utf-8').split(), lines))
-    return lines
-
-
 @bp.route('/article/<int:id>', methods=('GET',))
 def get_article(id):
     db = get_db()
@@ -70,60 +58,20 @@ def get_article(id):
     return jsonify(article)
 
 
-def normalize_algorithm_json(algorithm):
-    algorithm_parsed = json.loads(algorithm)
-
-    if algorithm_parsed['algorithm'] == 'exact':
-        if 'skipstopwords' not in algorithm_parsed:
-            algorithm_parsed['skipstopwords'] = False
-        else:
-            algorithm_parsed['skipstopwords'] = bool(int(algorithm_parsed['skipstopwords']))
-
-    return json.dumps(algorithm_parsed, sort_keys=True), algorithm_parsed
-
-
-def get_user_edl(algorithm_normalized_json_key, article_id):
-    db = get_db()
-    user_id = g.user['id']
-
-    cursor = db.cursor(dictionary=True)
-
-    # check if EDL exists
-    sql = '''SELECT `lines`.`nr` AS `source_line_nr`, `start`, `length`, `destination_article_id`
-                FROM `decisions` JOIN `lines` ON `decisions`.`source_line_id` = `lines`.`id`
-                JOIN `edls` ON `decisions`.`edl_id` = `edls`.`id`
-                WHERE `edls`.`algorithm`=%s AND `edls`.`user_id`=%s AND `edls`.`article_id`=%s'''
-    data = (algorithm_normalized_json_key, user_id, article_id)
-    cursor.execute(sql, data)
-
-    decisions_dict = {}
-    for row in cursor:
-        source_line_nr = row['source_line_nr']
-        start = row['start']
-        length = row['length']
-        destination_article_id = row['destination_article_id']
-        decisions_dict[source_line_nr, start, length] = destination_article_id
-
-    cursor.close()
-
-    return decisions_dict
-
-
 @bp.route('/candidateLabels/<int:article_id>', methods=('GET',))
 def get_candidate_labels(article_id):
     if 'algorithm' not in request.args:
         abort(400, "algorithm not given")
 
     algorithm_normalized_json_key, algorithm_normalized_json = normalize_algorithm_json(request.args['algorithm'])
-    lines = get_lines(article_id)
 
     if algorithm_normalized_json['algorithm'] == 'exact':
-        labels = get_labels_exact(lines, algorithm_normalized_json)
+        labels = get_labels_exact(article_id, algorithm_normalized_json)
     else:
         abort(400, "unknown algorithm")
 
-    # applay saved decisions
-    decisions_dict = get_user_edl(algorithm_normalized_json_key, article_id)
+    # apply saved decisions
+    decisions_dict = get_user_decisions(article_id, algorithm_normalized_json_key)
     for label in labels:
         if (label['line'], label['start'], label['ngrams']) in decisions_dict:
             label['decision'] = decisions_dict[(label['line'], label['start'], label['ngrams'])]

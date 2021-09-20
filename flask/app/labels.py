@@ -5,13 +5,16 @@ from flask import current_app, g
 from nltk.corpus import stopwords
 
 from app.dbconfig import get_dbconfig
+from app.helper import get_lines
 
 
-def get_label_titles_dict():
+def get_label_titles_dict(dump_id):
     if 'label_titles_dict' not in g:
+        g.label_titles_dict = {}
+
+    if dump_id not in g.label_titles_dict:
         db = get_db()
         cursor = db.cursor(dictionary=True)
-        currentdump_id = get_dbconfig('currentdump')
 
         sql = '''SELECT `labels`.`label`, `labels`.`counter` AS `label_counter`,
                 `labels_articles`.`article_id`, `labels_articles`.`title`, `labels_articles`.`counter` AS `label_title_counter`,
@@ -20,7 +23,7 @@ def get_label_titles_dict():
                                 JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
                 WHERE `labels`.`dump_id`=%s'''
 
-        data = (currentdump_id, )
+        data = (dump_id, )
         cursor.execute(sql, data)
         label_titles_dict = {}
         for row in cursor:
@@ -42,14 +45,22 @@ def get_label_titles_dict():
             else:
                 label_titles_dict[row['label']]['titles'].append(title)
         cursor.close()
+        g.label_titles_dict[dump_id] = label_titles_dict
 
-        g.label_titles_dict = label_titles_dict
-
-    return g.label_titles_dict
+    return g.label_titles_dict[dump_id]
 
 
-def get_labels_exact(lines, algorithm_normalized_json):
-    label_titles_dict = get_label_titles_dict()
+def get_labels_exact(article_id, algorithm_normalized_json):
+    lines = get_lines(article_id)
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    sql = 'SELECT `dump_id` FROM `articles` WHERE `id`=%s'
+    data = (article_id,)
+    cursor.execute(sql, data)
+    dump_id = cursor.fetchone()['dump_id']
+
+    label_titles_dict = get_label_titles_dict(dump_id)
     stops = set(stopwords.words('english'))
 
     labels = []
