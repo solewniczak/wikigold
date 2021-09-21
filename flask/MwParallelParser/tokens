@@ -11,8 +11,8 @@ REF_END                              </ref>
 LIST                                 ^[:#;*]+[ \t]*
 DOUBLEBRACES>doublebraces            \{\{
 DOUBLEBRACES_END<                    \}\}
-GENERICLINK                          (?:http|https)://[[:alnum:]\-._~:/?#@!$&'()*+,;=]*
-TITLEDLINK                           \[(?:http|https)://[[:alnum:]\-._~:/?#@!$&'()*+,;=]*[^\]<>]*\]
+GENERICLINK                          (?:http|https)://[a-z0-9\-._~:/?#@!$&'()*+,;=]*
+TITLEDLINK                           \[(?:http|https)://[a-z0-9\-._~:/?#@!$&'()*+,;=]*[^\]<>]*\]
 WIKILINK                             \[{2}
 WIKILINK_END                         \]{2}
 COMMENT>comment                      <!--

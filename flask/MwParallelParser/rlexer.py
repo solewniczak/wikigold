@@ -7,34 +7,26 @@ class Rlexer:
     def __init__(self):
         self.lexers = {'base': Lexer()}
         self.transitions = defaultdict(dict)
-        self.states = ['base']
 
-    def add(self, state, pattern, label, next=None):
-        """
-        :param state:
-        :param pattern:
-        :param label:
-        :param next: None - stay in current state; ">something" - push to new state; "<" - pop state
-        :return:
-        """
+        self.state_stack = ['base']
+        self.doc = ''
+
+    def add_rule(self, state, pattern, label, next_state=None):
+        # next_state: None - stay in current state; ('push', 'state') - push to new state; ('pop', 1)- pop state
         if state not in self.lexers:
             self.lexers[state] = Lexer()
 
-        self.lexers[state].push(pattern, label)
-        if next is not None:
-            if next[0] == '>':
-                self.transitions[state][label] = ('push', next[1:])
-            elif next == '<':
-                self.transitions[state][label] = ('pop', )
-            else:
-                raise Exception('next should be ">state" or "<"')
+        self.lexers[state].add_rule(pattern, label)
+        if next_state:
+            self.transitions[state][label] = next_state
+
+    def build(self):
+        # prepare lexers
+        for _, lexer in self.lexers.items():
+            lexer.build()
 
     def consume(self, doc):
-        """
-        Load document into Lexer.
-        :param data:
-        :return:
-        """
+        self.state_stack = ['base']
         self.doc = doc
         self.lexers['base'].consume(self.doc)
 
@@ -42,24 +34,31 @@ class Rlexer:
         """
         Get next token from the document.
 
-        :return: Tuple|None: (token, match)
+        :return: Tuple: (label, match)
         """
-        state = self.states[-1]
-        advance = self.lexers[state].advance(self.doc)
+        state = self.state_stack[-1]
+        advance = self.lexers[state].advance()
         if advance is None:
             return None
 
-        label = advance[0]
+        label, match, self.doc = advance
+
         if label in self.transitions[state]:
             transition = self.transitions[state][label]
             if transition[0] == 'push':
-                self.states.append(transition[1])
+                self.state_stack.append(transition[1])
             elif transition[0] == 'pop':
-                if len(self.states) == 1:
-                    raise Exception('cannot pop "base" state.')
-                self.states.pop()
+                self.state_stack.pop()
 
-            next_state = self.states[-1]
+            next_state = self.state_stack[-1]
             self.lexers[next_state].consume(self.doc)
 
-        return advance
+        return label, match
+
+    def tokenize(self, doc):
+        self.consume(doc)
+        while True:
+            advance = self.advance()
+            if advance is None:
+                break
+            yield advance

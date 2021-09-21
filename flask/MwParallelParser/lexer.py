@@ -1,11 +1,21 @@
+import re
+
+
 class Lexer:
 
     def __init__(self):
         self.patterns = []
-        self.compounded = None
+        self.labels = []
+        self.tokens = []
+        self.doc = ''
+        self.flags = re.IGNORECASE
+        self.compounded_pattern = None
 
-    def add(self, regex, label):
-        self.patterns.append((regex, label))
+    def add_rule(self, pattern, label):
+        if self.compounded_pattern:
+            raise Exception('cannot add patterns after build.')
+        self.patterns.append(pattern)
+        self.labels.append(label)
 
     def build(self):
         """
@@ -13,13 +23,46 @@ class Lexer:
         :return:
         """
         regexes = []
-        for regex, label in self.patterns:
+        for regex in self.patterns:
             regexes.append('(' + regex + ')')
-        self.compounded = '|'.join(regexes)
+        compounded_pattern = '|'.join(regexes)
+        self.compounded_pattern = re.compile(compounded_pattern, self.flags)
 
     def consume(self, doc):
+        if self.compounded_pattern is None:
+            raise Exception('build the Lexer first.')
+
         self.tokens = []
         self.doc = doc
 
     def advance(self):
-        pass
+        """
+        Get next token from the document.
+
+        :return: Tuple: (label, match, post)
+        """
+        if len(self.tokens) == 0:
+            if self.doc == '':
+                return None
+
+            pre, label, match = self.split()
+            if pre != '':
+                self.tokens.append(('UNKNOWN', pre))
+            if match != '':
+                self.tokens.append((label, match))
+
+        label, match = self.tokens.pop(0)
+        self.doc = self.doc[len(match):]  # remove token from document
+        return label, match, self.doc
+
+    def split(self):
+        match = self.compounded_pattern.search(self.doc)
+        if not match:
+            return self.doc, '', ''
+
+        idx = match.lastindex
+        label = self.labels[idx-1]  # first element is entire string
+        pre = self.doc[:match.start(idx)]
+        match = self.doc[match.start(idx):match.end(idx)]
+        # post = self.doc[match.end(idx):]
+        return pre, label, match
