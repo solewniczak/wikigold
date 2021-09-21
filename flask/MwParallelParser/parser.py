@@ -1,3 +1,4 @@
+from MwParallelParser.handler import Handler
 from MwParallelParser.rlexer import Rlexer
 
 
@@ -7,6 +8,7 @@ class Parser:
         self.version = '1.0.0'
 
         self.rlexer = Rlexer()
+        self.handler = Handler()
 
         # load token patterns
         tokens = {}
@@ -38,6 +40,6 @@ class Parser:
 
     def parse(self, wikitext):
         for label, match in self.rlexer.tokenize(wikitext):
-            print(label, match)
+            self.handler.call(label, match)
 
-        # return {'lines': wikitext.split('\n'), 'links': []}
+        return {'lines': self.handler.lines, 'links': self.handler.links}

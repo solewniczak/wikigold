@@ -66,3 +66,11 @@ class Lexer:
         match = self.doc[match.start(idx):match.end(idx)]
         # post = self.doc[match.end(idx):]
         return pre, label, match
+
+    def tokenize(self, doc):
+        self.consume(doc)
+        while True:
+            advance = self.advance()
+            if advance is None:
+                break
+            yield advance

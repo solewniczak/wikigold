@@ -1,7 +1,9 @@
 from MwParallelParser.parser import Parser
 
-wikitext = 'Pierwszy [[test]]!'
+wikitext = '''{{template}}
+Pierwszy [[test]]!'''
 
 parser = Parser()
 
-parser.parse(wikitext)
+d = parser.parse(wikitext)
+print(d)
