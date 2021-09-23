@@ -10,8 +10,9 @@ from flask.cli import with_appcontext
 
 from app.db import get_db
 from app.mediawikixml import MediaWikiXml
-import MwParallelParser.parser
-import MwParserFromHellLinks.parser
+
+import mwparserfromhelllinks
+import mwparallelparser
 
 
 @click.command('import-dump')
@@ -51,9 +52,9 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
     cursor = db.cursor()
 
     if parser == 'MwParallelParser':
-        parser = MwParallelParser.parser.Parser()
+        parser = mwparallelparser.Parser()
     elif parser == 'MwParserFromHellLinks':
-        parser = MwParserFromHellLinks.parser.Parser()
+        parser = mwparserfromhelllinks.Parser()
 
     mediawikixml = MediaWikiXml(filepath, parser)
 

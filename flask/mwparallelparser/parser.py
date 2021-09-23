@@ -1,5 +1,7 @@
-from MwParallelParser.handler import Handler
-from MwParallelParser.rlexer import Rlexer
+import os
+
+from .rlexer import Rlexer
+from .handler import Handler
 
 
 class Parser:
@@ -8,12 +10,11 @@ class Parser:
         self.version = '1.0.0'
 
         self.rlexer = Rlexer()
-        self.handler = Handler()
 
         # load token patterns
         tokens = {}
-        filename = 'tokens'
-        with open(filename) as file:
+        filepath = os.path.join(os.path.dirname(__file__), 'tokens')
+        with open(filepath) as file:
             for line in file:
                 line = line.rstrip()
                 label, pattern = line.split(None, 1)
@@ -26,8 +27,8 @@ class Parser:
                 else:
                     tokens[label] = (pattern, None)
 
-        filename = 'mode_bind'
-        with open(filename) as file:
+        filepath = os.path.join(os.path.dirname(__file__), 'mode_bind')
+        with open(filepath) as file:
             for line in file:
                 line_split = line.split()
                 mode, bind_list = line_split[0], line_split[1:]
@@ -39,7 +40,8 @@ class Parser:
         self.rlexer.build()
 
     def parse(self, wikitext):
+        handler = Handler()
         for label, match in self.rlexer.tokenize(wikitext):
-            self.handler.call(label, match)
+            handler.call(label, match)
 
-        return {'lines': self.handler.lines, 'links': self.handler.links}
+        return {'lines': handler.lines, 'links': handler.links}

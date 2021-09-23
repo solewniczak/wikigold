@@ -1,6 +1,6 @@
 import re
 
-from MwParallelParser.tag import Tag, TagPopException
+from .tag import Tag, TagPopException
 
 
 class Handler:

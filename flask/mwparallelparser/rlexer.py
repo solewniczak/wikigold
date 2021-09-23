@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from MwParallelParser.lexer import Lexer
+from .lexer import Lexer
 
 
 class Rlexer:
