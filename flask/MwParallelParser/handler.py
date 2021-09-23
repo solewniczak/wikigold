@@ -11,6 +11,8 @@ class Handler:
         self.links = []
         self.lines = [''] # start with first empty line
 
+        self._titledlink_counter = 1
+
     def call(self, label, match):
         method = '_' + label.lower()
         self._previous_call = self._current_call
@@ -88,6 +90,21 @@ class Handler:
             self.links.append(link)
         self._append_content(text)
 
+    def _genericlink(self, match):
+        self._append_content(match)
+
+    def _titledlink(self, match):
+        match = match[1:-1] # remove [] charters
+        split = match.split(None, 1)
+        if len(split) == 2:
+            url, content = split
+        else:
+            url = match
+            content = f'[{self._titledlink_counter}]'
+            self._titledlink_counter += 1
+
+        self._append_content(content)
+
     def _header(self, match):
         # header can only start on a line without any other content
         if re.match(r'^[ \t]*$', self.lines[-1]):
@@ -109,10 +126,36 @@ class Handler:
         self._tag_pop('ref')
 
     def _list(self, match):
-        pass  # ignore list syntax
+        # list can only start on a line without any other content
+        if not re.match(r'^[ \t]*$', self.lines[-1]):
+            self._append_content(match)
 
     def _doublebraces(self, match):
         self._tag_push('doublebraces', match)
 
     def _doublebraces_end(self, match):
         self._tag_pop('doublebraces')
+
+    def _table(self, match):
+        self._tag_push('table', match)
+
+    def _table_end(self, match):
+        self._tag_pop('table')
+
+    def _comment(self, match):
+        self._tag_push('comment', match)
+
+    def _comment_end(self, match):
+        self._tag_pop('comment')
+
+    def _div(self, match):
+        self._tag_push('div', match)
+
+    def _div_end(self, match):
+        self._tag_pop('div')
+
+    def _gallery(self, match):
+        self._tag_push('gallery', match)
+
+    def _gallery_end(self, match):
+        self._tag_pop('gallery')
