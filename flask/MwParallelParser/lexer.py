@@ -8,12 +8,12 @@ class Lexer:
         self.labels = []
         self.tokens = []
         self.doc = ''
-        self.flags = re.IGNORECASE
+        self.flags = re.IGNORECASE | re.MULTILINE | re.DOTALL
         self.compounded_pattern = None
 
     def add_rule(self, pattern, label):
         if self.compounded_pattern:
-            raise Exception('cannot add patterns after build.')
+            raise Exception('cannot add patterns after the build.')
         self.patterns.append(pattern)
         self.labels.append(label)
 

@@ -6,31 +6,24 @@ from MwParallelParser.tag import Tag, TagPopException
 class Handler:
     def __init__(self):
         self._tag_stack = []
-        self._skip_content_tags = ['doublebraces', 'table', 'comment', 'div', 'gallery']
+        self._previous_call = None
+        self._current_call = None
         self.links = []
         self.lines = [''] # start with first empty line
 
-    def __getattr__(self, method_name):
-        def method(*args, **kwargs):
-            tag_name = method_name.split('_', 1)[0]
-            if tag_name not in self._skip_content_tags:
-                raise AttributeError(f'No handler for {method_name}')
-
-            if method_name[-4:] == '_end':
-                self._tag_pop(tag_name)
-            else:
-                self._tag_push(tag_name)
-        return method
-
     def call(self, label, match):
-        method = label.lower()
+        method = '_' + label.lower()
+        self._previous_call = self._current_call
+        self._current_call = method
         try:
             getattr(self, method)(match)
         except TagPopException:
             self.call('UNKNOWN', match)  # add closing tag to document if not opening tag is present
+        except AttributeError:
+            pass  # when we have no handler just skip the token
 
-    def _tag_push(self, name):
-        self._tag_stack.append(Tag(name))
+    def _tag_push(self, name, match):
+        self._tag_stack.append(Tag(name, match))
 
     def _tag_pop(self, expect):
         if len(self._tag_stack) == 0:
@@ -48,17 +41,29 @@ class Handler:
 
         lines = content.split('\n')
 
-        self.lines[-1] += lines.pop() # append to current line
+        self.lines[-1] += lines.pop(0) # append to current line
         for line in lines:
             self.lines.append(line)
 
-    def unknown(self, match):
+    def _unknown(self, match):
+        # support for Blend link https://en.wikipedia.org/wiki/Help:Wikitext#Links_and_URLs
+        # check if we have some lowercase letters at the end of a link
+        if self._previous_call == '_wikilink_end':
+            blend_match = re.match(r'[^\W0-9_]+', match) # match only UNICODE alpha charters
+            if blend_match:
+                blend = blend_match[0]
+                self.links[-1]['length'] += len(blend)
+
         self._append_content(match)
 
-    def wikilink(self, match):
-        self._tag_push('wikilink')
+    def _nbsp(self, match):
+        # convert &nbsp; to normal space
+        self._append_content(' ')
 
-    def wikilink_end(self, match):
+    def _wikilink(self, match):
+        self._tag_push('wikilink', match)
+
+    def _wikilink_end(self, match):
         tag = self._tag_pop('wikilink')
 
         link = tag.content.split('|', 1)
@@ -82,3 +87,32 @@ class Handler:
         if len(self._tag_stack) == 0:
             self.links.append(link)
         self._append_content(text)
+
+    def _header(self, match):
+        # header can only start on a line without any other content
+        if re.match(r'^[ \t]*$', self.lines[-1]):
+            self._tag_push('header', match)
+        else:
+            self._append_content(match)
+
+    def _header_end(self, match):
+        tag = self._tag_pop('header')
+        header_content = tag.content.strip()
+        self._append_content(header_content)
+
+    def _ref(self, match):
+        # check if it is an empty ref tag
+        if match[-2:] != '/>':
+            self._tag_push('ref', match)
+
+    def _ref_end(self, match):
+        self._tag_pop('ref')
+
+    def _list(self, match):
+        pass  # ignore list syntax
+
+    def _doublebraces(self, match):
+        self._tag_push('doublebraces', match)
+
+    def _doublebraces_end(self, match):
+        self._tag_pop('doublebraces')
