@@ -1,0 +1,21 @@
+version: "3.7"
+services:
+  flask:
+    restart: always
+    environment:
+      - FLASK_APP=app
+      - FLASK_ENV=production
+      - MYSQL_HOST=db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=example
+      - MYSQL_DATABASE=wikigold
+      - BASEURL=http://localhost
+
+  nginx:
+    restart: always
+
+  db:
+    restart: always
+
+  adminer:
+    restart: always

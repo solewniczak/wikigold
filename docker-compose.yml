@@ -1,38 +1,28 @@
 version: "3.7"
-
 services:
-
   flask:
     build: ./flask
     container_name: flask
-#    restart: always
     environment:
-      - APP_NAME=MyFlaskApp
+      - FLASK_APP=app
+      - FLASK_ENV=development
+      - MYSQL_HOST=db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=example
+      - MYSQL_DATABASE=wikigold
+      - BASEURL=http://localhost
     expose:
       - 8080
 
   nginx:
     build: ./nginx
     container_name: nginx
-#    restart: always
     ports:
-      - "80:80"
+      - 80:80
 
   db:
     image: mariadb:10.6.2
-#    restart: always
     ports:
-      - "3306:3306"
-    volumes:
-      - dbdata:/var/lib/mysql
+      - 3306:3306
     environment:
       MYSQL_ROOT_PASSWORD: example
-
-  adminer:
-    image: adminer
-#    restart: always
-    ports:
-      - 8080:8080
-
-volumes:
-  dbdata:
