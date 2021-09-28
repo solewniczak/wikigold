@@ -2,7 +2,6 @@ version: "3.7"
 services:
   flask:
     build: ./flask
-    container_name: flask
     environment:
       - FLASK_APP=app
       - FLASK_ENV=development
@@ -11,14 +10,8 @@ services:
       - MYSQL_PASSWORD=example
       - MYSQL_DATABASE=wikigold
       - BASEURL=http://localhost
-    expose:
-      - 8080
-
-  nginx:
-    build: ./nginx
-    container_name: nginx
     ports:
-      - 80:80
+      - 8000:8000
 
   db:
     image: mariadb:10.6.2
@@ -26,3 +19,8 @@ services:
       - 3306:3306
     environment:
       MYSQL_ROOT_PASSWORD: example
+
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
