@@ -1,6 +1,22 @@
 import os
 
-from flask import Flask, request
+from flask import Flask
+
+
+class PrefixMiddleware(object):
+
+    def __init__(self, app, prefix=''):
+        self.app = app
+        self.prefix = prefix
+
+    def __call__(self, environ, start_response):
+        if environ['PATH_INFO'].startswith(self.prefix):
+            environ['PATH_INFO'] = environ['PATH_INFO'][len(self.prefix):]
+            environ['SCRIPT_NAME'] = self.prefix
+            return self.app(environ, start_response)
+        else:
+            start_response('404', [('Content-Type', 'text/plain')])
+            return ["This url does not belong to the app.".encode()]
 
 
 def create_app():
@@ -12,12 +28,14 @@ def create_app():
         MYSQL_USER=os.getenv('MYSQL_USER'),
         MYSQL_PASSWORD=os.getenv('MYSQL_PASSWORD'),
         MYSQL_DATABASE=os.getenv('MYSQL_DATABASE'),
-        BASEURL=os.getenv('BASEURL'),
+        PREFIX=os.getenv('PREFIX', default=''),
         MAX_NGRAMS=os.getenv('MAX_NGRAMS', default='5')
     )
+    app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=app.config['PREFIX'])
 
     # config types mapping
     app.config['MAX_NGRAMS'] = int(app.config['MAX_NGRAMS'])
+    # app.config['APPLICATION_ROOT'] = '/wikigold'
 
     from app import db
     db.init_app(app)

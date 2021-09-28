@@ -9,7 +9,6 @@ services:
       - MYSQL_USER=root
       - MYSQL_PASSWORD=example
       - MYSQL_DATABASE=wikigold
-      - BASEURL=http://localhost
 
   nginx:
     restart: always

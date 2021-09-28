@@ -5,11 +5,12 @@ services:
     environment:
       - FLASK_APP=app
       - FLASK_ENV=development
+      - SECRET_KEY=dev
       - MYSQL_HOST=db
       - MYSQL_USER=root
       - MYSQL_PASSWORD=example
       - MYSQL_DATABASE=wikigold
-      - BASEURL=http://localhost
+      - PREFIX=/wikigold
     ports:
       - 8000:8000
 

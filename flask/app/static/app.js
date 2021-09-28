@@ -1,8 +1,17 @@
 class App {
-    constructor(baseUrl, maxNgrams) {
-        this.baseUrl = baseUrl;
+    constructor(prefix, maxNgrams) {
+        this.prefix = prefix;
         this.maxNgrams = maxNgrams;
         this.url =  new URL(document.location);
+    }
+
+    requestUrl(path, params) {
+        if (params) {
+            const searchParams = new URLSearchParams(params);
+            return this.prefix + path + '?' + searchParams
+        } else {
+            return this.prefix + path
+        }
     }
 }
 
@@ -92,7 +101,7 @@ class Index extends App {
                 const length = label.ngrams;
                 const algorithm = that.url.searchParams.get('algorithm');
 
-                const requestURL = new URL('/api/decision', that.baseUrl);
+                const requestUrl = that.requestUrl('/api/decision');
                 const data = {  article: article,
                                 algorithm: algorithm,
                                 source_article_id: article,
@@ -100,7 +109,7 @@ class Index extends App {
                                 start: start,
                                 length: length,
                                 destination_article_id: checkbox_value}
-                return fetch(requestURL.href, {
+                return fetch(requestUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -224,9 +233,8 @@ class Index extends App {
     loadArticleByTitle(title) {
         const that = this;
 
-        const requestURL = new URL('/api/article', that.baseUrl);
-        requestURL.searchParams.append('title', title);
-        return fetch(requestURL.href, {
+        const requestUrl = that.requestUrl('/api/article', {'title': title})
+        return fetch(requestUrl, {
             method: 'GET'
         })
             .then(response => response.json())
@@ -236,8 +244,8 @@ class Index extends App {
     loadArticleById(articleId) {
         const that = this;
 
-        const requestURL = new URL('/api/article/' + articleId, that.baseUrl);
-        return fetch(requestURL.href, {
+        const requestUrl = that.requestUrl('/api/article/' + articleId);
+        return fetch(requestUrl, {
             method: 'GET'
         })
             .then(response => response.json())
@@ -287,9 +295,9 @@ class Index extends App {
 
         if (!articleId) return;
 
-        const requestURL = new URL('/api/candidateLabels/' + articleId, that.baseUrl);
-        requestURL.searchParams.append('algorithm', JSON.stringify(algorithm));
-        return fetch(requestURL.href, {
+        const requestUrl = that.requestUrl('/api/candidateLabels/' + articleId,
+            {'algorithm': JSON.stringify(algorithm)});
+        return fetch(requestUrl, {
             method: 'GET'
         })
             .then(response => response.json())
