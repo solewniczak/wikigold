@@ -1,12 +1,7 @@
-import unittest
+from mwparallelparser.tests.parsertestcase import ParserTestCase
 
-from mwparallelparser import Parser
-
-
-class HeaderTestCase(unittest.TestCase):
+class HeaderTestCase(ParserTestCase):
 
     def test_basic(self):
-        parser = Parser()
         wikitext = '== Header ==\nContent'
-        result = parser.parse(wikitext)
-        self.assertEqual(result['lines'], ['Header', 'Content'])
+        self.assertParsed(wikitext, ['Header', 'Content'])
