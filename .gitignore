@@ -1,13 +1,10 @@
-flask/venv/
-flask/instance/
-dumps/
-.idea
+venv/
+.idea/
 .~lock.*#
 
 *.pyc
 __pycache__/
 
-instance/
 
 .pytest_cache/
 .coverage
