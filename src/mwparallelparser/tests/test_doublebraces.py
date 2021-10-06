@@ -1,8 +1,7 @@
 from mwparallelparser.tests.parsertestcase import ParserTestCase
 
 
-class DoublebracesTestCase(ParserTestCase):
-
+class DoubleBracesTestCase(ParserTestCase):
     def test_basic(self):
         wikitext = '{{This will be deleted}}'
         self.assertParsed(wikitext, [''])
