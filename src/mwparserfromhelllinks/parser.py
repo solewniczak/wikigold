@@ -75,6 +75,6 @@ class Parser:
                     logging.info(f"Artifacts removal from {text} to {new_text}")
                 text = new_text
 
-            links.append({'text': text, 'title': title_underscored})
+            links.append({'label': text, 'destination': title_underscored})
 
         return links

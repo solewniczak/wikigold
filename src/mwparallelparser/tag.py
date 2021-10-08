@@ -1,7 +1,3 @@
-class TagPopException(Exception):
-    pass
-
-
 class Tag:
     def __init__(self, name, match):
         self.name = name

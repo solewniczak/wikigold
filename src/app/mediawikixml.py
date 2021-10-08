@@ -65,15 +65,30 @@ class MediaWikiXml:
                         title = page.find('xmlns:title', self._namespaces).text
                         title = self.normalize_title(title)
                         wikitext = page.find('xmlns:revision/xmlns:text', self._namespaces).text
-                        wikitext_parsed = self.parser.parse(wikitext)
-                        for link in wikitext_parsed['links']:
-                            if link['title'] in titles_in_ns0:
-                                link_text = link['text']
-                                self.links_labels[link_text] += 1
-                                self.link_titles[link_text][link['title']] += 1
-                                self.links_titles_freq[link['title']] += 1
-                        lines = wikitext_parsed['lines']
-                        yield title, lines, None
+                        try:
+                            wikitext_parsed = self.parser.parse(wikitext)
+                            lines = wikitext_parsed['lines']
+                            for link in wikitext_parsed['links']:
+                                destination = link['destination']
+                                # Normalize destination
+                                destination = destination.replace(' ', '_')
+                                if len(destination) > 1:
+                                    destination = destination[0].upper() + destination[1:]
+                                else:
+                                    destination = destination[0].upper()
+
+                                if destination in titles_in_ns0:
+                                    if 'label' not in link:
+                                        link_label = lines[link['line']][link['start']:link['start']+link['length']]
+                                    else:
+                                        link_label = link['label']
+                                    self.links_labels[link_label] += 1
+                                    self.link_titles[link_label][link['destination']] += 1
+                                    self.links_titles_freq[link['destination']] += 1
+                            yield title, lines, None
+                        except Exception as e:
+                            print(f'cannot parse: {title}. skipping ...')
+                            print(e)
 
                     pbar.update(1)
                     pages_to_process -= 1

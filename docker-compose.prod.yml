@@ -1,6 +1,7 @@
 version: "3.7"
 services:
   flask:
+    image: https://kask.eti.pg.edu.pl/gitlab/szyolewn/wikigold/container_registry/
     restart: always
     environment:
       - FLASK_APP=app
@@ -9,12 +10,18 @@ services:
       - MYSQL_USER=root
       - MYSQL_PASSWORD=example
       - MYSQL_DATABASE=wikigold
-
-  nginx:
-    restart: always
+      - PREFIX=/wikigold
 
   db:
+    image: mariadb:10.6.2
     restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: example
 
   adminer:
+    image: adminer
     restart: always
+    ports:
+      - 8080:8080

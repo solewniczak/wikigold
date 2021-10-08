@@ -9,6 +9,6 @@ class ParserTestCase(unittest.TestCase):
 
     def assertParsed(self, wikitext, lines, links=None):
         result = self.parser.parse(wikitext)
-        self.assertEqual(result['lines'], lines)
+        self.assertEqual(lines, result['lines'])
         if links is not None:
-            self.assertEqual(result['links'], links)
+            self.assertEqual(links, result['links'])

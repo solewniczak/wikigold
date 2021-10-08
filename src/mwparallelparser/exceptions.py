@@ -1,0 +1,2 @@
+class TagPopException(Exception):
+    pass

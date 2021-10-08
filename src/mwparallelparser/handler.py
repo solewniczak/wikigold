@@ -1,6 +1,7 @@
 import re
 
-from .tag import Tag, TagPopException
+from .tag import Tag
+from .exceptions import TagPopException
 
 
 class Handler:
@@ -36,16 +37,16 @@ class Handler:
 
         return tag
 
+    # def _append_content(self, content):
+    #     """Append content to the current line."""
+    #     assert '\n' not in content  # for multiline append use _append_paragraph
+    #     if len(self._tag_stack) >= 1:
+    #         self._tag_stack[-1].append_content(content)
+    #         return
+    #
+    #     self.lines[-1] += content
+
     def _append_content(self, content):
-        """Append content to the current line."""
-        assert '\n' not in content  # for multiline append use _append_paragraph
-        if len(self._tag_stack) >= 1:
-            self._tag_stack[-1].append_content(content)
-            return
-
-        self.lines[-1] += content
-
-    def _append_paragraph(self, content):
         """Additional support for glue paragraphs."""
         if len(self._tag_stack) >= 1:
             self._tag_stack[-1].append_content(content)
@@ -66,13 +67,13 @@ class Handler:
     def _unknown(self, match):
         # support for Blend link https://en.wikipedia.org/wiki/Help:Wikitext#Links_and_URLs
         # check if we have some lowercase letters at the end of a link
-        if self._previous_call == '_wikilink_end':
+        if self._previous_call == '_wikilink_blend':
             blend_match = re.match(r'[^\W0-9_]+', match) # match only UNICODE alpha charters
             if blend_match:
                 blend = blend_match[0]
                 self.links[-1]['length'] += len(blend)
 
-        self._append_paragraph(match)
+        self._append_content(match)
 
     def _nbsp(self, match):
         # convert &nbsp; to normal space
@@ -83,6 +84,11 @@ class Handler:
 
     def _wikilink_end(self, match):
         tag = self._tag_pop('wikilink')
+
+        # links cannot have multilines
+        if '\n' in tag.content:
+            self._append_content(tag.match + tag.content + match)
+            return
 
         link = tag.content.split('|', 1)
         if len(link) == 1 or link[1] == '':
@@ -104,6 +110,7 @@ class Handler:
         # add links only when we are in top content
         if len(self._tag_stack) == 0:
             self.links.append(link)
+            self._current_call = '_wikilink_blend' # support blended links in top level
         self._append_content(text)
 
     def _genericlink(self, match):

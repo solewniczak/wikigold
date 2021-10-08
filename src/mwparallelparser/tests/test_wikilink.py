@@ -42,3 +42,11 @@ class WikilinkTestCase(ParserTestCase):
     def test_titled_link_without_ending_bracket(self):
         wikitext = 'some <ref>[http://example.com It should work by now</ref>content [[and link]].'
         self.assertParsed(wikitext, ['some content and link.'])
+
+    def test_blend_link_in_file_link(self):
+        wikitext = '[[File:true.berries.jpg|300px|thumb|right|[[grape]]s]]'
+        self.assertParsed(wikitext, [])
+
+    def test_invalid_link_multiline(self):
+        wikitext = '[[kinematics\n]]'
+        self.assertParsed(wikitext, ['[[kinematics ]]'])

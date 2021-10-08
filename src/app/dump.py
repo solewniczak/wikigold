@@ -1,3 +1,4 @@
+from datetime import datetime
 import os.path
 from bz2 import BZ2Decompressor
 
@@ -69,8 +70,8 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
     cursor.execute(sql_charter_maximum_length, ('labels', 'label'))
     label_maximum_length = cursor.fetchone()[0]
 
-    sql_add_dump = "INSERT INTO dumps (`lang`, `date`, `parser_name`, `parser_version`) VALUES (%s, %s, %s, %s)"
-    data_dump = (lang, dump_date, parser.name, parser.version)
+    sql_add_dump = "INSERT INTO dumps (`lang`, `date`, `parser_name`, `parser_version`, `timestamp`) VALUES (%s, %s, %s, %s, %s)"
+    data_dump = (lang, dump_date, parser.name, parser.version, datetime.now().isoformat())
     cursor.execute(sql_add_dump, data_dump)
     dump_id = cursor.lastrowid
 
@@ -87,7 +88,10 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
             continue
 
         if redirect_to is None:
-            caption = lines[0]
+            try:
+                caption = lines[0]
+            except IndexError:
+                caption = None
             data_article = (title, caption, dump_id)
             cursor.execute(sql_add_article, data_article)
             article_id = cursor.lastrowid

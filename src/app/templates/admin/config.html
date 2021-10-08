@@ -9,7 +9,7 @@
     <select class="form-select" name="currentdump" id="currentdump">
       {% for dump in all_dumps %}
         <option value="{{ dump['id'] }}" {% if dbconfig['currentdump'] == dump['id'] %} selected {% endif %}>
-          {{ dump['lang'] }}wiki-{{ dump['date'] }} {{ dump['parser_name'] }} {{ dump['parser_version'] }}
+          {{ dump['lang'] }}wiki-{{ dump['date'] }} {{ dump['parser_name'] }} {{ dump['parser_version'] }} loaded on: {{ dump['timestamp'] }}
         </option>
       {% endfor %}
     </select>

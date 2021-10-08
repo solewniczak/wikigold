@@ -23,7 +23,7 @@ def config():
 
     dbconfig = get_dbconfig()
 
-    sql_select_dumps = "SELECT id, lang, date, parser_name, parser_version FROM dumps"
+    sql_select_dumps = "SELECT id, lang, date, parser_name, parser_version, timestamp FROM dumps"
     cursor.execute(sql_select_dumps)
     all_dumps = cursor.fetchall()
 
