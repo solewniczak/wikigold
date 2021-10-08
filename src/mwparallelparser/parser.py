@@ -39,9 +39,28 @@ class Parser:
 
         self.rlexer.build()
 
-    def parse(self, wikitext):
+    @classmethod
+    def trim(cls, lines, links):
+        start = 0
+        while start < len(lines) and lines[start] == '':
+            start += 1
+        end = len(lines)
+        while end > 0 and lines[end-1] == '':
+            end -= 1
+
+        # update link lines
+        for link in links:
+            link['line'] -= start
+
+        return lines[start:end], links
+
+    def parse(self, wikitext, trim=True):
         handler = Handler()
         for label, match in self.rlexer.tokenize(wikitext):
             handler.call(label, match)
 
-        return {'lines': handler.lines, 'links': handler.links}
+        lines, links = handler.lines, handler.links
+        if trim:
+            lines, links = self.trim(lines, links)
+
+        return {'lines': lines, 'links': links}

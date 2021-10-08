@@ -37,6 +37,16 @@ class Handler:
         return tag
 
     def _append_content(self, content):
+        """Append content to the current line."""
+        assert '\n' not in content  # for multiline append use _append_paragraph
+        if len(self._tag_stack) >= 1:
+            self._tag_stack[-1].append_content(content)
+            return
+
+        self.lines[-1] += content
+
+    def _append_paragraph(self, content):
+        """Additional support for glue paragraphs."""
         if len(self._tag_stack) >= 1:
             self._tag_stack[-1].append_content(content)
             return
@@ -45,7 +55,13 @@ class Handler:
 
         self.lines[-1] += lines.pop(0) # append to current line
         for line in lines:
-            self.lines.append(line)
+            # create new paragraph if line is empty
+            if line == '' and self.lines[-1] != '':
+                self.lines.append('')
+            else:
+                if self.lines[-1] != '':
+                    self.lines[-1] += ' '  # glue paragraph
+                self.lines[-1] += line
 
     def _unknown(self, match):
         # support for Blend link https://en.wikipedia.org/wiki/Help:Wikitext#Links_and_URLs
@@ -56,7 +72,7 @@ class Handler:
                 blend = blend_match[0]
                 self.links[-1]['length'] += len(blend)
 
-        self._append_content(match)
+        self._append_paragraph(match)
 
     def _nbsp(self, match):
         # convert &nbsp; to normal space
@@ -116,6 +132,7 @@ class Handler:
         tag = self._tag_pop('header')
         header_content = tag.content.strip()
         self._append_content(header_content)
+        self.lines.append('')  # break line after header
 
     def _ref(self, match):
         # check if it is an empty ref tag

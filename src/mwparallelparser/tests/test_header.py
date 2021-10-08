@@ -30,17 +30,17 @@ class HeaderTestCase(ParserTestCase):
 
     def test_with_tag_before_header(self):
         wikitext = '<center>Something</center>  == Header ==\n'
-        self.assertParsed(wikitext, ['Something  == Header ==', ''])
+        self.assertParsed(wikitext, ['Something  == Header =='])
 
     def test_with_tag_after_header(self):
         wikitext = '  == Header == <center>Something</center>\n'
-        self.assertParsed(wikitext, ['  == Header == Something', ''])
+        self.assertParsed(wikitext, ['  == Header == Something'])
 
     @unittest.skip
     def test_diffirent_open_adn_close(self):
         '''To fix it back references must work in regexps'''
         wikitext = '== Header ===\n'
-        self.assertParsed(wikitext, ['Header =', ''])
+        self.assertParsed(wikitext, ['Header ='])
 
     def test_level_4(self):
         wikitext = '==== Zabór rosyjski ====\nTekst'
@@ -48,8 +48,8 @@ class HeaderTestCase(ParserTestCase):
 
     def test_level_4_with_link(self):
         wikitext = '\n==== [[Departament zamorski|Departamenty zamorskie]] ====\nTekst'
-        self.assertParsed(wikitext, ['', 'Departamenty zamorskie', 'Tekst'])
+        self.assertParsed(wikitext, ['Departamenty zamorskie', 'Tekst'])
 
     def test_header_with_ref_and_doublebraces(self):
         wikitext = '\n==== Filmografia<ref name=\"gs/mkg\">{{Cytuj stronę | url = http://www.gniazdoswiatow.net/2012/07/20/mini-kompendium-ghibli/ | tytuł = Ghibli – Mini kompendium | autor = [[Bartek Biedrzycki]] | praca = GniazdoSwiatow.net | data dostępu = 2017-02-03}}</ref> ====\nTekst'
-        self.assertParsed(wikitext, ['', 'Filmografia', 'Tekst'])
+        self.assertParsed(wikitext, ['Filmografia', 'Tekst'])
