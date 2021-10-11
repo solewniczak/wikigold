@@ -116,7 +116,7 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
     for label, counter in mediawikixml.links_labels.items():
         if len(label) > label_maximum_length:
             print(
-                f"label: {label[:label_maximum_length]}...' exceeds maximum label length ({label_maximum_length}). skipping")
+                f"label {label[:label_maximum_length]}...' exceeds maximum label length ({label_maximum_length}). skipping")
             continue
 
         data_label = (label, dump_id, counter)
@@ -131,8 +131,12 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
             article_id = None
             if title in dict_articles_ids:
                 article_id = dict_articles_ids[title]
-            data_label_article = (dict_labels_ids[label], title, article_id, counter)
-            cursor.execute(sql_add_label_article, data_label_article)
+
+            try:
+                data_label_article = (dict_labels_ids[label], title, article_id, counter)
+                cursor.execute(sql_add_label_article, data_label_article)
+            except KeyError:
+                print(f'{title}: there is no label: {label} in database')
 
     # update article counters
     sql_update_article_counter = "UPDATE `articles` SET `counter`=%s WHERE `title`=%s AND `dump_id`=%s"
