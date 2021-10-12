@@ -50,3 +50,8 @@ class WikilinkTestCase(ParserTestCase):
     def test_invalid_link_multiline(self):
         wikitext = '[[kinematics\n]]'
         self.assertParsed(wikitext, ['[[kinematics ]]'])
+
+    def test_link_to_score(self):
+        wikitext = r"""[[flute|<score vorbis="1"> \relative c''''  { \clef treble \time 4/4 \set Staff.midiInstrument = #"flute"  \tempo "Allegro" 4=176 \slashedGrace a8\mf( g8-.)[ e-.] \slashedGrace a( gis-.)[ gis-.] gis-.[ gis-.] \slashedGrace a( gis-.)[ e-.] | d16->( ees des c b8) \times 2/3 {a16( b a } g8->) g-. c-. e-. | \slashedGrace a8( g8-.)[ e-.] \slashedGrace a( gis-.)[ gis-.] gis-.[ gis-.] \slashedGrace a( gis-.)[ e-.] | d16->( ees des c g'!8-.) \slashedGrace b,( a-.) g2-> } </score>]]"""
+        links = [{'line': 0, 'start': 0, 'length': 5, 'destination': 'flute'}]
+        self.assertParsed(wikitext, ['flute'], links)

@@ -8,3 +8,4 @@ with open(filepath) as file:
 parser = Parser()
 result = parser.parse(wikitext)
 print(result['lines'])
+print(result['links'])

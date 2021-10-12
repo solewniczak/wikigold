@@ -37,15 +37,6 @@ class Handler:
 
         return tag
 
-    # def _append_content(self, content):
-    #     """Append content to the current line."""
-    #     assert '\n' not in content  # for multiline append use _append_paragraph
-    #     if len(self._tag_stack) >= 1:
-    #         self._tag_stack[-1].append_content(content)
-    #         return
-    #
-    #     self.lines[-1] += content
-
     def _append_content(self, content):
         """Additional support for glue paragraphs."""
         if len(self._tag_stack) >= 1:
@@ -183,3 +174,9 @@ class Handler:
 
     def _gallery_end(self, match):
         self._tag_pop('gallery')
+
+    def _score(self, match):
+        self._tag_push('score', match)
+
+    def _score_end(self, match):
+        self._tag_pop('score')

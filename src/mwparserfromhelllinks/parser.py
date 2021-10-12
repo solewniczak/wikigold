@@ -54,9 +54,6 @@ class Parser:
                 title_underscored = title_underscored[0].upper() + title_underscored[1:]
             else:
                 title_underscored = title_underscored[0].upper()
-            # if title_underscored not in self._titles_in_ns0:
-            #     logging.info(f"Not in titles_in_ns0: {title} IGNORING")
-            #     continue
 
             if wikilink.text is None:
                 text = title

@@ -33,3 +33,5 @@ SUP                                  <sup>
 SUP_END                              </sup>
 SUB                                  <sub>
 SUB_END                              </sub>
+SCORE                                <score[^>]*>
+SCORE_END                            </score>

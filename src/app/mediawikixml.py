@@ -18,7 +18,10 @@ class MediaWikiXml:
 
     @staticmethod
     def normalize_title(title):
-        return title.strip().replace(' ', '_')
+        title = title.strip().replace(' ', '_')
+        if len(title) > 0:
+            title = title[0].upper() + title[1:]
+        return title
 
     def _iterate_articles(self):
         # get an iterable
@@ -69,14 +72,8 @@ class MediaWikiXml:
                             wikitext_parsed = self.parser.parse(wikitext)
                             lines = wikitext_parsed['lines']
                             for link in wikitext_parsed['links']:
-                                destination = link['destination']
                                 # Normalize destination
-                                destination = destination.replace(' ', '_')
-                                if len(destination) > 1:
-                                    destination = destination[0].upper() + destination[1:]
-                                else:
-                                    destination = destination[0].upper()
-
+                                destination = self.normalize_title(link['destination'])
                                 if destination in titles_in_ns0:
                                     if 'label' not in link:
                                         link_label = lines[link['line']][link['start']:link['start']+link['length']]
@@ -89,6 +86,8 @@ class MediaWikiXml:
                         except Exception as e:
                             print(f'cannot parse: {title}. skipping ...')
                             print(e)
+                            import traceback
+                            traceback.print_exc()
 
                     pbar.update(1)
                     pages_to_process -= 1
