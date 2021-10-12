@@ -1,16 +1,20 @@
 version: "3.7"
 services:
   flask:
-    image: https://kask.eti.pg.edu.pl/gitlab/szyolewn/wikigold/container_registry/
+    image: kask.eti.pg.edu.pl:5001/szyolewn/wikigold:latest
     restart: always
     environment:
       - FLASK_APP=app
       - FLASK_ENV=production
+      - SECRET_KEY=changeme  # change to: openssl rand -base64 16
       - MYSQL_HOST=db
+      - MYSQL_PORT=3306
       - MYSQL_USER=root
-      - MYSQL_PASSWORD=example
+      - MYSQL_PASSWORD=changeme  # change to: openssl rand -base64 16
       - MYSQL_DATABASE=wikigold
-      - PREFIX=/wikigold
+      - PREFIX=/wikigold  # the path to application (must be the same as in proxy server)
+    ports:
+      - 8000:8000
 
   db:
     image: mariadb:10.6.2
@@ -18,7 +22,7 @@ services:
     ports:
       - 3306:3306
     environment:
-      MYSQL_ROOT_PASSWORD: example
+      MYSQL_ROOT_PASSWORD: changeme  # the same as above
 
   adminer:
     image: adminer

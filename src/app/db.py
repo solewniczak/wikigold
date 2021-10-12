@@ -10,6 +10,7 @@ def get_db():
     if 'db' not in g:
         g.db = mysql.connector.connect(
             host=current_app.config['MYSQL_HOST'],
+            port=current_app.config['MYSQL_PORT'],
             user=current_app.config['MYSQL_USER'],
             password=current_app.config['MYSQL_PASSWORD'],
             database=current_app.config['MYSQL_DATABASE'],
@@ -25,10 +26,11 @@ def close_db(e=None):
         db.close()
 
 
-def init_db():
+def init_db(admin_password):
     # create database if not exists
     mysql_connection = mysql.connector.connect(
         host=current_app.config['MYSQL_HOST'],
+        port=current_app.config['MYSQL_PORT'],
         user=current_app.config['MYSQL_USER'],
         password=current_app.config['MYSQL_PASSWORD']
     )
@@ -51,7 +53,7 @@ def init_db():
 
     # create application superuser
     sql_add_user = "INSERT INTO `users` (`username`, `password`, `superuser`) VALUES (%s, %s, TRUE)"
-    data_user = ('admin', generate_password_hash('admin'))
+    data_user = ('admin', generate_password_hash(admin_password))
     cursor.execute(sql_add_user, data_user)
     db.commit()
 
@@ -59,10 +61,11 @@ def init_db():
 
 
 @click.command('init-db')
+@click.argument('admin_password')
 @with_appcontext
-def init_db_command():
+def init_db_command(admin_password):
     """Clear the existing data and create new tables."""
-    init_db()
+    init_db(admin_password)
     click.echo('database initialized')
 
 

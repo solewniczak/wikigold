@@ -24,10 +24,11 @@ def create_app():
     app = Flask(__name__)
     app.config.from_mapping(
         SECRET_KEY=os.getenv('SECRET_KEY', default='dev'),
-        MYSQL_HOST=os.getenv('MYSQL_HOST'),
-        MYSQL_USER=os.getenv('MYSQL_USER'),
-        MYSQL_PASSWORD=os.getenv('MYSQL_PASSWORD'),
-        MYSQL_DATABASE=os.getenv('MYSQL_DATABASE'),
+        MYSQL_HOST=os.getenv('MYSQL_HOST', default='localhost'),
+        MYSQL_PORT=os.getenv('MYSQL_PORT', default=3306),
+        MYSQL_USER=os.getenv('MYSQL_USER', default='root'),
+        MYSQL_PASSWORD=os.getenv('MYSQL_PASSWORD', default=''),
+        MYSQL_DATABASE=os.getenv('MYSQL_DATABASE', default='wikigold'),
         PREFIX=os.getenv('PREFIX', default=''),
         MAX_NGRAMS=os.getenv('MAX_NGRAMS', default='5')
     )
@@ -35,7 +36,7 @@ def create_app():
 
     # config types mapping
     app.config['MAX_NGRAMS'] = int(app.config['MAX_NGRAMS'])
-    # app.config['APPLICATION_ROOT'] = '/wikigold'
+    app.config['MYSQL_PORT'] = int(app.config['MYSQL_PORT'])
 
     from app import db
     db.init_app(app)
