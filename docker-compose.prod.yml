@@ -21,6 +21,8 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: changeme  # the same as above
+    volumes:
+      - dbdata:/var/lib/mysql
     ports:
       - "3306:3306"
 
@@ -29,3 +31,6 @@ services:
     restart: always
     ports:
       - "8080:8080"
+
+volumes:
+  dbdata:
