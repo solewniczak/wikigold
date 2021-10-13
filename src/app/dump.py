@@ -27,6 +27,7 @@ import mwparallelparser
 def import_dump_command(lang, dump_date, early_stopping, parser):
 
     filename = f'{lang}wiki-{dump_date}-pages-meta-current.xml'
+    filename_bz2 = f'{lang}wiki-{dump_date}-pages-meta-current.xml.bz2'
 
     homedir = os.path.expanduser("~/")
     if homedir == "~/":
@@ -37,17 +38,26 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
         os.mkdir(download_dir)
 
     filepath = os.path.join(download_dir, filename)
+    filepath_bz2 = os.path.join(download_dir, filename_bz2)
 
     if not os.path.exists(filepath):
-        url = f'http://dumps.wikimedia.org/{lang}wiki/{dump_date}/{filename}.bz2'
         chunk_size = 1024
-        with requests.get(url, stream=True) as request:
-            total_size = int(request.headers['Content-Length'])
 
-            with open(filepath, 'wb') as file:
-                decompressor = BZ2Decompressor()
-                for data in tqdm(iterable=request.iter_content(chunk_size=chunk_size), total=total_size / chunk_size, unit='KB'):
-                    file.write(decompressor.decompress(data))
+        if not os.path.exists(filepath_bz2):
+            url = f'http://dumps.wikimedia.org/{lang}wiki/{dump_date}/{filename_bz2}'
+            with requests.get(url, stream=True) as request:
+                total_size = int(request.headers['Content-Length'])
+                with open(filepath_bz2, 'wb') as file_bz2:
+                    for data in tqdm(iterable=request.iter_content(chunk_size=chunk_size), total=total_size / chunk_size,
+                                     unit='KB'):
+                        file_bz2.write(data)
+
+        with open(filepath_bz2, 'rb') as file_bz2, open(filepath, 'wb') as file:
+            decompressor = BZ2Decompressor()
+            for data in tqdm(iterable=iter(lambda: file_bz2.read(chunk_size), b''), total=total_size / chunk_size, unit='KB'):
+                file.write(decompressor.decompress(data))
+
+        os.remove(filepath_bz2)
 
     db = get_db()
     cursor = db.cursor()
@@ -153,7 +163,7 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
             destination_article_id = dict_articles_ids[link['destination']]
         else:
             destination_article_id = None
-            print(f'cannot find destination article id for title: {destination_title}')
+            # print(f'cannot find destination article id for title: {destination_title}')
         if len(destination_title) > title_maximum_length:
             print(
                 f"destination title: '{destination_title[:title_maximum_length]}...' exceeds maximum title length ({title_maximum_length}). skipping")
