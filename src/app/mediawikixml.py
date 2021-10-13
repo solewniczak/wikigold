@@ -15,10 +15,11 @@ class MediaWikiXml:
         self.links_labels = Counter()
         self.link_titles = defaultdict(Counter)
         self.links_titles_freq = Counter()
+        self.wikipedia_decisions = []
 
     @staticmethod
     def normalize_title(title):
-        title = title.strip().replace(' ', '_')
+        title = '_'.join(title.split())
         if len(title) > 0:
             title = title[0].upper() + title[1:]
         return title
@@ -51,9 +52,9 @@ class MediaWikiXml:
         print(count_articles)
 
         if early_stopping == -1:
-            pages_to_process = count_articles
+            pages_to_process = len(titles_in_ns0)
         else:
-            pages_to_process = min(count_articles, early_stopping)
+            pages_to_process = min(len(titles_in_ns0), early_stopping)
 
         with tqdm(total=pages_to_process) as pbar:
             for page, ns in self._iterate_articles():
@@ -72,13 +73,14 @@ class MediaWikiXml:
                             wikitext_parsed = self.parser.parse(wikitext)
                             lines = wikitext_parsed['lines']
                             for link in wikitext_parsed['links']:
+                                link['source'] = title  # add the source for a link
+                                link['destination'] = self.normalize_title(link['destination'])  # normalize destination
+
+                                self.wikipedia_decisions.append(link)
                                 # Normalize destination
                                 destination = self.normalize_title(link['destination'])
                                 if destination in titles_in_ns0:
-                                    if 'label' not in link:
-                                        link_label = lines[link['line']][link['start']:link['start']+link['length']]
-                                    else:
-                                        link_label = link['label']
+                                    link_label = lines[link['line']][link['start']:link['start']+link['length']]
                                     self.links_labels[link_label] += 1
                                     self.link_titles[link_label][link['destination']] += 1
                                     self.links_titles_freq[link['destination']] += 1

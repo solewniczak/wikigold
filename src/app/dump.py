@@ -81,6 +81,7 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
     dict_articles_ids = {}
     dict_articles_captions = {}
     dict_redirect_articles = {}
+    dict_lines_ids = {}
     sql_add_line = "INSERT INTO `lines` (`article_id`, `nr`, `content`) VALUES (%s, %s, %s)"
     for title, lines, redirect_to in mediawikixml.parse(early_stopping=early_stopping):
         if len(title) > title_maximum_length:
@@ -103,6 +104,8 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
                     continue
                 data_line = (article_id, line_nr, content)
                 cursor.execute(sql_add_line, data_line)
+                line_id = cursor.lastrowid
+                dict_lines_ids[(title, line_nr)] = line_id
         else:
             data_article = (title, redirect_to, dump_id)
             cursor.execute(sql_add_article_redirect, data_article)
@@ -137,6 +140,27 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
                 cursor.execute(sql_add_label_article, data_label_article)
             except KeyError:
                 print(f'save label_titles: there is no label: {label} in database')
+
+    sql_add_wikipedia_decision = '''INSERT INTO `wikipedia_decisions`
+    (`source_line_id`, `start`, `length`, `destination_title`, `destination_article_id`) VALUES (%s, %s, %s, %s, %s)'''
+    for link in mediawikixml.wikipedia_decisions:
+        if (link['source'], link['line']) not in dict_lines_ids:
+            print(f'there is not line for {link["source"]}:{link["line"]}')
+            continue
+        source_line_id = dict_lines_ids[(link['source'], link['line'])]
+        destination_title = link['destination']
+        if link['destination'] in dict_articles_ids:
+            destination_article_id = dict_articles_ids[link['destination']]
+        else:
+            destination_article_id = None
+            print(f'cannot find destination article id for title: {destination_title}')
+        if len(destination_title) > title_maximum_length:
+            print(
+                f"destination title: '{destination_title[:title_maximum_length]}...' exceeds maximum title length ({title_maximum_length}). skipping")
+        else:
+            data_wikipedia_decision = (source_line_id, link['start'], link['length'], destination_title, destination_article_id)
+            cursor.execute(sql_add_wikipedia_decision, data_wikipedia_decision)
+
 
     # update article counters
     sql_update_article_counter = "UPDATE `articles` SET `counter`=%s WHERE `title`=%s AND `dump_id`=%s"

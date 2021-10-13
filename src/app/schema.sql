@@ -71,6 +71,18 @@ CREATE TABLE `decisions` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
+CREATE TABLE `wikipedia_decisions` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `source_line_id` INT UNSIGNED NOT NULL,
+    `start` INT UNSIGNED NOT NULL,
+    `length` INT UNSIGNED NOT NULL,
+    `destination_title` VARCHAR(255) NOT NULL,
+    `destination_article_id` INT UNSIGNED NULL,
+    FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`),
+    FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`),
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
 CREATE TABLE `labels` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `label` VARCHAR(255) NOT NULL,

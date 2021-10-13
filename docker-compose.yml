@@ -8,20 +8,20 @@ services:
       - SECRET_KEY=dev
       - MYSQL_HOST=db
       - MYSQL_USER=root
-      - MYSQL_PASSWORD=example
+      - MYSQL_PASSWORD=changeme
       - MYSQL_DATABASE=wikigold
       - PREFIX=/wikigold
     ports:
-      - 8000:8000
+      - "8000:8000"
 
   db:
     image: mariadb:10.6.2
     ports:
       - 3306:3306
     environment:
-      MYSQL_ROOT_PASSWORD: example
+      MYSQL_ROOT_PASSWORD: changeme
 
   adminer:
     image: adminer
     ports:
-      - 8080:8080
+      - "8080:8080"
