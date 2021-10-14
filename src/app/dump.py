@@ -1,6 +1,7 @@
 from datetime import datetime
 import os.path
 from bz2 import BZ2Decompressor
+from functools import partial
 
 from tqdm import tqdm
 import requests
@@ -23,8 +24,11 @@ import mwparallelparser
                                                                    'early stopping.')
 @click.option('-p', '--parser', type=click.Choice(['MwParallelParser', 'MwParserFromHellLinks'], case_sensitive=False),
               default='MwParserFromHellLinks')
+@click.option('-m', '--mirror', default='http://dumps.wikimedia.org')
 @with_appcontext
-def import_dump_command(lang, dump_date, early_stopping, parser):
+def import_dump_command(lang, dump_date, early_stopping, parser, mirror):
+
+    mirror = mirror.rstrip('/')
 
     filename = f'{lang}wiki-{dump_date}-pages-meta-current.xml'
     filename_bz2 = f'{lang}wiki-{dump_date}-pages-meta-current.xml.bz2'
@@ -44,20 +48,35 @@ def import_dump_command(lang, dump_date, early_stopping, parser):
         chunk_size = 1024
 
         if not os.path.exists(filepath_bz2):
-            url = f'http://dumps.wikimedia.org/{lang}wiki/{dump_date}/{filename_bz2}'
-            with requests.get(url, stream=True) as request:
-                total_size = int(request.headers['Content-Length'])
-                with open(filepath_bz2, 'wb') as file_bz2:
-                    for data in tqdm(iterable=request.iter_content(chunk_size=chunk_size), total=total_size / chunk_size,
-                                     unit='KB'):
-                        file_bz2.write(data)
+            url = f'{mirror}/{lang}wiki/{dump_date}/{filename_bz2}'
+            r = requests.get(url, stream=True)
+            total_size = int(r.headers['Content-Length'])
+            with open(filepath_bz2, 'wb') as file_bz2, tqdm(
+                desc='downloading: ' + filename_bz2,
+                total=total_size,
+                unit='iB',
+                unit_scale=True,
+                unit_divisor=1024,
+            ) as bar:
+                for data in r.iter_content(chunk_size=chunk_size):
+                    size = file_bz2.write(data)
+                    bar.update(size)
 
-        with open(filepath_bz2, 'rb') as file_bz2, open(filepath, 'wb') as file:
+        total_size = os.path.getsize(filepath_bz2)
+        with open(filepath_bz2, 'rb') as file_bz2, open(filepath, 'wb') as file, tqdm(
+                desc='unpacking: ' + filename_bz2,
+                total=total_size,
+                unit='iB',
+                unit_scale=True,
+                unit_divisor=1024,
+            ) as bar:
             decompressor = BZ2Decompressor()
-            for data in tqdm(iterable=iter(lambda: file_bz2.read(chunk_size), b''), total=total_size / chunk_size, unit='KB'):
+            for data in iter(partial(file_bz2.read, chunk_size), b''):
+                size = len(data)
                 file.write(decompressor.decompress(data))
+                bar.update(size)
 
-        os.remove(filepath_bz2)
+        # os.remove(filepath_bz2)
 
     db = get_db()
     cursor = db.cursor()
