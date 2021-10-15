@@ -1,3 +1,5 @@
+import unittest
+
 from mwparallelparser.tests.parsertestcase import ParserTestCase
 
 
@@ -33,3 +35,23 @@ class ParagraphTestCase(ParserTestCase):
     def test_extra_spaces_between_words(self):
         wikitext = 'This     is     a paragraph'
         self.assertParsed(wikitext, ['This is a paragraph'])
+
+    @unittest.skip
+    def test_preformatted_paragraph(self):
+        wikitext = '  This     is     a paragraph'
+        self.assertParsed(wikitext, ['This     is     a paragraph'])
+
+    @unittest.skip
+    def test_preformatted_paragraph_with_markup(self):
+        wikitext = "  This     is     a '''paragraph'''"
+        self.assertParsed(wikitext, ['This     is     a paragraph'])
+
+    @unittest.skip
+    def test_preformatted_multi_paragraph(self):
+        wikitext = ' This     is     a paragraph\n  There are two spaces!'
+        self.assertParsed(wikitext, ['This     is     a paragraph', ' There are two spaces!'])
+
+    @unittest.skip
+    def test_preformatted_and_standard_paragraph_after(self):
+        wikitext = ' This     is     a paragraph\nThis    is   standard'
+        self.assertParsed(wikitext, ['This     is     a paragraph', 'This is standard'])

@@ -9,8 +9,10 @@ class Handler:
         self._tag_stack = []
         self._previous_call = None
         self._current_call = None
+        self._preformatted_mode = False
+
         self.links = []
-        self.lines = [''] # start with first empty line
+        self.lines = ['']  # start with first empty line
 
         self._titledlink_counter = 1
 
@@ -37,29 +39,50 @@ class Handler:
 
         return tag
 
+    def _break_line(self):
+        # remove end whitespaces form current line
+        self.lines.append('')
+
+    def _append_to_line(self, content):
+        if len(content) == 0:  # if empty content do noting
+            return
+        normalized_content = ' '.join(content.split())
+        if normalized_content == '':  # content was only white spaces
+            self.lines[-1] += ' '
+        else:
+            if self.lines[-1] != '':  # append space to the  the line if not the first charter in the line
+                if content[0] == ' ':
+                    self.lines[-1] += ' '
+
+            self.lines[-1] += normalized_content
+            if content[-1] == ' ':  # add space if was present
+                self.lines[-1] += ' '
+
     def _append_content(self, content):
         """Additional support for glue paragraphs."""
+
         if len(self._tag_stack) >= 1:
             self._tag_stack[-1].append_content(content)
             return
 
         lines = content.split('\n')
 
-        self.lines[-1] += lines.pop(0) # append to current line
+        self._append_to_line(lines.pop(0)) # append to current line
         for line in lines:
+            self.lines[-1] = self.lines[-1].rstrip()
             # create new paragraph if line is empty
             if line == '' and self.lines[-1] != '':
-                self.lines.append('')
+                self._break_line()
             else:
-                if self.lines[-1] != '':
+                if self.lines[-1] != '' and self.lines[-1][-1] != ' ':
                     self.lines[-1] += ' '  # glue paragraph
-                self.lines[-1] += line
+                self._append_to_line(line)
 
     def _unknown(self, match):
         # support for Blend link https://en.wikipedia.org/wiki/Help:Wikitext#Links_and_URLs
         # check if we have some lowercase letters at the end of a link
         if self._previous_call == '_wikilink_blend':
-            blend_match = re.match(r'[^\W0-9_]+', match) # match only UNICODE alpha charters
+            blend_match = re.match(r'[^\W0-9_]+', match)  # match only UNICODE alpha charters
             if blend_match:
                 blend = blend_match[0]
                 self.links[-1]['length'] += len(blend)
@@ -92,7 +115,7 @@ class Handler:
             return
 
         link = {
-            'line': len(self.lines)-1,
+            'line': len(self.lines) - 1,
             'start': len(self.lines[-1]),
             'length': len(text),
             'destination': destination
@@ -101,14 +124,14 @@ class Handler:
         # add links only when we are in top content
         if len(self._tag_stack) == 0:
             self.links.append(link)
-            self._current_call = '_wikilink_blend' # support blended links in top level
+            self._current_call = '_wikilink_blend'  # support blended links in top level
         self._append_content(text)
 
     def _genericlink(self, match):
         self._append_content(match)
 
     def _titledlink(self, match):
-        match = match[1:-1] # remove [] charters
+        match = match[1:-1]  # remove [] charters
         split = match.split(None, 1)
         if len(split) == 2:
             url, content = split
@@ -130,7 +153,7 @@ class Handler:
         tag = self._tag_pop('header')
         header_content = tag.content.strip()
         self._append_content(header_content)
-        self.lines.append('')  # break line after header
+        self._break_line()  # break line after header
 
     def _ref(self, match):
         # check if it is an empty ref tag

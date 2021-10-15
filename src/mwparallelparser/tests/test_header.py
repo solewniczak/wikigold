@@ -30,11 +30,11 @@ class HeaderTestCase(ParserTestCase):
 
     def test_with_tag_before_header(self):
         wikitext = '<center>Something</center>  == Header ==\n'
-        self.assertParsed(wikitext, ['Something  == Header =='])
+        self.assertParsed(wikitext, ['Something == Header =='])
 
     def test_with_tag_after_header(self):
         wikitext = '  == Header == <center>Something</center>\n'
-        self.assertParsed(wikitext, ['  == Header == Something'])
+        self.assertParsed(wikitext, ['== Header == Something'])
 
     @unittest.skip
     def test_diffirent_open_adn_close(self):
