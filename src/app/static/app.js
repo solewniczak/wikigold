@@ -13,6 +13,13 @@ class App {
             return this.prefix + path
         }
     }
+
+    escapeAttribute(value) {
+        // https://stackoverflow.com/questions/9187946/escaping-inside-html-tag-attribute-value
+        return value
+            .replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;");
+    }
 }
 
 class Index extends App {
@@ -363,11 +370,16 @@ class Index extends App {
                             if (article.redirect_to_title) {
                                 tooltip += '<p>Redirects to: ' + article.redirect_to_title + '</p>';
                             }
-                            tooltip += '<p>' + article.caption + '</p>';
+                            if (article.caption) {
+                                tooltip += '<p>' + article.caption + '</p>';
+                            } else {
+                                tooltip += '<p><i>no caption</i></p>';
+                            }
+
                             popoverHtml += '<tr>' +
                                     '<td class="align-middle"><label class="col-form-label">' +
                                     '<a href="https://' + that.article.lang + '.wikipedia.org/wiki/' + article.title + '" target="_blank" ' +
-                                        'data-bs-toggle="tooltip" data-bs-placement="left" title="' + tooltip + '">' +
+                                        'data-bs-toggle="tooltip" data-bs-placement="left" title="' + that.escapeAttribute(tooltip) + '">' +
                                         article.title +
                                     '</a>' +
                                     '</label></td>' +

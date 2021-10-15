@@ -1,3 +1,5 @@
+import bz2
+import json
 from datetime import datetime
 import os.path
 from bz2 import BZ2Decompressor
@@ -11,7 +13,7 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 
 from app.db import get_db
-from app.mediawikixml import MediaWikiXml
+from app.mediawikixml import MediaWikiXml, iterate_xml_dump, normalize_title
 
 import mwparserfromhelllinks
 import mwparallelparser
@@ -25,13 +27,18 @@ import mwparallelparser
 @click.option('-p', '--parser', type=click.Choice(['MwParallelParser', 'MwParserFromHellLinks'], case_sensitive=False),
               default='MwParserFromHellLinks')
 @click.option('-m', '--mirror', default='http://dumps.wikimedia.org')
+@click.option('--download/--no-download', default=False)
+@click.option('--decompress/--no-decompress', default=False)
 @with_appcontext
-def import_dump_command(lang, dump_date, early_stopping, parser, mirror):
+def import_dump_command(lang, dump_date, early_stopping, parser, mirror, download, decompress):
 
     mirror = mirror.rstrip('/')
 
     filename = f'{lang}wiki-{dump_date}-pages-meta-current.xml'
     filename_bz2 = f'{lang}wiki-{dump_date}-pages-meta-current.xml.bz2'
+    filename_metadata = f'{lang}wiki-{dump_date}-metadata.json'
+
+    url = f'{mirror}/{lang}wiki/{dump_date}/{filename_bz2}'
 
     homedir = os.path.expanduser("~/")
     if homedir == "~/":
@@ -43,40 +50,73 @@ def import_dump_command(lang, dump_date, early_stopping, parser, mirror):
 
     filepath = os.path.join(download_dir, filename)
     filepath_bz2 = os.path.join(download_dir, filename_bz2)
+    filepath_metadata = os.path.join(download_dir, filename_metadata)
 
-    if not os.path.exists(filepath):
-        chunk_size = 1024
+    chunk_size = 1024
 
+    def download_xml_dump():
         if not os.path.exists(filepath_bz2):
-            url = f'{mirror}/{lang}wiki/{dump_date}/{filename_bz2}'
             r = requests.get(url, stream=True)
             total_size = int(r.headers['Content-Length'])
             with open(filepath_bz2, 'wb') as file_bz2, tqdm(
-                desc='downloading: ' + filename_bz2,
-                total=total_size,
-                unit='iB',
-                unit_scale=True,
-                unit_divisor=1024,
+                    desc='downloading: ' + filename_bz2,
+                    total=total_size,
+                    unit='iB',
+                    unit_scale=True,
+                    unit_divisor=chunk_size,
             ) as bar:
                 for data in r.iter_content(chunk_size=chunk_size):
                     size = file_bz2.write(data)
                     bar.update(size)
+            r.close()
 
-        total_size = os.path.getsize(filepath_bz2)
-        with open(filepath_bz2, 'rb') as file_bz2, open(filepath, 'wb') as file, tqdm(
-                desc='unpacking: ' + filename_bz2,
-                total=total_size,
-                unit='iB',
-                unit_scale=True,
-                unit_divisor=1024,
+    def decompress_xml_dump():
+        if not os.path.exists(filepath):
+            total_size = os.path.getsize(filepath_bz2)
+            with open(filepath_bz2, 'rb') as file_bz2, open(filepath, 'wb') as file, tqdm(
+                    desc='unpacking: ' + filename_bz2,
+                    total=total_size,
+                    unit='iB',
+                    unit_scale=True,
+                    unit_divisor=1024,
             ) as bar:
-            decompressor = BZ2Decompressor()
-            for data in iter(partial(file_bz2.read, chunk_size), b''):
-                size = len(data)
-                file.write(decompressor.decompress(data))
-                bar.update(size)
+                decompressor = BZ2Decompressor()
+                for data in iter(partial(file_bz2.read, chunk_size), b''):
+                    size = len(data)
+                    file.write(decompressor.decompress(data))
+                    bar.update(size)
 
-        # os.remove(filepath_bz2)
+    def xml_dump_stream():
+        if download and decompress:
+            download_xml_dump()
+            decompress_xml_dump()
+            return open(filepath)
+        elif download:
+            download_xml_dump()
+            return bz2.open(filepath_bz2)
+        else:
+            raise "downloading on fly not implemented"
+
+    if not os.path.exists(filepath_metadata):
+        with xml_dump_stream() as dump:
+            print('collecting metadata ...', end=' ')
+            titles_in_ns0 = set()
+            for page in iterate_xml_dump(dump, tags=('ns', 'title')):
+                ns = page['ns'].text.strip()
+                title = page['title'].text
+                if ns == '0':
+                    title = normalize_title(title)
+                    titles_in_ns0.add(title)
+
+            metadata = {'titles_in_ns0': list(titles_in_ns0)}
+            with open(filepath_metadata, 'w') as file:
+                json.dump(metadata, file)
+            print('done')
+    else:
+        print(f'loading metadata from: {filename_metadata}')
+        with open(filepath_metadata, 'r') as file:
+            metadata = json.load(file)
+        metadata['titles_in_ns0'] = set(metadata['titles_in_ns0'])
 
     db = get_db()
     cursor = db.cursor()
@@ -86,7 +126,8 @@ def import_dump_command(lang, dump_date, early_stopping, parser, mirror):
     elif parser == 'MwParserFromHellLinks':
         parser = mwparserfromhelllinks.Parser()
 
-    mediawikixml = MediaWikiXml(filepath, parser)
+    dump = xml_dump_stream()
+    mediawikixml = MediaWikiXml(dump, metadata, parser)
 
     sql_charter_maximum_length = '''SELECT character_maximum_length FROM information_schema.columns 
                                     WHERE table_name = %s AND column_name = %s'''
@@ -217,6 +258,7 @@ def import_dump_command(lang, dump_date, early_stopping, parser, mirror):
 
     db.commit()
     cursor.close()
+    dump.close()
 
 
 def init_app(app):

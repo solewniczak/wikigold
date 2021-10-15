@@ -29,3 +29,7 @@ class ParagraphTestCase(ParserTestCase):
     def test_extra_newlines(self):
         wikitext = 'This is a paragraph\n\n{{some template}}\n\nThis is next'
         self.assertParsed(wikitext, ['This is a paragraph', 'This is next'])
+
+    def test_extra_spaces_between_words(self):
+        wikitext = 'This     is     a paragraph'
+        self.assertParsed(wikitext, ['This is a paragraph'])
