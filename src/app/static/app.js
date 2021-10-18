@@ -53,6 +53,19 @@ class Index extends App {
                 });
         });
 
+        document.querySelector("#wikipediadecisions-form").addEventListener("submit", event => {
+            event.preventDefault();
+            const articleId = that.url.searchParams.get('article');
+            const requestUrl = that.requestUrl('/api/wikipediaDecisions/' + articleId)
+            fetch(requestUrl, {
+                method: 'GET'
+            })
+                .then(response => response.json())
+                .then(result => {
+                    console.log(result);
+                });
+        });
+
         algorithmForm.addEventListener("submit", event => {
             event.preventDefault();
             const formData = new FormData(algorithmForm);

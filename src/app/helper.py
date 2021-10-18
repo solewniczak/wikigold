@@ -12,10 +12,15 @@ def get_lines(article_id):
     sql = "SELECT `id`, `content` FROM `lines` WHERE `article_id`=%s ORDER BY `nr`"
     data = (article_id,)
     cursor.execute(sql, data)
-    lines = cursor.fetchall()
+
+    lines = []
+    for row in cursor:
+        line_text = row['content'].decode('utf-8')
+        line_tokens = nltk.word_tokenize(line_text)
+        lines.append(line_tokens)
+
     cursor.close()
 
-    lines = list(map(lambda line: nltk.word_tokenize(line['content'].decode('utf-8')), lines))
     return lines
 
 

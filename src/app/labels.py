@@ -1,4 +1,3 @@
-import re
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 
 from app.db import get_db
@@ -70,9 +69,7 @@ def get_labels_exact(article_id, algorithm_normalized_json):
             for label_nr, label in enumerate(line):
                 if label_nr + ngrams > len(line):  # cannot construct ngram of length "ngrams" starting from "label"
                     break
-                # label = ' '.join(line[label_nr:label_nr + ngrams])  # construct the label
-                # # remove punctation
-                # label = re.sub(r'[.,:?]', '', label)
+
                 label = TreebankWordDetokenizer().detokenize(line[label_nr:label_nr + ngrams])
 
                 if algorithm_normalized_json['skipstopwords'] and label in stops:

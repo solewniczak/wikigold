@@ -1,5 +1,7 @@
 import json
 from datetime import datetime
+from nltk.tokenize.treebank import TreebankWordTokenizer
+from nltk.tokenize.punkt import PunktSentenceTokenizer
 
 from flask import (
     Blueprint, g, jsonify, request, abort, url_for, redirect
@@ -77,6 +79,30 @@ def get_candidate_labels(article_id):
             label['decision'] = decisions_dict[(label['line'], label['start'], label['ngrams'])]
 
     return jsonify(labels)
+
+
+@bp.route('/wikipediaDecisions/<int:article_id>', methods=('GET',))
+def get_wikipedia_decisions(article_id):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    sql_select_wikipedia_decisions = "SELECT `lines`.`nr`, `lines`.`content`, `wikipedia_decisions`.`start`," \
+                       "`wikipedia_decisions`.`length`, `wikipedia_decisions`.`destination_title`" \
+                       "FROM `wikipedia_decisions` JOIN `lines`" \
+                       "ON `wikipedia_decisions`.`source_line_id` = `lines`.`id` WHERE `lines`.`article_id`=%s"
+    data_wikipedia_decisions = (article_id, )
+    cursor.execute(sql_select_wikipedia_decisions, data_wikipedia_decisions)
+
+    decisions = []
+    for row in cursor:
+        line_content = row['content'].decode('utf-8')
+        sentences = PunktSentenceTokenizer().span_tokenize(line_content)
+        line_spans = TreebankWordTokenizer().span_tokenize(line_content)
+        decisions.append(list(sentences))
+
+    cursor.close()
+    return jsonify(decisions)
+
 
 
 @bp.route('/decision', methods=('POST',))
