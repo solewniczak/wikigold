@@ -36,6 +36,27 @@ class ParagraphTestCase(ParserTestCase):
         wikitext = 'This     is     a paragraph'
         self.assertParsed(wikitext, ['This is a paragraph'])
 
+    def test_spaces_at_the_begin_of_paragraph(self):
+        """This will not work when preformatted paragraph will be implemented."""
+        wikitext = ' This     is     a paragraph'
+        self.assertParsed(wikitext, ['This is a paragraph'])
+
+    def test_extra_spaces_between_words_with_formatting(self):
+        wikitext = "This     '''is     '''a paragraph"
+        self.assertParsed(wikitext, ['This is a paragraph'])
+
+    def test_extra_spaces_between_words_with_links(self):
+        wikitext = "This     [[ is    a ]] paragraph"
+        self.assertParsed(wikitext, ['This is a paragraph'])
+
+    def test_extra_spaces_between_words_with_links2(self):
+        wikitext = "[[ Test ]] This     [[ is    a ]] paragraph [[ Another ]]"
+        self.assertParsed(wikitext, ['Test This is a paragraph Another'])
+
+    def test_extra_spaces_between_words_with_links3(self):
+        wikitext = "[[ Test ]]     [[ Another ]]"
+        self.assertParsed(wikitext, ['Test Another'])
+
     @unittest.skip
     def test_preformatted_paragraph(self):
         wikitext = '  This     is     a paragraph'

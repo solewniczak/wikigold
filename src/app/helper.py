@@ -1,4 +1,5 @@
 import json
+import nltk
 
 from flask import g
 
@@ -14,7 +15,7 @@ def get_lines(article_id):
     lines = cursor.fetchall()
     cursor.close()
 
-    lines = list(map(lambda line: line['content'].decode('utf-8').split(), lines))
+    lines = list(map(lambda line: nltk.word_tokenize(line['content'].decode('utf-8')), lines))
     return lines
 
 

@@ -50,7 +50,7 @@ class Handler:
         if normalized_content == '':  # content was only white spaces
             self.lines[-1] += ' '
         else:
-            if self.lines[-1] != '':  # append space to the  the line if not the first charter in the line
+            if self.lines[-1] != '':  # append space to the the line if not the first charter in the line
                 if content[0] == ' ':
                     self.lines[-1] += ' '
 
@@ -69,7 +69,7 @@ class Handler:
 
         self._append_to_line(lines.pop(0)) # append to current line
         for line in lines:
-            self.lines[-1] = self.lines[-1].rstrip()
+            self.lines[-1] = self.lines[-1]
             # create new paragraph if line is empty
             if line == '' and self.lines[-1] != '':
                 self._break_line()
@@ -106,7 +106,7 @@ class Handler:
 
         link = tag.content.split('|', 1)
         if len(link) == 1 or link[1] == '':
-            destination = text = link[0]
+            destination = text = link[0].strip()
         else:
             destination, text = link[0].strip(), link[1].strip()
 

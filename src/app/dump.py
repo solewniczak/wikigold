@@ -242,7 +242,10 @@ def import_dump_command(lang, dump_date, early_stopping, parser, mirror, downloa
     sql_update_article_redirect = "UPDATE `articles` SET `caption`=%s, `redirect_to_id`=%s WHERE `id`=%s"
     for article_id, redirect_to_title in dict_redirect_articles.items():
         if redirect_to_title in dict_articles_ids:
-            caption = dict_articles_captions[redirect_to_title]
+            try:
+                caption = dict_articles_captions[redirect_to_title]
+            except KeyError:
+                caption = None
             redirect_to_id = dict_articles_ids[redirect_to_title]
             data_article = (caption, redirect_to_id, article_id)
             cursor.execute(sql_update_article_redirect, data_article)
