@@ -53,7 +53,9 @@ CREATE TABLE `edls` (
     `timestamp` TIMESTAMP NOT NULL,
     `user_id` INT UNSIGNED NOT NULL,
     `article_id` INT UNSIGNED NOT NULL,
+    `knowledge_base_id` INT UNSIGNED NOT NULL,
     FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
+    FOREIGN KEY (`knowledge_base_id`) REFERENCES `dumps`(`id`),
     FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;

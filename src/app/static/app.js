@@ -45,7 +45,8 @@ class Index extends App {
             event.preventDefault();
             const formData = new FormData(searchForm);
             const title = formData.get('title');
-            that.loadArticleByTitle(title)
+            const article_source = formData.get('article_source');
+            that.loadArticleByTitle(title, article_source)
                 .then(result => {
                     that.url.searchParams.set('article', result.id);
                     that.url.searchParams.delete('algorithm');
@@ -53,18 +54,34 @@ class Index extends App {
                 });
         });
 
-        document.querySelector("#wikipediadecisions-form").addEventListener("submit", event => {
-            event.preventDefault();
-            const articleId = that.url.searchParams.get('article');
-            const requestUrl = that.requestUrl('/api/wikipediaDecisions/' + articleId)
-            fetch(requestUrl, {
-                method: 'GET'
-            })
-                .then(response => response.json())
-                .then(result => {
-                    console.log(result);
-                });
-        });
+        // document.querySelector("#wikipediadecisions-form").addEventListener("submit", event => {
+        //     event.preventDefault();
+        //     const article = document.querySelector("article");
+        //     const articleId = that.url.searchParams.get('article');
+        //     const requestUrl = that.requestUrl('/api/wikipediaDecisions/' + articleId)
+        //     fetch(requestUrl, {
+        //         method: 'GET'
+        //     })
+        //         .then(response => response.json())
+        //         .then(result => {
+        //             console.log(result);
+        //             result.forEach(label => {
+        //                 const line = article.querySelectorAll("p")[label.line];
+        //                 let span = line.querySelectorAll("span.ngram")[label.start];
+        //                 const showBorder = [span];
+        //                 // collect spans which should be bordered
+        //                 for (let i = 1; i < label.ngrams; i++) {
+        //                     span = span.nextSibling;  // space node
+        //                     showBorder.push(span)
+        //                     span = span.nextSibling; // next token
+        //                     showBorder.push(span)
+        //                 }
+        //                 showBorder.forEach(span => {
+        //                     span.style.backgroundColor = "red";
+        //                 });
+        //             });
+        //         });
+        // });
 
         algorithmForm.addEventListener("submit", event => {
             event.preventDefault();
@@ -250,10 +267,10 @@ class Index extends App {
         });
     }
 
-    loadArticleByTitle(title) {
+    loadArticleByTitle(title, article_source) {
         const that = this;
 
-        const requestUrl = that.requestUrl('/api/article', {'title': title})
+        const requestUrl = that.requestUrl('/api/article', {'title': title, 'article_source': article_source})
         return fetch(requestUrl, {
             method: 'GET'
         })
@@ -322,7 +339,6 @@ class Index extends App {
         })
             .then(response => response.json())
             .then(result => {
-                console.log(result);
                 that.edl = result;
                 that.ngrams_labels = {};
                 that.labels_ngrams = {};

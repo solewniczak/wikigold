@@ -16,10 +16,18 @@ bp = Blueprint('wikigold', __name__)
 @bp.route('/')
 @login_required
 def index():
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    sql_select_dumps = "SELECT id, lang, date, parser_name, parser_version, timestamp FROM dumps ORDER BY id DESC"
+    cursor.execute(sql_select_dumps)
+    dumps = cursor.fetchall()
+    cursor.close()
+
     algorithm = {'algorithm': ''}
     if 'algorithm' in request.args:
         algorithm = json.loads(request.args['algorithm'])
-    return render_template('wikigold/index.html', algorithm=algorithm)
+    return render_template('wikigold/index.html', algorithm=algorithm, dumps=dumps)
 
 
 @bp.route('/edls')

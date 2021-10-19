@@ -1,7 +1,5 @@
-import json
 from datetime import datetime
-from nltk.tokenize.treebank import TreebankWordTokenizer
-from nltk.tokenize.punkt import PunktSentenceTokenizer
+
 
 from flask import (
     Blueprint, g, jsonify, request, abort, url_for, redirect
@@ -9,7 +7,7 @@ from flask import (
 
 from app.db import get_db
 from app.dbconfig import get_dbconfig
-from app.helper import get_lines, normalize_algorithm_json, get_user_decisions
+from app.helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions
 from app.labels import get_labels_exact
 
 bp = Blueprint('api', __name__, url_prefix='/api')
@@ -24,11 +22,13 @@ def search_article():
 
     cursor = db.cursor(dictionary=True)
 
-    # get current dump
-    currentdump_id = get_dbconfig('currentdump')
+    if 'article_source' in request.args:
+        dump_id = request.args['article_source']
+    else:
+        dump_id = get_dbconfig('currentdump')
 
     sql = 'SELECT `id` FROM `articles` WHERE `title`=%s AND `dump_id`=%s'
-    data = (request.args['title'], currentdump_id)
+    data = (request.args['title'], dump_id)
     cursor.execute(sql, data)
     article = cursor.fetchone()
     cursor.close()
@@ -56,6 +56,7 @@ def get_article(id):
         abort(404)
 
     article['lines'] = get_lines(id)
+    # article['wikipedia_decisions'] = get_wikipedia_decisions(id)
 
     return jsonify(article)
 
@@ -79,30 +80,6 @@ def get_candidate_labels(article_id):
             label['decision'] = decisions_dict[(label['line'], label['start'], label['ngrams'])]
 
     return jsonify(labels)
-
-
-@bp.route('/wikipediaDecisions/<int:article_id>', methods=('GET',))
-def get_wikipedia_decisions(article_id):
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-
-    sql_select_wikipedia_decisions = "SELECT `lines`.`nr`, `lines`.`content`, `wikipedia_decisions`.`start`," \
-                       "`wikipedia_decisions`.`length`, `wikipedia_decisions`.`destination_title`" \
-                       "FROM `wikipedia_decisions` JOIN `lines`" \
-                       "ON `wikipedia_decisions`.`source_line_id` = `lines`.`id` WHERE `lines`.`article_id`=%s"
-    data_wikipedia_decisions = (article_id, )
-    cursor.execute(sql_select_wikipedia_decisions, data_wikipedia_decisions)
-
-    decisions = []
-    for row in cursor:
-        line_content = row['content'].decode('utf-8')
-        sentences = PunktSentenceTokenizer().span_tokenize(line_content)
-        line_spans = TreebankWordTokenizer().span_tokenize(line_content)
-        decisions.append(list(sentences))
-
-    cursor.close()
-    return jsonify(decisions)
-
 
 
 @bp.route('/decision', methods=('POST',))

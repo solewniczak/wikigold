@@ -87,42 +87,81 @@
       </div>
       <div class="col">
           <div class="position-fixed">
-              <form class="mb-3" id="search-form">
-                  <div class="row">
-                      <div class="col-8">
-                        <input class="form-control me-2" type="search" placeholder="Search" name="title">
-                      </div>
-                      <div class="col">
-                          <button class="btn btn-outline-success" type="submit">Search</button>
-                      </div>
-                  </div>
-              </form>
-            <form class="mb-3" id="wikipediadecisions-form">
-                  <div class="row">
-                      <div class="col">
-                          <button class="btn btn-outline-success" type="submit">Get Wikipedia decisions</button>
-                      </div>
-                  </div>
-              </form>
-              <form class="mb-3" id="algorithm-form">
-                <div class="row mb-2">
-                    <div class="col-7">
-                        <select class="form-select" name="algorithm">
-                          <option value="" {{ 'selected' if algorithm['algorithm'] == '' }}>Select algorithm</option>
-                          <option value="exact" {{ 'selected' if algorithm['algorithm'] == 'exact' }}>Exact match</option>
-                        </select>
-                    </div>
-                    <div class="col">
-                        <button class="btn btn-outline-success" type="submit">Get Labels</button>
-                    </div>
+              <form class="mb-4" id="search-form">
+                  <div class="mb-2">
+                      <h5><label for="article_source" class="col-form-label">Source</label></h5>
+                      <select class="form-select form-select-sm" name="article_source" id="article_source">
+                        {% for dump in dumps %}
+                          <option value="{{ dump['id'] }}">
+                            {{ dump['lang'] }}wiki-{{ dump['date'] }} | {{ dump['timestamp'] }}
+                          </option>
+                        {% endfor %}
+                      </select>
                 </div>
-              <div class="form-check">
-                  <input class="form-check-input" type="checkbox" name="skipstopwords" value="1"
-                         id="algorithm-selector-skipstopwords" {{ 'checked' if 'skipstopwords' in algorithm }}>
-                  <label class="form-check-label" for="algorithm-selector-skipstopwords">
-                    Skip stop words
-                  </label>
-              </div>
+                  <div class="row mb-2">
+                      <div class="col-auto">
+                        <label for="title" class="col-form-label">Title</label>
+                      </div>
+                      <div class="col-auto">
+                        <input class="form-control" name="title" id="title">
+                      </div>
+                  </div>
+                  <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" name="wikipedia_decisions" value="1"
+                             id="wikipedia_decisions">
+                      <label class="form-check-label" for="wikipedia_decisions">
+                        Wikipedia decisions
+                      </label>
+                  </div>
+              <button class="btn btn-outline-success" type="submit">Load content</button>
+              </form>
+              <form class="mb-4" id="algorithm-form">
+              <div class="mb-4">
+                  <h5><label for="knowledge_base" class="col-form-label">Knowledge base</label></h5>
+                <select class="form-select form-select-sm" name="knowledge_base" id="knowledge_base">
+                  {% for dump in dumps %}
+                    <option value="{{ dump['id'] }}">
+                      {{ dump['lang'] }}wiki-{{ dump['date'] }} | {{ dump['timestamp'] }}
+                    </option>
+                  {% endfor %}
+                  </select>
+                </div>
+                  <fieldset class="mb-4">
+                    <h6>Entity retrieval</h6>
+                    <div class="row mb-2">
+                        <div class="col-auto">
+                            <label for="retrieval" class="col-form-label">Algorithm</label>
+                        </div>
+                        <div class="col-auto">
+                            <select class="form-select" name="retrieval" id="retrieval">
+                              <option value="" {{ 'selected' if algorithm['retrieval'] == '' }}></option>
+                              <option value="exact" {{ 'selected' if algorithm['retrieval'] == 'exact' }}>n-gram exact match</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" name="skipstopwords" value="1"
+                             id="skipstopwords" {{ 'checked' if 'skipstopwords' in algorithm }}>
+                      <label class="form-check-label" for="skipstopwords">
+                        Skip stop words
+                      </label>
+                    </div>
+                </fieldset>
+                <fieldset class="mb-2">
+                    <h6>Entity disambiguation</h6>
+                    <div class="row">
+                        <div class="col-auto">
+                                <label for="algorithm" class="col-form-label">Algorithm</label>
+                        </div>
+                        <div class="col-auto">
+                            <select class="form-select" name="disambiguation" id="disambiguation">
+                              <option value="" {{ 'selected' if algorithm['disambiguation'] == '' }}></option>
+                              <option value="exact" {{ 'selected' if algorithm['disambiguation'] == 'top' }}>top popularity</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+                <button class="btn btn-outline-success" type="submit">Load entities</button>
               </form>
               <div class="mb-3" id="ngramsDisplay">
                   {% for ngram in range(1, config['MAX_NGRAMS']+1) %}
@@ -134,10 +173,6 @@
                       </div>
                   {% endfor %}
               </div>
-<!--              <h2>Your decisions</h2>-->
-<!--              <div id="decisionsList">-->
-<!--              </div>-->
-              <button class="btn btn-outline-success">Save decisions</button>
           </div>
       </div>
     </div>
