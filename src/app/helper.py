@@ -29,14 +29,12 @@ def get_lines(article_id):
 def get_wikipedia_decisions(article_id):
     db = get_db()
     cursor = db.cursor(dictionary=True)
+    sql = "SELECT `id`, `content` FROM `lines` WHERE `article_id`=%s ORDER BY `nr`"
+    data = (article_id,)
+    cursor.execute(sql, data)
 
-    sql_select_lines = "SELECT `nr`, `content` FROM `lines` WHERE `article_id`=%s ORDER BY `nr`"
-    data_article_id = (article_id, )
-    cursor.execute(sql_select_lines, data_article_id)
-
-    lines_spans = {}
+    lines_spans = []
     for row in cursor:
-        line_nr = row['nr']
         line_content = row['content'].decode('utf-8')
         sentences_spans = PunktSentenceTokenizer().span_tokenize(line_content)
         line_spans = [
@@ -45,30 +43,44 @@ def get_wikipedia_decisions(article_id):
             for (token_span_start, token_span_end)
             in TreebankWordTokenizer().span_tokenize(line_content[sentence_span_start:sentence_span_end])
         ]
-        line_spans_starts, line_spans_ends = zip(*line_spans)
-        lines_spans[line_nr] = ({position: ngram for ngram, position in enumerate(line_spans_starts)},
-                                {position: ngram for ngram, position in enumerate(line_spans_ends)})
+        if len(line_spans) > 0:
+            line_spans_starts, line_spans_ends = zip(*line_spans)
+            lines_spans.append(({position: ngram for ngram, position in enumerate(line_spans_starts)},
+                                    {position: ngram for ngram, position in enumerate(line_spans_ends)}))
+        else:
+            lines_spans.append(({}, {}))
 
-    sql_select_wikipedia_decisions = "SELECT `lines`.`nr`, `wikipedia_decisions`.`start`," \
-                       "`wikipedia_decisions`.`length`, `wikipedia_decisions`.`destination_title`" \
-                       "FROM `wikipedia_decisions` JOIN `lines`" \
-                       "ON `wikipedia_decisions`.`source_line_id` = `lines`.`id` WHERE `lines`.`article_id`=%s"
-    cursor.execute(sql_select_wikipedia_decisions, data_article_id)
+    sql = '''SELECT `lines`.`nr`, `wikipedia_decisions`.`start`, `wikipedia_decisions`.`length`,
+            `wikipedia_decisions`.`destination_title`, `wikipedia_decisions`.`destination_article_id`,
+            `articles`.`caption`
+            FROM `wikipedia_decisions`
+            JOIN `lines` ON `wikipedia_decisions`.`source_line_id` = `lines`.`id`
+            LEFT JOIN `articles` ON `wikipedia_decisions`.`destination_article_id` = `articles`.`id`
+            WHERE `lines`.`article_id`=%s'''
+    cursor.execute(sql, data)
 
     decisions = []
     for row in cursor:
         line_nr = row['nr']
+        try:
+            caption = row['caption'].decode('utf-8')
+        except AttributeError:
+            caption = None
         line_starts, line_ends = lines_spans[line_nr]
-        start_ngram = line_starts[row['start']]
-        end_ngram = line_ends[row['start']+row['length']]
-        decision = {
-            'line': row['nr'],
-            'destination': row['destination_title'],
-            'start': start_ngram,
-            'ngrams': end_ngram-start_ngram+1
-        }
-
-        decisions.append(decision)
+        try:
+            start_ngram = line_starts[row['start']]
+            end_ngram = line_ends[row['start']+row['length']]
+            decision = {
+                'line': row['nr'],
+                'destination_title': row['destination_title'],
+                'destination_article_id': row['destination_article_id'],
+                'destination_caption': caption,
+                'start': start_ngram,
+                'ngrams': end_ngram-start_ngram+1
+            }
+            decisions.append(decision)
+        except KeyError:
+            pass
 
     cursor.close()
     return decisions

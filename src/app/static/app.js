@@ -54,35 +54,6 @@ class Index extends App {
                 });
         });
 
-        // document.querySelector("#wikipediadecisions-form").addEventListener("submit", event => {
-        //     event.preventDefault();
-        //     const article = document.querySelector("article");
-        //     const articleId = that.url.searchParams.get('article');
-        //     const requestUrl = that.requestUrl('/api/wikipediaDecisions/' + articleId)
-        //     fetch(requestUrl, {
-        //         method: 'GET'
-        //     })
-        //         .then(response => response.json())
-        //         .then(result => {
-        //             console.log(result);
-        //             result.forEach(label => {
-        //                 const line = article.querySelectorAll("p")[label.line];
-        //                 let span = line.querySelectorAll("span.ngram")[label.start];
-        //                 const showBorder = [span];
-        //                 // collect spans which should be bordered
-        //                 for (let i = 1; i < label.ngrams; i++) {
-        //                     span = span.nextSibling;  // space node
-        //                     showBorder.push(span)
-        //                     span = span.nextSibling; // next token
-        //                     showBorder.push(span)
-        //                 }
-        //                 showBorder.forEach(span => {
-        //                     span.style.backgroundColor = "red";
-        //                 });
-        //             });
-        //         });
-        // });
-
         algorithmForm.addEventListener("submit", event => {
             event.preventDefault();
             const formData = new FormData(algorithmForm);
@@ -320,6 +291,35 @@ class Index extends App {
                 space.append(spaceContent);
             });
             article.append(p);
+        });
+
+        //apply wikipedia decisions
+        result.wikipedia_decisions.forEach(decision => {
+            const line = article.querySelectorAll("p")[decision.line];
+            let span = line.querySelectorAll("span.ngram")[decision.start];
+            const showBorder = [span];
+            // collect spans which should be bordered
+            for (let i = 1; i < decision.ngrams; i++) {
+                span = span.nextSibling;  // space node
+                showBorder.push(span)
+                span = span.nextSibling; // next token
+                showBorder.push(span)
+            }
+            showBorder.forEach(span => {
+                if (decision.destination_article_id == null) {
+                    span.classList.add('wikipedia-link-red');
+                } else {
+                    span.classList.add('wikipedia-link-blue');
+                    let tooltip = '';
+                    if (decision.destination_caption) {
+                        tooltip += '<p>' + decision.destination_caption + '</p>';
+                    } else {
+                        tooltip += '<p><i>no caption</i></p>';
+                    }
+                    span.title = tooltip;
+                    span.dataset.bsToggle = "tooltip";
+                }
+            });
         });
         return result;
     }

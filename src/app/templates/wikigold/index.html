@@ -76,6 +76,14 @@
     .ngram-popover-5 {
         border-color: var(--ngram-color-5);
     }
+
+    .wikipedia-link-red {
+        background-color: rgba(255,0,0,0.3);
+    }
+
+    .wikipedia-link-blue {
+        background-color: rgba(0,0,255,0.3);
+    }
 </style>
 {% endblock %}
 
@@ -98,20 +106,13 @@
                         {% endfor %}
                       </select>
                 </div>
-                  <div class="row mb-2">
-                      <div class="col-auto">
-                        <label for="title" class="col-form-label">Title</label>
+                <div class="row mb-2">
+                    <div class="col-auto">
+                      <label for="title" class="col-form-label">Title</label>
+                    </div>
+                    <div class="col-auto">
+                      <input class="form-control" name="title" id="title">
                       </div>
-                      <div class="col-auto">
-                        <input class="form-control" name="title" id="title">
-                      </div>
-                  </div>
-                  <div class="form-check mb-2">
-                      <input class="form-check-input" type="checkbox" name="wikipedia_decisions" value="1"
-                             id="wikipedia_decisions">
-                      <label class="form-check-label" for="wikipedia_decisions">
-                        Wikipedia decisions
-                      </label>
                   </div>
               <button class="btn btn-outline-success" type="submit">Load content</button>
               </form>

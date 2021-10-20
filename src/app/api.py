@@ -56,7 +56,7 @@ def get_article(id):
         abort(404)
 
     article['lines'] = get_lines(id)
-    # article['wikipedia_decisions'] = get_wikipedia_decisions(id)
+    article['wikipedia_decisions'] = get_wikipedia_decisions(id)
 
     return jsonify(article)
 
