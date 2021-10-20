@@ -270,10 +270,12 @@ class Index extends App {
             const p = document.createElement("p");
             line.forEach(token => {
                 let span = document.createElement("span");
+                span.classList.add("top-level");
                 span.classList.add("ngram");
                 p.append(span);
 
                 let space = document.createElement("span");
+                space.classList.add("top-level");
                 p.append(space);
 
                 for (let i = 0; i < that.maxNgrams; i++) {
@@ -306,19 +308,21 @@ class Index extends App {
                 showBorder.push(span)
             }
             showBorder.forEach(span => {
+                let tooltip = '';
                 if (decision.destination_article_id == null) {
+                    tooltip += '<p>Links to: '+decision.destination_title+'</p>';
                     span.classList.add('wikipedia-link-red');
                 } else {
                     span.classList.add('wikipedia-link-blue');
-                    let tooltip = '';
                     if (decision.destination_caption) {
+                        tooltip += '<p>Links to: '+decision.destination_title+'</p>';
                         tooltip += '<p>' + decision.destination_caption + '</p>';
                     } else {
                         tooltip += '<p><i>no caption</i></p>';
                     }
-                    span.title = tooltip;
-                    span.dataset.bsToggle = "tooltip";
                 }
+                span.title = tooltip;
+                span.dataset.bsToggle = "tooltip";
             });
         });
         return result;
@@ -360,7 +364,7 @@ class Index extends App {
                 });
 
                 // remove old links
-                article.querySelectorAll("span:not(.ngram) ").forEach(span => {
+                article.querySelectorAll("span:not(.top-level) ").forEach(span => {
                     span.className = "";
                     // remove events
                     span.replaceWith(span.cloneNode(true));
@@ -449,12 +453,12 @@ class Index extends App {
 
                         // only one popover at time - stop event propagation
                         span.addEventListener('click', event => {
-                            event.stopPropagation();
-                            if (that.previousPopover) {
-                                that.previousPopover.hide();
-                            }
                             // check if ngram is active
                             if (span.classList.contains('ngram-link') && !span.classList.contains('ngram-link-covered')) {
+                                event.stopPropagation();
+                                if (that.previousPopover) {
+                                    that.previousPopover.hide();
+                                }
                                 popover.show();
                                 that.previousPopover = popover;
                             }
