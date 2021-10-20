@@ -88,9 +88,10 @@ def post_decision():
 
     content = request.get_json()
 
-    algorithm_normalized_json_key, _ = normalize_algorithm_json(content['algorithm'])
+    algorithm_normalized_json_key, algorithm_normalized_json = normalize_algorithm_json(content['algorithm'])
     user_id = g.user['id']
     article_id = int(content['source_article_id'])
+    knowledge_base_id = algorithm_normalized_json['knowledge_base']
     source_line_nr = int(content['source_line_nr'])
     start = int(content['start'])
     length = int(content['length'])
@@ -101,14 +102,14 @@ def post_decision():
     cursor = db.cursor(dictionary=True)
 
     # check if EDL exists
-    sql_select_edl = "SELECT `id` FROM `edls` WHERE `algorithm`=%s AND `user_id`=%s AND `article_id`=%s"
-    data_edl = (algorithm_normalized_json_key, user_id, article_id)
+    sql_select_edl = "SELECT `id` FROM `edls` WHERE `algorithm`=%s AND `user_id`=%s AND `article_id`=%s AND `knowledge_base_id`=%s"
+    data_edl = (algorithm_normalized_json_key, user_id, article_id, knowledge_base_id)
     cursor.execute(sql_select_edl, data_edl)
     edl = cursor.fetchone()
 
     if edl is None:
         # create new EDL
-        sql_insert_edl = "INSERT INTO `edls` (algorithm, user_id, article_id, `timestamp`) VALUES (%s, %s, %s, %s)"
+        sql_insert_edl = "INSERT INTO `edls` (algorithm, user_id, article_id, `knowledge_base_id`, `timestamp`) VALUES (%s, %s, %s, %s, %s)"
         data_edl += (datetime.now().isoformat(), )
         cursor.execute(sql_insert_edl, data_edl)
         edl_id = cursor.lastrowid
