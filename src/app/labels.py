@@ -4,7 +4,6 @@ from app.db import get_db
 from flask import current_app, g
 from nltk.corpus import stopwords
 
-from app.dbconfig import get_dbconfig
 from app.helper import get_lines
 
 

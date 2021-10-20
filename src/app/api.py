@@ -6,7 +6,6 @@ from flask import (
 )
 
 from app.db import get_db
-from app.dbconfig import get_dbconfig
 from app.helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions
 from app.labels import get_labels_exact
 
@@ -22,10 +21,7 @@ def search_article():
 
     cursor = db.cursor(dictionary=True)
 
-    if 'article_source' in request.args:
-        dump_id = request.args['article_source']
-    else:
-        dump_id = get_dbconfig('currentdump')
+    dump_id = int(request.args['article_source'])
 
     sql = 'SELECT `id` FROM `articles` WHERE `title`=%s AND `dump_id`=%s'
     data = (request.args['title'], dump_id)
