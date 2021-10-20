@@ -116,7 +116,9 @@ def get_user_decisions(article_id, algorithm_normalized_json_key):
 def normalize_algorithm_json(algorithm):
     algorithm_parsed = json.loads(algorithm)
 
-    if algorithm_parsed['algorithm'] == 'exact':
+    algorithm_parsed['knowledge_base'] = int(algorithm_parsed['knowledge_base'])
+
+    if algorithm_parsed['retrieval'] == 'exact':
         if 'skipstopwords' not in algorithm_parsed:
             algorithm_parsed['skipstopwords'] = False
         else:

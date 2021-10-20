@@ -53,12 +53,7 @@ def get_label_titles_dict(dump_id):
 def get_labels_exact(article_id, algorithm_normalized_json):
     lines = get_lines(article_id)
 
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    sql = 'SELECT `dump_id` FROM `articles` WHERE `id`=%s'
-    data = (article_id,)
-    cursor.execute(sql, data)
-    dump_id = cursor.fetchone()['dump_id']
+    dump_id = algorithm_normalized_json['knowledge_base']
 
     label_titles_dict = get_label_titles_dict(dump_id)
     stops = set(stopwords.words('english'))

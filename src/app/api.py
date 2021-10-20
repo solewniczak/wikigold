@@ -64,14 +64,14 @@ def get_article(id):
 @bp.route('/candidateLabels/<int:article_id>', methods=('GET',))
 def get_candidate_labels(article_id):
     if 'algorithm' not in request.args:
-        abort(400, "algorithm not given")
+        abort(400, "retrieval algorithm not given")
 
     algorithm_normalized_json_key, algorithm_normalized_json = normalize_algorithm_json(request.args['algorithm'])
 
-    if algorithm_normalized_json['algorithm'] == 'exact':
+    if algorithm_normalized_json['retrieval'] == 'exact':
         labels = get_labels_exact(article_id, algorithm_normalized_json)
     else:
-        abort(400, "unknown algorithm")
+        abort(400, "unknown retrieval algorithm")
 
     # apply saved decisions
     decisions_dict = get_user_decisions(article_id, algorithm_normalized_json_key)
