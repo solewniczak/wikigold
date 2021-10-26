@@ -1,10 +1,10 @@
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 
-from app.db import get_db
+from .db import get_db
 from flask import current_app, g
 from nltk.corpus import stopwords
 
-from app.helper import get_lines
+from .helper import get_lines
 
 
 def get_label_titles_dict(dump_id):

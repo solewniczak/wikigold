@@ -12,10 +12,9 @@ import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 
-from app.db import get_db
-from app.mediawikixml import MediaWikiXml, iterate_xml_dump, normalize_title
+from .db import get_db
+from .mediawikixml import MediaWikiXml, iterate_xml_dump, normalize_title
 
-import mwparserfromhelllinks
 import mwparallelparser
 
 
@@ -24,13 +23,11 @@ import mwparallelparser
 @click.argument('dump_date')
 @click.option('-e', '--early-stopping', type=int, default=-1, help='Stop dump parsing after -e articles. -1 means no '
                                                                    'early stopping.')
-@click.option('-p', '--parser', type=click.Choice(['MwParallelParser', 'MwParserFromHellLinks'], case_sensitive=False),
-              default='MwParserFromHellLinks')
 @click.option('-m', '--mirror', default='http://dumps.wikimedia.org')
 @click.option('--download/--no-download', default=False)
 @click.option('--decompress/--no-decompress', default=False)
 @with_appcontext
-def import_dump_command(lang, dump_date, early_stopping, parser, mirror, download, decompress):
+def import_dump_command(lang, dump_date, early_stopping, mirror, download, decompress):
 
     mirror = mirror.rstrip('/')
 
@@ -121,13 +118,8 @@ def import_dump_command(lang, dump_date, early_stopping, parser, mirror, downloa
     db = get_db()
     cursor = db.cursor()
 
-    if parser == 'MwParallelParser':
-        parser = mwparallelparser.Parser()
-    elif parser == 'MwParserFromHellLinks':
-        parser = mwparserfromhelllinks.Parser()
-
     dump = xml_dump_stream()
-    mediawikixml = MediaWikiXml(dump, metadata, parser)
+    mediawikixml = MediaWikiXml(dump, metadata)
 
     sql_charter_maximum_length = '''SELECT character_maximum_length FROM information_schema.columns 
                                     WHERE table_name = %s AND column_name = %s'''
@@ -140,11 +132,12 @@ def import_dump_command(lang, dump_date, early_stopping, parser, mirror, downloa
     cursor.execute(sql_charter_maximum_length, ('labels', 'label'))
     label_maximum_length = cursor.fetchone()[0]
 
+    parser_name = mwparallelparser.__name__
+    parser_version = mwparallelparser.__version__
     sql_add_dump = "INSERT INTO dumps (`lang`, `date`, `parser_name`, `parser_version`, `timestamp`) VALUES (%s, %s, %s, %s, %s)"
-    data_dump = (lang, dump_date, parser.name, parser.version, datetime.now().isoformat())
+    data_dump = (lang, dump_date, parser_name, parser_version, datetime.now().isoformat())
     cursor.execute(sql_add_dump, data_dump)
     dump_id = cursor.lastrowid
-
 
     sql_add_article = "INSERT INTO `articles` (`title`, `caption`, `dump_id`) VALUES (%s, %s, %s)"
     sql_add_article_redirect = "INSERT INTO `articles` (`title`, `redirect_to_title`, `dump_id`) VALUES (%s, %s, %s)"
@@ -230,7 +223,6 @@ def import_dump_command(lang, dump_date, early_stopping, parser, mirror, downloa
         else:
             data_wikipedia_decision = (source_line_id, link['start'], link['length'], destination_title, destination_article_id)
             cursor.execute(sql_add_wikipedia_decision, data_wikipedia_decision)
-
 
     # update article counters
     sql_update_article_counter = "UPDATE `articles` SET `counter`=%s WHERE `title`=%s AND `dump_id`=%s"

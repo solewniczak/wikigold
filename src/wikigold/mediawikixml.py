@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 
+from mwparallelparser import Parser
 from tqdm import tqdm
 
 
@@ -34,11 +35,9 @@ def iterate_xml_dump(source, tags):
 
 
 class MediaWikiXml:
-    def __init__(self, source, metadata, parser):
+    def __init__(self, source, metadata):
         self._source = source
         self._metadata = metadata
-
-        self._parser = parser
 
         self.links_labels = Counter()
         self.link_titles = defaultdict(Counter)
@@ -53,6 +52,7 @@ class MediaWikiXml:
         else:
             pages_to_process = min(len(titles_in_ns0), early_stopping)
 
+        parser = Parser()
         with tqdm(total=pages_to_process) as pbar:
             for tag in iterate_xml_dump(self._source, ('ns', 'redirect', 'title', 'revision/text')):
                 ns = tag['ns'].text.strip()
@@ -66,7 +66,7 @@ class MediaWikiXml:
                         title = normalize_title(title)
                         wikitext = tag['revision/text'].text
                         try:
-                            wikitext_parsed = self._parser.parse(wikitext)
+                            wikitext_parsed = parser.parse(wikitext)
                             lines = wikitext_parsed['lines']
                             for link in wikitext_parsed['links']:
                                 link['source'] = title  # add the source for a link

@@ -6,13 +6,6 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
-CREATE TABLE `config` (
-    `key` VARCHAR(255) NOT NULL,
-    `value` VARCHAR(255) NOT NULL,
-    `type` VARCHAR(10) NOT NULL DEFAULT 'string',
-    PRIMARY KEY (`key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
 CREATE TABLE `dumps` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `lang` CHAR(10) NOT NULL,
@@ -31,8 +24,8 @@ CREATE TABLE `articles` (
     `redirect_to_id` INT UNSIGNED NULL,
     `dump_id` INT UNSIGNED NULL,
     `counter` INT UNSIGNED NOT NULL DEFAULT 0,
-    FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`),
-    FOREIGN KEY (`redirect_to_id`) REFERENCES `articles` (`id`),
+    FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`redirect_to_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -43,7 +36,7 @@ CREATE TABLE `lines` (
     `nr` INT UNSIGNED NOT NULL,
     `content` LONGTEXT NOT NULL,
     `article_id` INT UNSIGNED NOT NULL,
-    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
+    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -54,9 +47,9 @@ CREATE TABLE `edls` (
     `user_id` INT UNSIGNED NOT NULL,
     `article_id` INT UNSIGNED NOT NULL,
     `knowledge_base_id` INT UNSIGNED NOT NULL,
-    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
-    FOREIGN KEY (`knowledge_base_id`) REFERENCES `dumps`(`id`),
-    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`knowledge_base_id`) REFERENCES `dumps`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -67,9 +60,9 @@ CREATE TABLE `decisions` (
     `start` INT UNSIGNED NOT NULL,
     `length` INT UNSIGNED NOT NULL,
     `destination_article_id` INT UNSIGNED NULL,
-    FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`),
+    FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`edl_id`) REFERENCES `edls` (`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`),
+    FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -80,8 +73,8 @@ CREATE TABLE `wikipedia_decisions` (
     `length` INT UNSIGNED NOT NULL,
     `destination_title` VARCHAR(255) NOT NULL,
     `destination_article_id` INT UNSIGNED NULL,
-    FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`),
-    FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`),
+    FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -90,7 +83,7 @@ CREATE TABLE `labels` (
     `label` VARCHAR(255) NOT NULL,
     `dump_id` INT UNSIGNED NULL,
     `counter` INT UNSIGNED NOT NULL DEFAULT 0,
-    FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`),
+    FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`) ON DELETE CASCADE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -100,7 +93,7 @@ CREATE TABLE `labels_articles` (
     `title` VARCHAR(255) NOT NULL,
     `article_id` INT UNSIGNED NULL,  # we can have links to not existing articles
     `counter` INT UNSIGNED NOT NULL DEFAULT 0,
-    FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`),
-    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
+    FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;

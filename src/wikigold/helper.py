@@ -5,7 +5,7 @@ from flask import g
 from nltk.tokenize.treebank import TreebankWordTokenizer
 from nltk.tokenize.punkt import PunktSentenceTokenizer
 
-from app.db import get_db
+from .db import get_db
 
 
 def get_lines(article_id):

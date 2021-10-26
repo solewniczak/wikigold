@@ -1,2 +1,0 @@
-Link labels are not always textual (eg. https://simple.wikipedia.org/wiki/Peter_and_the_Wolf). Current version of parser
-convert them to text links with empty labels: [[flute|<socre>...</score>]] becomes [[flute|]].

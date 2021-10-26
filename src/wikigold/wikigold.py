@@ -7,8 +7,8 @@ from flask import (
 )
 from werkzeug.exceptions import abort
 
-from app.auth import login_required
-from app.db import get_db
+from .auth import login_required
+from .db import get_db
 
 bp = Blueprint('wikigold', __name__)
 

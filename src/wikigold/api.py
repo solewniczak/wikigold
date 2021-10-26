@@ -5,9 +5,9 @@ from flask import (
     Blueprint, g, jsonify, request, abort, url_for, redirect
 )
 
-from app.db import get_db
-from app.helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions
-from app.labels import get_labels_exact
+from .db import get_db
+from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions
+from .labels import get_labels_exact
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 

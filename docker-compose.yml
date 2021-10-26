@@ -1,9 +1,9 @@
 version: "3.7"
 services:
-  flask:
+  wikigold:
     build: .
     environment:
-      - FLASK_APP=app
+      - FLASK_APP=wikigold
       - FLASK_ENV=development
       - SECRET_KEY=dev
       - MYSQL_HOST=db
@@ -19,7 +19,7 @@ services:
   db:
     image: mariadb:10.6.2
     ports:
-      - 3306:3306
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: changeme
     volumes:
