@@ -242,15 +242,6 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
             data_article = (caption, redirect_to_id, article_id)
             cursor.execute(sql_update_article_redirect, data_article)
 
-    # save dump_id in config
-    sql_select_currentdump = "SELECT `value` FROM `config` WHERE `key`='currentdump'"
-    cursor.execute(sql_select_currentdump)
-    currentdump = cursor.fetchone()
-    if currentdump is None:
-        sql_insert_currentdump = "INSERT INTO `config` (`key`, `value`, `type`) VALUES ('currentdump', %s, 'int')"
-        data_config = (dump_id, )
-        cursor.execute(sql_insert_currentdump, data_config)
-
     db.commit()
     cursor.close()
     dump.close()
