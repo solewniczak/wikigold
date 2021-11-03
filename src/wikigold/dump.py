@@ -171,8 +171,13 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
                 # dict_lines_ids[(title, line_nr)] = line_id
                 if line_nr in wikipedia_decisions:
                     for link in wikipedia_decisions[line_nr]:
-                        data_wikipedia_decision = (line_id, link['start'], link['length'], link['destination'], dump_id)
-                        cursor.execute(sql_add_wikipedia_decision, data_wikipedia_decision)
+                        destination_title = link['destination']
+                        if len(destination_title) > title_maximum_length:
+                            print(f"destination title: '{destination_title[:title_maximum_length]}...' "
+                                f"exceeds maximum title length ({title_maximum_length}). skipping")
+                        else:
+                            data_wikipedia_decision = (line_id, link['start'], link['length'], link['destination'], dump_id)
+                            cursor.execute(sql_add_wikipedia_decision, data_wikipedia_decision)
 
         else:
             data_article = (title, redirect_to, dump_id)
