@@ -142,11 +142,11 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
     sql_add_article = "INSERT INTO `articles` (`title`, `caption`, `dump_id`) VALUES (%s, %s, %s)"
     sql_add_article_redirect = "INSERT INTO `articles` (`title`, `redirect_to_title`, `dump_id`) VALUES (%s, %s, %s)"
     dict_articles_ids = {}
-    dict_articles_captions = {}
-    dict_redirect_articles = {}
-    dict_lines_ids = {}
+
     sql_add_line = "INSERT INTO `lines` (`article_id`, `nr`, `content`) VALUES (%s, %s, %s)"
-    for title, lines, redirect_to in mediawikixml.parse(early_stopping=early_stopping):
+    sql_add_wikipedia_decision = '''INSERT INTO `wikipedia_decisions`
+    (`source_line_id`, `start`, `length`, `destination_title`, `dump_id`) VALUES (%s, %s, %s, %s, %s)'''
+    for title, lines, redirect_to, wikipedia_decisions in mediawikixml.parse(early_stopping=early_stopping):
         if len(title) > title_maximum_length:
             print(f"title: '{title[:title_maximum_length]}...' exceeds maximum title length ({title_maximum_length}). skipping")
             continue
@@ -160,7 +160,7 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
             cursor.execute(sql_add_article, data_article)
             article_id = cursor.lastrowid
             dict_articles_ids[title] = article_id
-            dict_articles_captions[title] = caption
+
             for line_nr, content in enumerate(lines):
                 if len(content) > line_content_maximum_length:
                     print(f"line: {title}({line_nr}): '{content[:50]}...' exceeds maximum line length ({line_content_maximum_length}). skipping")
@@ -168,13 +168,17 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
                 data_line = (article_id, line_nr, content)
                 cursor.execute(sql_add_line, data_line)
                 line_id = cursor.lastrowid
-                dict_lines_ids[(title, line_nr)] = line_id
+                # dict_lines_ids[(title, line_nr)] = line_id
+                if line_nr in wikipedia_decisions:
+                    for link in wikipedia_decisions[line_nr]:
+                        data_wikipedia_decision = (line_id, link['start'], link['length'], link['destination'], dump_id)
+                        cursor.execute(sql_add_wikipedia_decision, data_wikipedia_decision)
+
         else:
             data_article = (title, redirect_to, dump_id)
             cursor.execute(sql_add_article_redirect, data_article)
             article_id = cursor.lastrowid
             dict_articles_ids[title] = article_id
-            dict_redirect_articles[article_id] = redirect_to
 
     # save labels
     sql_add_label = "INSERT INTO `labels` (`label`, `dump_id`, `counter`) VALUES (%s, %s, %s)"
@@ -204,25 +208,14 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
             except KeyError:
                 print(f'save label_titles: there is no label: {label} in database')
 
-    sql_add_wikipedia_decision = '''INSERT INTO `wikipedia_decisions`
-    (`source_line_id`, `start`, `length`, `destination_title`, `destination_article_id`) VALUES (%s, %s, %s, %s, %s)'''
-    for link in mediawikixml.wikipedia_decisions:
-        if (link['source'], link['line']) not in dict_lines_ids:
-            print(f'there is not line for {link["source"]}:{link["line"]}')
-            continue
-        source_line_id = dict_lines_ids[(link['source'], link['line'])]
-        destination_title = link['destination']
-        if link['destination'] in dict_articles_ids:
-            destination_article_id = dict_articles_ids[link['destination']]
-        else:
-            destination_article_id = None
-            # print(f'cannot find destination article id for title: {destination_title}')
-        if len(destination_title) > title_maximum_length:
-            print(
-                f"destination title: '{destination_title[:title_maximum_length]}...' exceeds maximum title length ({title_maximum_length}). skipping")
-        else:
-            data_wikipedia_decision = (source_line_id, link['start'], link['length'], destination_title, destination_article_id)
-            cursor.execute(sql_add_wikipedia_decision, data_wikipedia_decision)
+    # update wikipedia_decisions ids
+    sql_update_wikipedia_decisions = '''
+    UPDATE `wikipedia_decisions`, `articles`
+        SET `wikipedia_decisions`.`destination_article_id` = `articles`.`id`
+        WHERE `wikipedia_decisions`.`dump_id`=%s AND `articles`.`dump_id`=%s
+        AND `wikipedia_decisions`.`destination_title`=`articles`.`title`'''
+    data_wikipedia_decisions = (dump_id, dump_id)
+    cursor.execute(sql_update_wikipedia_decisions, data_wikipedia_decisions)
 
     # update article counters
     sql_update_article_counter = "UPDATE `articles` SET `counter`=%s WHERE `title`=%s AND `dump_id`=%s"
@@ -231,16 +224,14 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
         cursor.execute(sql_update_article_counter, data_article)
 
     # update redirect articles
-    sql_update_article_redirect = "UPDATE `articles` SET `caption`=%s, `redirect_to_id`=%s WHERE `id`=%s"
-    for article_id, redirect_to_title in dict_redirect_articles.items():
-        if redirect_to_title in dict_articles_ids:
-            try:
-                caption = dict_articles_captions[redirect_to_title]
-            except KeyError:
-                caption = None
-            redirect_to_id = dict_articles_ids[redirect_to_title]
-            data_article = (caption, redirect_to_id, article_id)
-            cursor.execute(sql_update_article_redirect, data_article)
+    sql_update_article_redirect = '''
+    UPDATE `articles` `a1`, `articles` `a2`
+        SET `a1`.`caption`=`a2`.`caption`, `a1`.`redirect_to_id`=`a2`.`id`
+        WHERE `a1`.`dump_id`=%s AND `a2`.`dump_id`=%s
+        AND `a1`.`redirect_to_title` IS NOT NULL
+        AND `a1`.`redirect_to_title`=`a2`.`title`'''
+    data_article_redirect = (dump_id, dump_id)
+    cursor.execute(sql_update_article_redirect, data_article_redirect)
 
     db.commit()
     cursor.close()

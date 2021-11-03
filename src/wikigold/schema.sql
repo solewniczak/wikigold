@@ -73,8 +73,10 @@ CREATE TABLE `wikipedia_decisions` (
     `length` INT UNSIGNED NOT NULL,
     `destination_title` VARCHAR(255) NOT NULL,
     `destination_article_id` INT UNSIGNED NULL,
+    `dump_id` INT UNSIGNED NULL,
     FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`) ON DELETE CASCADE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
