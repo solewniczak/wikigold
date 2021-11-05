@@ -102,4 +102,5 @@ CREATE TABLE `wikipedia_decisions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE INDEX articles_ix_title ON articles(title);
+
 CREATE INDEX labels_ix_label ON labels(label);
