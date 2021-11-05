@@ -65,7 +65,7 @@ class MediaWikiXml:
                         title = tag['title'].text
                         title = normalize_title(title)
                         wikitext = tag['revision/text'].text
-                        wikipedia_decisions = defaultdict(list) # line: links: []
+                        wikipedia_decisions = defaultdict(list)  # line: [link]
                         try:
                             wikitext_parsed = parser.parse(wikitext)
                             lines = wikitext_parsed['lines']
@@ -73,20 +73,23 @@ class MediaWikiXml:
                                 if parallel_tag['type'] == 'link':
                                     destination = normalize_title(parallel_tag['attributes']['destination'])
                                     line = parallel_tag['spans'][0]['line']
+                                    start = parallel_tag['spans'][0]['start']
+                                    length = parallel_tag['spans'][0]['length']
+                                    label = lines[line][start:start + length]
                                     link = {
                                         'source': title,
                                         'destination': destination,
                                         'line': line,
-                                        'start': parallel_tag['spans'][0]['start'],
-                                        'length': parallel_tag['spans'][0]['length'],
+                                        'start': start,
+                                        'length': length,
+                                        'label': label
                                     }
                                     wikipedia_decisions[line].append(link)
 
-                                    if link['destination'] in titles_in_ns0:
-                                        link_label = lines[link['line']][link['start']:link['start'] + link['length']]
-                                        self.links_labels[link_label] += 1
-                                        self.link_titles[link_label][link['destination']] += 1
-                                        self.links_titles_freq[link['destination']] += 1
+                                    # if link['destination'] in titles_in_ns0:
+                                    #     self.links_labels[link_label] += 1
+                                    #     self.link_titles[link_label][link['destination']] += 1
+                                    #     self.links_titles_freq[link['destination']] += 1
                             yield title, lines, None, wikipedia_decisions
                         except Exception as e:
                             print(f'cannot parse: {title}. skipping ...')

@@ -1,5 +1,6 @@
 import bz2
 import json
+import sys
 from datetime import datetime
 import os.path
 from bz2 import BZ2Decompressor
@@ -141,14 +142,13 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
 
     sql_add_article = "INSERT INTO `articles` (`title`, `caption`, `dump_id`) VALUES (%s, %s, %s)"
     sql_add_article_redirect = "INSERT INTO `articles` (`title`, `redirect_to_title`, `dump_id`) VALUES (%s, %s, %s)"
-    dict_articles_ids = {}
 
     sql_add_line = "INSERT INTO `lines` (`article_id`, `nr`, `content`) VALUES (%s, %s, %s)"
     sql_add_wikipedia_decision = '''INSERT INTO `wikipedia_decisions`
-    (`source_line_id`, `start`, `length`, `destination_title`, `dump_id`) VALUES (%s, %s, %s, %s, %s)'''
+    (`source_line_id`, `start`, `length`, `label`, `destination_title`, `dump_id`) VALUES (%s, %s, %s, %s, %s, %s)'''
     for title, lines, redirect_to, wikipedia_decisions in mediawikixml.parse(early_stopping=early_stopping):
         if len(title) > title_maximum_length:
-            print(f"title: '{title[:title_maximum_length]}...' exceeds maximum title length ({title_maximum_length}). skipping")
+            print(f"title '{title[:title_maximum_length]}...' exceeds maximum length ({title_maximum_length})")
             continue
 
         if redirect_to is None:
@@ -159,84 +159,78 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
             data_article = (title, caption, dump_id)
             cursor.execute(sql_add_article, data_article)
             article_id = cursor.lastrowid
-            dict_articles_ids[title] = article_id
 
             for line_nr, content in enumerate(lines):
                 if len(content) > line_content_maximum_length:
-                    print(f"line: {title}({line_nr}): '{content[:50]}...' exceeds maximum line length ({line_content_maximum_length}). skipping")
+                    print(f"line {title}({line_nr}): '{content[:50]}...' exceeds maximum length ({line_content_maximum_length})")
                     continue
                 data_line = (article_id, line_nr, content)
                 cursor.execute(sql_add_line, data_line)
                 line_id = cursor.lastrowid
-                # dict_lines_ids[(title, line_nr)] = line_id
                 if line_nr in wikipedia_decisions:
                     for link in wikipedia_decisions[line_nr]:
+                        label = link['label']
+                        if len(label) > label_maximum_length:
+                            print(f"label {label} in {title}({line_nr}): '{label[:label_maximum_length]}...' "
+                                f"exceeds length ({label_maximum_length})")
+                            continue
                         destination_title = link['destination']
                         if len(destination_title) > title_maximum_length:
                             print(f"destination title: '{destination_title[:title_maximum_length]}...' "
-                                f"exceeds maximum title length ({title_maximum_length}). skipping")
+                                f"exceeds maximum length ({title_maximum_length})")
                         else:
-                            data_wikipedia_decision = (line_id, link['start'], link['length'], link['destination'], dump_id)
+                            data_wikipedia_decision = (line_id, link['start'], link['length'], link['label'],
+                                                       link['destination'], dump_id)
                             cursor.execute(sql_add_wikipedia_decision, data_wikipedia_decision)
 
         else:
             data_article = (title, redirect_to, dump_id)
             cursor.execute(sql_add_article_redirect, data_article)
-            article_id = cursor.lastrowid
-            dict_articles_ids[title] = article_id
 
     # save labels
-    sql_add_label = "INSERT INTO `labels` (`label`, `dump_id`, `counter`) VALUES (%s, %s, %s)"
-    dict_labels_ids = {}
-    for label, counter in mediawikixml.links_labels.items():
-        if len(label) > label_maximum_length:
-            print(
-                f"save labels: label {label[:label_maximum_length]}...' exceeds maximum label length ({label_maximum_length}). skipping")
-            continue
+    sql_create_labels = '''INSERT INTO `labels` (`label`, `dump_id`, `counter`)
+                            SELECT `label`, `dump_id`, COUNT(*) FROM `wikipedia_decisions` WHERE `dump_id`=%s GROUP BY `label`'''
+    cursor.execute(sql_create_labels, (dump_id, ))
 
-        data_label = (label, dump_id, counter)
-        cursor.execute(sql_add_label, data_label)
-        label_id = cursor.lastrowid
-        dict_labels_ids[label] = label_id
-
-    # save labels_titles
-    sql_add_label_article = "INSERT INTO `labels_articles` (`label_id`, `title`, `article_id`, `counter`) VALUES (%s, %s, %s, %s)"
-    for label, titles in mediawikixml.link_titles.items():
-        for title, counter in titles.items():
-            article_id = None
-            if title in dict_articles_ids:
-                article_id = dict_articles_ids[title]
-
-            try:
-                data_label_article = (dict_labels_ids[label], title, article_id, counter)
-                cursor.execute(sql_add_label_article, data_label_article)
-            except KeyError:
-                print(f'save label_titles: there is no label: {label} in database')
-
-    # update wikipedia_decisions ids
+    # update wikipedia_decisions destination_id
     sql_update_wikipedia_decisions = '''
-    UPDATE `wikipedia_decisions`, `articles`
+    UPDATE `wikipedia_decisions` INNER JOIN `articles` ON `wikipedia_decisions`.`destination_title`=`articles`.`title`
         SET `wikipedia_decisions`.`destination_article_id` = `articles`.`id`
-        WHERE `wikipedia_decisions`.`dump_id`=%s AND `articles`.`dump_id`=%s
-        AND `wikipedia_decisions`.`destination_title`=`articles`.`title`'''
-    data_wikipedia_decisions = (dump_id, dump_id)
-    cursor.execute(sql_update_wikipedia_decisions, data_wikipedia_decisions)
+        WHERE `wikipedia_decisions`.`dump_id`=%s AND `articles`.`dump_id`=%s'''
+    cursor.execute(sql_update_wikipedia_decisions, (dump_id, dump_id))
 
-    # update article counters
-    sql_update_article_counter = "UPDATE `articles` SET `counter`=%s WHERE `title`=%s AND `dump_id`=%s"
-    for title, counter in mediawikixml.links_titles_freq.items():
-        data_article = (counter, title, dump_id)
-        cursor.execute(sql_update_article_counter, data_article)
+    # update wikipedia_decisions label_id
+    sql_update_wikipedia_decisions = '''
+        UPDATE `wikipedia_decisions` INNER JOIN `labels` ON `wikipedia_decisions`.`label`=`labels`.`label`
+            SET `wikipedia_decisions`.`label_id` = `labels`.`id`
+            WHERE `wikipedia_decisions`.`dump_id`=%s AND `labels`.`dump_id`=%s'''
+    cursor.execute(sql_update_wikipedia_decisions, (dump_id, dump_id))
 
     # update redirect articles
     sql_update_article_redirect = '''
-    UPDATE `articles` `a1`, `articles` `a2`
+    UPDATE `articles` `a1` INNER JOIN `articles` `a2` ON `a1`.`redirect_to_title`=`a2`.`title`
         SET `a1`.`caption`=`a2`.`caption`, `a1`.`redirect_to_id`=`a2`.`id`
-        WHERE `a1`.`dump_id`=%s AND `a2`.`dump_id`=%s
-        AND `a1`.`redirect_to_title` IS NOT NULL
-        AND `a1`.`redirect_to_title`=`a2`.`title`'''
+        WHERE `a1`.`dump_id`=%s AND `a2`.`dump_id`=%s'''
     data_article_redirect = (dump_id, dump_id)
     cursor.execute(sql_update_article_redirect, data_article_redirect)
+
+    # update article counters
+    sql_update_article_counter = '''UPDATE `articles` INNER JOIN
+                                        (SELECT `destination_title`, COUNT(*) AS `counter` FROM `wikipedia_decisions`
+                                            WHERE `dump_id`=%s GROUP BY `destination_title`) `wd1`
+                                        ON `articles`.`title`=`wd1`.`destination_title`
+                                        SET `articles`.`counter`=`wd1`.`counter`
+                                        WHERE `articles`.`dump_id`=%s'''
+    cursor.execute(sql_update_article_counter, (dump_id, dump_id))
+
+    # save labels_articles
+    sql_create_labels_articles = '''INSERT INTO `labels_articles` (`label_id`, `title`, `article_id`, `counter`)
+                            SELECT `wd`.`label_id`, `wd`.`destination_title`, `wd`.`destination_article_id`, COUNT(*)
+                                FROM `wikipedia_decisions` `wd`
+                                WHERE `wd`.`dump_id`=%s
+                                GROUP BY `wd`.`label_id`, `wd`.`destination_title`, `wd`.`destination_article_id`'''
+    cursor.execute(sql_create_labels_articles, (dump_id,))
+
 
     db.commit()
     cursor.close()

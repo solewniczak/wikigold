@@ -29,8 +29,6 @@ CREATE TABLE `articles` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
-CREATE INDEX articles_ix_title ON articles(title);
-
 CREATE TABLE `lines` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `nr` INT UNSIGNED NOT NULL,
@@ -66,20 +64,6 @@ CREATE TABLE `decisions` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
-CREATE TABLE `wikipedia_decisions` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `source_line_id` INT UNSIGNED NOT NULL,
-    `start` INT UNSIGNED NOT NULL,
-    `length` INT UNSIGNED NOT NULL,
-    `destination_title` VARCHAR(255) NOT NULL,
-    `destination_article_id` INT UNSIGNED NULL,
-    `dump_id` INT UNSIGNED NULL,
-    FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`) ON DELETE CASCADE,
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
 CREATE TABLE `labels` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `label` VARCHAR(255) NOT NULL,
@@ -99,3 +83,23 @@ CREATE TABLE `labels_articles` (
     FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE TABLE `wikipedia_decisions` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `source_line_id` INT UNSIGNED NOT NULL,
+    `start` INT UNSIGNED NOT NULL,
+    `length` INT UNSIGNED NOT NULL,
+    `label` VARCHAR(255) NOT NULL,
+    `label_id` INT UNSIGNED NULL,
+    `destination_title` VARCHAR(255) NOT NULL,
+    `destination_article_id` INT UNSIGNED NULL,
+    `dump_id` INT UNSIGNED NULL,
+    FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`) ON DELETE CASCADE,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE INDEX articles_ix_title ON articles(title);
+CREATE INDEX labels_ix_label ON labels(label);
