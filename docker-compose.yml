@@ -18,6 +18,7 @@ services:
 
   db:
     image: mariadb:10.6.2
+    command: mysqld --innodb-buffer-pool-size=1073741824
     ports:
       - "3306:3306"
     environment:
