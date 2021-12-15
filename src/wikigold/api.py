@@ -8,6 +8,7 @@ from flask import (
 from .db import get_db
 from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions
 from .labels import get_labels_exact
+from .mediawikixml import normalize_title
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -24,7 +25,8 @@ def search_article():
     dump_id = int(request.args['article_source'])
 
     sql = 'SELECT `id` FROM `articles` WHERE `title`=%s AND `dump_id`=%s'
-    data = (request.args['title'], dump_id)
+    title = normalize_title(request.args['title'])
+    data = (title, dump_id)
     cursor.execute(sql, data)
     article = cursor.fetchone()
     cursor.close()

@@ -1,0 +1,13 @@
+loading metadata from: simplewiki-20211001-metadata.json
+parsing: Gargunnock               :  19%|█▉        | 51231/271184 [05:28<12:17, 298.37it/s]destination: '"https://books.google.com.ua/books?id=dhkIAAAAQAAJ&pg=PA183&lpg=PA183&dq=pausanias+niobe&source=bl&ots=QYh_IL3U03&sig=ACfU3U2UZm6hZMKN1nrnThbcqq5EK_iakA&hl=ru&sa=X&ved=2ahUKEwiv8J6fqsjoAhVMwsQBHYXTBQwQ6AEwBHoECAIQAQ#v%3Donepage%26q%3Dpausanias%2520niobe%2...' exceeds maximum length (255)
+parsing: Jun_Kasai                :  53%|█████▎    | 144229/271184 [11:40<06:47, 311.27it/s]cannot parse: Thameslink
+parsing: Bart_After_Dark          : 100%|██████████| 271184/271184 [19:24<00:00, 232.78it/s]
+saving labels... 49.53 s
+updating wikipedia_decisions destination_ids... 142.22 s
+updating wikipedia_decisions label_ids... 238.72 s
+updating articles redirects... 10.64 s
+updating articles counters... 58.69 s
+saving labels_articles... 64.19 s
+
+Process finished with exit code 0
+

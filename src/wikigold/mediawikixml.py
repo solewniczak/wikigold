@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 from mwparallelparser import Parser
 from tqdm import tqdm
@@ -13,7 +13,6 @@ def normalize_title(title):
 
 
 def iterate_xml_dump(source, tags):
-
     context = ET.iterparse(source, events=("start", "end"))
     context = iter(context)
     event, root = next(context)
