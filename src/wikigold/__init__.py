@@ -28,6 +28,7 @@ app.config.from_mapping(
     MYSQL_USER=os.getenv('MYSQL_USER', default='root'),
     MYSQL_PASSWORD=os.getenv('MYSQL_PASSWORD', default=''),
     MYSQL_DATABASE=os.getenv('MYSQL_DATABASE', default='wikigold'),
+    REDIS_URL = os.getenv('REDIS_URL', default='redis://localhost:6379'),
     PREFIX=os.getenv('PREFIX', default=''),
     MAX_NGRAMS=os.getenv('MAX_NGRAMS', default='5')
 )
@@ -42,6 +43,9 @@ db.init_app(app)
 
 from . import dump
 dump.init_app(app)
+
+from . import cache
+cache.init_app(app)
 
 from . import auth
 app.register_blueprint(auth.bp)
