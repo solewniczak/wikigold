@@ -1,5 +1,6 @@
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 
+from .cache import get_redis
 from .db import get_db
 from flask import current_app, g
 from nltk.corpus import stopwords
@@ -7,57 +8,67 @@ from nltk.corpus import stopwords
 from .helper import get_lines
 
 
-# def get_label_titles_dict(dump_id):
-#     if 'label_titles_dict' not in g:
-#         g.label_titles_dict = {}
-#
-#     if dump_id not in g.label_titles_dict:
-#         db = get_db()
-#         cursor = db.cursor(dictionary=True)
-#
-#         sql = '''SELECT `labels`.`label`, `labels`.`counter` AS `label_counter`,
-#                 `labels_articles`.`article_id`, `labels_articles`.`title`, `labels_articles`.`counter` AS `label_title_counter`,
-#                 `articles`.`counter` AS `article_counter`, `articles`.`caption`, `articles`.`redirect_to_title`
-#                 FROM `labels`   JOIN `labels_articles` ON `labels`.`id` = `labels_articles`.`label_id`
-#                                 JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
-#                 WHERE `labels`.`dump_id`=%s'''
-#
-#         data = (dump_id, )
-#         cursor.execute(sql, data)
-#         label_titles_dict = {}
-#         for row in cursor:
-#             title = {
-#                 'article_id': row['article_id'],
-#                 'title': row['title'],
-#                 'label_title_counter': row['label_title_counter'],
-#                 'article_counter': row['article_counter'],
-#                 'caption': row['caption'],
-#                 'redirect_to_title': row['redirect_to_title']
-#             }
-#             if title['caption'] is not None:
-#                 title['caption'] = title['caption'].decode('utf-8')
-#             if row['label'] not in label_titles_dict:
-#                 label_titles_dict[row['label']] = {
-#                     'counter': row['label_counter'],
-#                     'titles': [title]
-#                 }
-#             else:
-#                 label_titles_dict[row['label']]['titles'].append(title)
-#         cursor.close()
-#         g.label_titles_dict[dump_id] = label_titles_dict
-#
-#     return g.label_titles_dict[dump_id]
+def get_label_titles_dict(dump_id, candidate_labels):
+    r = get_redis(dump_id)
+    db = get_db()
+
+    cursor = db.cursor(dictionary=True)
+
+    sql = '''CREATE TEMPORARY TABLE `current_labels` (
+            `id` INT UNSIGNED NOT NULL,
+            `label` VARCHAR(255) NOT NULL
+        ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin'''
+    cursor.execute(sql)
+
+    sql_insert_to_current_labels = 'INSERT INTO `current_labels` VALUES (%s, %s)'
+
+    for candidate_label in candidate_labels:
+        label_name = candidate_label['name']
+        id = r.get(label_name)
+        if id is not None:
+            data = (id, label_name)
+            cursor.execute(sql_insert_to_current_labels, data)
+
+    sql = '''SELECT `current_labels`.`label`, `labels`.`counter` AS `label_counter`,
+                    `labels_articles`.`article_id`, `labels_articles`.`title`, `labels_articles`.`counter` AS `label_title_counter`,
+                    `articles`.`counter` AS `article_counter`, `articles`.`caption`, `articles`.`redirect_to_title`
+                    FROM `current_labels` JOIN `labels` ON `current_labels`.`id` = `labels`.`id`
+                                          JOIN `labels_articles` ON `current_labels`.`id` = `labels_articles`.`label_id`
+                                          JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`'''
+
+    cursor.execute(sql)
+
+    label_titles_dict = {}
+    for row in cursor:
+        title = {
+            'article_id': row['article_id'],
+            'title': row['title'],
+            'label_title_counter': row['label_title_counter'],
+            'article_counter': row['article_counter'],
+            'caption': row['caption'],
+            'redirect_to_title': row['redirect_to_title']
+        }
+        if title['caption'] is not None:
+            title['caption'] = title['caption'].decode('utf-8')
+        if row['label'] not in label_titles_dict:
+            label_titles_dict[row['label']] = {
+                'counter': row['label_counter'],
+                'titles': [title]
+            }
+        else:
+            label_titles_dict[row['label']]['titles'].append(title)
+    cursor.close()
+
+    return label_titles_dict
 
 
 def get_labels_exact(article_id, algorithm_normalized_json):
     lines = get_lines(article_id)
 
     dump_id = algorithm_normalized_json['knowledge_base']
-
-    label_titles_dict = get_label_titles_dict(dump_id)
     stops = set(stopwords.words('english'))
 
-    labels = []
+    candidate_labels = []
     for ngrams in range(1, current_app.config['MAX_NGRAMS'] + 1):
         for line_nr, line in enumerate(lines):
             for label_nr, label in enumerate(line):
@@ -68,14 +79,20 @@ def get_labels_exact(article_id, algorithm_normalized_json):
 
                 if algorithm_normalized_json['skipstopwords'] and label in stops:
                     continue
-                if label in label_titles_dict:
-                    labels.append({
-                        'name': label,
-                        'line': line_nr,
-                        'start': label_nr,
-                        'ngrams': ngrams,
-                        'counter': label_titles_dict[label]['counter'],
-                        'titles': label_titles_dict[label]['titles']
-                    })
+
+                candidate_labels.append({
+                    'name': label,
+                    'line': line_nr,
+                    'start': label_nr,
+                    'ngrams': ngrams,
+                })
+
+    label_titles_dict = get_label_titles_dict(dump_id, candidate_labels)
+    labels = []
+    for candidate_label in candidate_labels:
+        label_name = candidate_label['name']
+        if label_name in label_titles_dict:
+            candidate_label['titles'] = label_titles_dict[label_name]['titles']
+            labels.append(candidate_label)
 
     return labels
