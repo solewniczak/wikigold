@@ -22,8 +22,8 @@ def get_label_titles_dict(dump_id, candidate_labels):
 
     sql_insert_to_current_labels = 'INSERT INTO `current_labels` VALUES (%s, %s)'
 
-    for candidate_label in candidate_labels:
-        label_name = candidate_label['name']
+    candidate_labels_unique = set(map(lambda candidate_label: candidate_label['name'], candidate_labels))
+    for label_name in candidate_labels_unique:
         id = r.get(label_name)
         if id is not None:
             data = (id, label_name)
@@ -40,6 +40,7 @@ def get_label_titles_dict(dump_id, candidate_labels):
 
     label_titles_dict = {}
     for row in cursor:
+        label_name = row['label']
         title = {
             'article_id': row['article_id'],
             'title': row['title'],
@@ -50,13 +51,13 @@ def get_label_titles_dict(dump_id, candidate_labels):
         }
         if title['caption'] is not None:
             title['caption'] = title['caption'].decode('utf-8')
-        if row['label'] not in label_titles_dict:
-            label_titles_dict[row['label']] = {
+        if label_name not in label_titles_dict:
+            label_titles_dict[label_name] = {
                 'counter': row['label_counter'],
                 'titles': [title]
             }
         else:
-            label_titles_dict[row['label']]['titles'].append(title)
+            label_titles_dict[label_name]['titles'].append(title)
     cursor.close()
 
     return label_titles_dict
