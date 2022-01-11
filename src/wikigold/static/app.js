@@ -268,46 +268,58 @@ class Index extends App {
         article.replaceChildren(); // remove old paragraphs
         result.lines.forEach(line => {
             const p = document.createElement("p");
-            line.forEach(token => {
-                let span = document.createElement("span");
-                span.classList.add("top-level");
-                span.classList.add("ngram");
-                p.append(span);
+            const content = line.content;
+            const tokens = line.tokens;
+            const char_spans = [];
 
-                let space = document.createElement("span");
-                space.classList.add("top-level");
-                p.append(space);
+            for (let char of content) {
+                const charSpan = document.createElement("span");
+                charSpan.className = "char";
+                charSpan.textContent = char;
+                char_spans.push(charSpan);
+                if (char === ' ') {
+                    let span = document.createElement("span");
+                    span.classList.add("space");
+                    p.append(span);
+                    for (let i = 0; i < that.maxNgrams; i++) {
+                        let nextSpan = document.createElement("span");
+                        span.append(nextSpan);
+                        span = nextSpan;
+                    }
+                    span.append(charSpan);
+                } else {
+                    p.append(charSpan);
+                }
+
+            }
+
+            for (let token of tokens) {
+                const token_start = token[0];
+                const token_end = token[1];
+                let span = document.createElement("span");
+                span.classList.add("ngram");
+                char_spans[token_start].before(span);
 
                 for (let i = 0; i < that.maxNgrams; i++) {
                     let nextSpan = document.createElement("span");
                     span.append(nextSpan);
                     span = nextSpan;
-
-                    let nextSpace = document.createElement("span");
-                    space.append(nextSpace);
-                    space = nextSpace;
                 }
-                const spanContent = document.createTextNode(token);
-                span.append(spanContent);
-                const spaceContent = document.createTextNode(" ");
-                space.append(spaceContent);
-            });
+
+                for (let i = token_start; i < token_end; i++) {
+                    span.append(char_spans[i]);
+                }
+            }
             article.append(p);
         });
 
         //apply wikipedia decisions
         result.wikipedia_decisions.forEach(decision => {
             const line = article.querySelectorAll("p")[decision.line];
-            let span = line.querySelectorAll("span.ngram")[decision.start];
-            const showBorder = [span];
-            // collect spans which should be bordered
-            for (let i = 1; i < decision.ngrams; i++) {
-                span = span.nextSibling;  // space node
-                showBorder.push(span)
-                span = span.nextSibling; // next token
-                showBorder.push(span)
-            }
-            showBorder.forEach(span => {
+            const char_spans = line.querySelectorAll("span.char");
+
+            for (let i = decision.start; i < decision.start+decision.length; i++) {
+                let span = char_spans[i];
                 let tooltip = '';
                 if (decision.destination_article_id == null) {
                     tooltip += '<p>Links to: '+decision.destination_title+'</p>';
@@ -323,7 +335,7 @@ class Index extends App {
                 }
                 span.title = tooltip;
                 span.dataset.bsToggle = "tooltip";
-            });
+            }
         });
         return result;
     }
@@ -364,7 +376,7 @@ class Index extends App {
                 });
 
                 // remove old links
-                article.querySelectorAll("span:not(.top-level) ").forEach(span => {
+                article.querySelectorAll("span:not(.ngram):not(.space):not(.char) ").forEach(span => {
                     span.className = "";
                     // remove events
                     span.replaceWith(span.cloneNode(true));
@@ -376,9 +388,13 @@ class Index extends App {
                     const showBorder = [span];
                     // collect spans which should be bordered
                     for (let i = 1; i < label.ngrams; i++) {
-                        span = span.nextSibling;  // space node
-                        showBorder.push(span)
-                        span = span.nextSibling; // next token
+                        span = span.nextSibling;
+                        // sometimes tokens aren't separated by space
+                        // sometimes there are more than one space between tokens
+                        while (span.classList.contains("space")) {
+                            showBorder.push(span)
+                            span = span.nextSibling; // next token
+                        }
                         showBorder.push(span)
                     }
 

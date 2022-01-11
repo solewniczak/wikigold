@@ -72,11 +72,17 @@ def get_labels_exact(article_id, algorithm_normalized_json):
     candidate_labels = []
     for ngrams in range(1, current_app.config['MAX_NGRAMS'] + 1):
         for line_nr, line in enumerate(lines):
-            for label_nr, label in enumerate(line):
-                if label_nr + ngrams > len(line):  # cannot construct ngram of length "ngrams" starting from "label"
+            line_content = line['content']
+            line_tokens = line['tokens']
+            for token_nr, token in enumerate(line_tokens):
+                # cannot construct ngram of length "ngrams" starting from "token"
+                if token_nr + ngrams > len(line_tokens):
                     break
 
-                label = TreebankWordDetokenizer().detokenize(line[label_nr:label_nr + ngrams])
+                # continuous ngram model
+                label_start = line_tokens[token_nr][0]  # begin of the first gram
+                label_end = line_tokens[token_nr + ngrams - 1][1] # end of the last gram
+                label = line_content[label_start:label_end]
 
                 if algorithm_normalized_json['skipstopwords'] and label in stops:
                     continue
@@ -84,7 +90,7 @@ def get_labels_exact(article_id, algorithm_normalized_json):
                 candidate_labels.append({
                     'name': label,
                     'line': line_nr,
-                    'start': label_nr,
+                    'start': token_nr,
                     'ngrams': ngrams,
                 })
 

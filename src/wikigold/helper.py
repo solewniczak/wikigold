@@ -1,11 +1,22 @@
 import json
-import nltk
 
 from flask import g
-from nltk.tokenize.treebank import TreebankWordTokenizer
-from nltk.tokenize.punkt import PunktSentenceTokenizer
+from nltk import TreebankWordTokenizer
+from nltk.data import load
 
 from .db import get_db
+
+
+def word_tokenize_spans(text, language="english"):
+    sent_tokenizer = load(f'tokenizers/punkt/{language}.pickle')
+    word_tokenizer = TreebankWordTokenizer()
+
+    sentence_spans = sent_tokenizer.span_tokenize(text)
+    for (sentence_span_start, sentence_span_end) in sentence_spans:
+        sentence = text[sentence_span_start:sentence_span_end]
+        word_spans = word_tokenizer.span_tokenize(sentence)
+        for (token_span_start, token_span_end) in word_spans:
+            yield sentence_span_start+token_span_start, sentence_span_start+token_span_end
 
 
 def get_lines(article_id):
@@ -18,8 +29,10 @@ def get_lines(article_id):
     lines = []
     for row in cursor:
         line_text = row['content'].decode('utf-8')
-        line_tokens = nltk.word_tokenize(line_text)
-        lines.append(line_tokens)
+        line_tokens = []
+        for (token_span_start, token_span_end) in word_tokenize_spans(line_text):
+            line_tokens.append((token_span_start, token_span_end))
+        lines.append({'content': line_text, 'tokens': line_tokens})
 
     cursor.close()
 
@@ -29,58 +42,33 @@ def get_lines(article_id):
 def get_wikipedia_decisions(article_id):
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    sql = "SELECT `id`, `content` FROM `lines` WHERE `article_id`=%s ORDER BY `nr`"
-    data = (article_id,)
-    cursor.execute(sql, data)
-
-    lines_spans = []
-    for row in cursor:
-        line_content = row['content'].decode('utf-8')
-        sentences_spans = PunktSentenceTokenizer().span_tokenize(line_content)
-        line_spans = [
-            (sentence_span_start+token_span_start, sentence_span_start+token_span_end)
-            for (sentence_span_start,sentence_span_end) in sentences_spans
-            for (token_span_start, token_span_end)
-            in TreebankWordTokenizer().span_tokenize(line_content[sentence_span_start:sentence_span_end])
-        ]
-        if len(line_spans) > 0:
-            line_spans_starts, line_spans_ends = zip(*line_spans)
-            lines_spans.append(({position: ngram for ngram, position in enumerate(line_spans_starts)},
-                                    {position: ngram for ngram, position in enumerate(line_spans_ends)}))
-        else:
-            lines_spans.append(({}, {}))
 
     sql = '''SELECT `lines`.`nr`, `wikipedia_decisions`.`start`, `wikipedia_decisions`.`length`,
-            `wikipedia_decisions`.`destination_title`, `wikipedia_decisions`.`destination_article_id`,
-            `articles`.`caption`
-            FROM `wikipedia_decisions`
-            JOIN `lines` ON `wikipedia_decisions`.`source_line_id` = `lines`.`id`
-            LEFT JOIN `articles` ON `wikipedia_decisions`.`destination_article_id` = `articles`.`id`
-            WHERE `lines`.`article_id`=%s'''
+                `wikipedia_decisions`.`destination_title`, `wikipedia_decisions`.`destination_article_id`,
+                `articles`.`caption`
+                FROM `wikipedia_decisions`
+                JOIN `lines` ON `wikipedia_decisions`.`source_line_id` = `lines`.`id`
+                LEFT JOIN `articles` ON `wikipedia_decisions`.`destination_article_id` = `articles`.`id`
+                WHERE `lines`.`article_id`=%s'''
+    data = (article_id,)
     cursor.execute(sql, data)
 
     decisions = []
     for row in cursor:
-        line_nr = row['nr']
         try:
             caption = row['caption'].decode('utf-8')
         except AttributeError:
             caption = None
-        line_starts, line_ends = lines_spans[line_nr]
-        try:
-            start_ngram = line_starts[row['start']]
-            end_ngram = line_ends[row['start']+row['length']]
-            decision = {
-                'line': row['nr'],
-                'destination_title': row['destination_title'],
-                'destination_article_id': row['destination_article_id'],
-                'destination_caption': caption,
-                'start': start_ngram,
-                'ngrams': end_ngram-start_ngram+1
-            }
-            decisions.append(decision)
-        except KeyError:
-            pass
+
+        decision = {
+            'line': row['nr'],
+            'destination_title': row['destination_title'],
+            'destination_article_id': row['destination_article_id'],
+            'destination_caption': caption,
+            'start': row['start'],
+            'length': row['length']
+        }
+        decisions.append(decision)
 
     cursor.close()
     return decisions
