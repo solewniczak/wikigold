@@ -10,6 +10,8 @@
     <!-- Bootstrap CSS -->
     <link href="{{ url_for('static', filename='bootstrap-5.0.2-dist/css/bootstrap.min.css') }}" rel="stylesheet">
 
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='DataTables/datatables.min.css') }}"/>
+
     {% block meta %}{% endblock %}
 
     <title>{% block title %}{% endblock %} - Wikigold</title>
@@ -50,6 +52,8 @@
     </div>
     {% block content %}{% endblock %}
     <script src="{{ url_for('static', filename='bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='DataTables/jQuery-3.6.0/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='DataTables/datatables.min.js') }}"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
     <script>
       'use strict';

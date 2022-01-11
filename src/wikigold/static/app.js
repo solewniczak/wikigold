@@ -413,7 +413,10 @@ class Index extends App {
                             that.addClassToOverlappingLabels(labelIndex, 'ngram-link-covered');
                         }
 
-                        let popoverHtml = '<table class="table table-sm">';
+                        let popoverHtml = '<div style="" id="article-selector">' +
+                            '<table class="table table-sm">' +
+                            '<thead><tr><th>Title</th><th>T cnt</th><th>L-T cnt</th><th></th></tr></thead>' +
+                            '<tbody>';
                         label.titles.forEach(article => {
                             let tooltip = '';
                             if (article.redirect_to_title) {
@@ -432,6 +435,8 @@ class Index extends App {
                                         article.title +
                                     '</a>' +
                                     '</label></td>' +
+                                    '<td>' + article.article_counter + '</td>' +
+                                    '<td>' + article.label_title_counter + '</td>' +
                                     '<td class="align-middle">' +
                                     '<input type="checkbox" class="form-check-input" name="correct_'+labelIndex+'" ' +
                                             'value="' + article.article_id + '" ' +
@@ -439,17 +444,19 @@ class Index extends App {
                                     '</td>' +
                                 '</tr>';
                         });
-                        popoverHtml += '<tr>' +
+                        popoverHtml += '</tbody>' +
+                            '<tfoot><tr>' +
                                     '<td class="align-middle">' +
                                     '<label class="col-form-label"><em>none</em></label>' +
                                     '</td>' +
+                                    '<td></td><td></td>' +
                                     '<td class="align-middle">' +
                                     '<input type="checkbox" class="form-check-input decisionMenuOption" ' +
                                             'name="correct_' + labelIndex + '" ' +
                                             'value="" data-wikigold-label="' + labelIndex + '">' +
                                     '</td>' +
                                 '</tr>';
-                        popoverHtml += '</table>';
+                        popoverHtml += '</tfoot></table></div>';
 
                         // create popovers
                         const popover = new bootstrap.Popover(span, {
@@ -479,8 +486,15 @@ class Index extends App {
                                 that.previousPopover = popover;
                             }
                         });
-                        // fill the values of form with the EDL
+
                         span.addEventListener('shown.bs.popover', event => {
+                            $("#article-selector table").DataTable({
+                                columnDefs: [
+                                    {orderable: false, targets: 3},
+                                    {orderSequence: ["desc", "asc"], targets: [1,2]}
+                                ]
+                            });
+                            // fill the values of form with the EDL
                             if ('decision' in label) {
                                 let value = label.decision;
                                 if (value === null) {

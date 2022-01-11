@@ -1,0 +1,6 @@
+Add progress bar for wikification process.
+Remove "none" option from decision list (as an option).
+
+BUGS
+When clicking on link that has several ngram options - datatable returns an error.
+Sometimes search bar overflows the popover.
