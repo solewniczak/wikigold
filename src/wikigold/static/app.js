@@ -144,7 +144,9 @@ class Index extends App {
 
         // hide popovers when users clicks not in popover itself
         document.addEventListener('click', event => {
-            if (event.target && event.target.closest('.popover') === null) {
+            if (event.target && event.target.closest('.popover') === null &&
+                // fixes strange behaviour of DataTable - .pagination is not child of .popover
+                event.target.closest('.pagination') === null) {
                 if (that.previousPopover) {
                     that.previousPopover.hide();
                 }
@@ -413,98 +415,111 @@ class Index extends App {
                             that.addClassToOverlappingLabels(labelIndex, 'ngram-link-covered');
                         }
 
-                        let popoverHtml = '<div style="" id="article-selector">' +
-                            '<table class="table table-sm">' +
-                            '<thead><tr><th>Title</th><th>T cnt</th><th>L-T cnt</th><th></th></tr></thead>' +
-                            '<tbody>';
-                        label.titles.forEach(article => {
-                            let tooltip = '';
-                            if (article.redirect_to_title) {
-                                tooltip += '<p>Redirects to: ' + article.redirect_to_title + '</p>';
-                            }
-                            if (article.caption) {
-                                tooltip += '<p>' + article.caption + '</p>';
-                            } else {
-                                tooltip += '<p><i>no caption</i></p>';
-                            }
+                        // If span have popover associated - don't create new one. Fix for overlapping links.
+                        if (bootstrap.Popover.getInstance(span) === null) {
+                            let popoverHtml = '<div style="min-width: 576px;">' +
+                                '<table class="table table-sm">' +
+                                '<thead><tr><th>Title</th>' +
+                                '<th title="<p>Article Counter</p><p>Number of Wikipedia links that points to this article.</p>" data-bs-toggle="tooltip">A</th>' +
+                                '<th title="<p>Lable-Article Counter</p><p>Number of Wikipedia links <b>with that label</b> that points to this article.</p>" data-bs-toggle="tooltip">L-A</th>' +
+                                '<th></th></tr></thead>' +
+                                '<tbody>';
+                            label.titles.forEach(article => {
+                                let tooltip = '';
+                                if (article.redirect_to_title) {
+                                    tooltip += '<p>Redirects to: ' + article.redirect_to_title + '</p>';
+                                }
+                                if (article.caption) {
+                                    tooltip += '<p>' + article.caption + '</p>';
+                                } else {
+                                    tooltip += '<p><i>no caption</i></p>';
+                                }
 
-                            popoverHtml += '<tr>' +
+                                popoverHtml += '<tr>' +
                                     '<td class="align-middle"><label class="col-form-label">' +
                                     '<a href="https://' + that.article.lang + '.wikipedia.org/wiki/' + article.title + '" target="_blank" ' +
-                                        'data-bs-toggle="tooltip" data-bs-placement="left" title="' + that.escapeAttribute(tooltip) + '">' +
-                                        article.title +
+                                    'data-bs-toggle="tooltip" data-bs-placement="left" title="' + that.escapeAttribute(tooltip) + '">' +
+                                    article.title +
                                     '</a>' +
                                     '</label></td>' +
                                     '<td>' + article.article_counter + '</td>' +
                                     '<td>' + article.label_title_counter + '</td>' +
                                     '<td class="align-middle">' +
-                                    '<input type="checkbox" class="form-check-input" name="correct_'+labelIndex+'" ' +
-                                            'value="' + article.article_id + '" ' +
-                                            'data-wikigold-label="' + labelIndex + '">' +
+                                    '<input type="checkbox" class="form-check-input" name="correct_' + labelIndex + '" ' +
+                                    'value="' + article.article_id + '" ' +
+                                    'data-wikigold-label="' + labelIndex + '">' +
                                     '</td>' +
-                                '</tr>';
-                        });
-                        popoverHtml += '</tbody>' +
-                            '<tfoot><tr>' +
-                                    '<td class="align-middle">' +
-                                    '<label class="col-form-label"><em>none</em></label>' +
-                                    '</td>' +
-                                    '<td></td><td></td>' +
-                                    '<td class="align-middle">' +
-                                    '<input type="checkbox" class="form-check-input decisionMenuOption" ' +
-                                            'name="correct_' + labelIndex + '" ' +
-                                            'value="" data-wikigold-label="' + labelIndex + '">' +
-                                    '</td>' +
-                                '</tr>';
-                        popoverHtml += '</tfoot></table></div>';
-
-                        // create popovers
-                        const popover = new bootstrap.Popover(span, {
-                            "title": label.name,
-                            "html": true,
-                            "sanitize": false,
-                            "content": popoverHtml,
-                            "contanier": "body",
-                            "placement": "bottom",
-                            "trigger": "manual",
-                            "template": '<div class="popover ngram-popover-' + label.ngrams + '" role="tooltip">' +
-                                '<div class="popover-arrow"></div>' +
-                                '<h3 class="popover-header"></h3>' +
-                                '<div class="popover-body"></div>' +
-                                '</div>'
-                        });
-
-                        // only one popover at time - stop event propagation
-                        span.addEventListener('click', event => {
-                            // check if ngram is active
-                            if (span.classList.contains('ngram-link') && !span.classList.contains('ngram-link-covered')) {
-                                event.stopPropagation();
-                                if (that.previousPopover) {
-                                    that.previousPopover.hide();
-                                }
-                                popover.show();
-                                that.previousPopover = popover;
-                            }
-                        });
-
-                        span.addEventListener('shown.bs.popover', event => {
-                            $("#article-selector table").DataTable({
-                                columnDefs: [
-                                    {orderable: false, targets: 3},
-                                    {orderSequence: ["desc", "asc"], targets: [1,2]}
-                                ]
+                                    '</tr>';
                             });
-                            // fill the values of form with the EDL
-                            if ('decision' in label) {
-                                let value = label.decision;
-                                if (value === null) {
-                                    value = ''
-                                }
-                                const popoverElement = popover.getTipElement();
-                                popoverElement.querySelector('input[type=checkbox][value="'+value+'"]').checked = true;
-                            }
-                        });
+                            popoverHtml += '</tbody>' +
+                                '<tfoot><tr>' +
+                                '<td class="align-middle">' +
+                                '<label class="col-form-label"><em>none</em></label>' +
+                                '</td>' +
+                                '<td></td><td></td>' +
+                                '<td class="align-middle">' +
+                                '<input type="checkbox" class="form-check-input decisionMenuOption" ' +
+                                'name="correct_' + labelIndex + '" ' +
+                                'value="" data-wikigold-label="' + labelIndex + '">' +
+                                '</td>' +
+                                '</tr>';
+                            popoverHtml += '</tfoot></table></div>';
 
+                            // create popovers
+                            const popover = new bootstrap.Popover(span, {
+                                "title": label.name,
+                                "html": true,
+                                "sanitize": false,
+                                "content": popoverHtml,
+                                "contanier": "body",
+                                "placement": "bottom",
+                                "trigger": "manual",
+                                "template": '<div class="popover ngram-popover-' + label.ngrams + '" role="tooltip">' +
+                                    '<div class="popover-arrow"></div>' +
+                                    '<h3 class="popover-header"></h3>' +
+                                    '<div class="popover-body"></div>' +
+                                    '</div>'
+                            });
+
+                            // only one popover at time - stop event propagation
+                            span.addEventListener('click', event => {
+                                // check if ngram is active
+                                if (span.classList.contains('ngram-link') && !span.classList.contains('ngram-link-covered')) {
+                                    event.stopPropagation();
+                                    if (that.previousPopover !== popover) {
+                                        if (that.previousPopover) {
+                                            that.previousPopover.hide();
+                                        }
+                                        popover.show();
+                                        that.previousPopover = popover;
+                                    } else if (popover.getTipElement().offsetParent === null) {
+                                        popover.show();
+                                    }
+                                }
+                            });
+
+                            span.addEventListener('inserted.bs.popover', event => {
+                                const popoverElement = popover.getTipElement();
+                                //apply to only visible popovers
+                                if (popoverElement.offsetParent === null) {
+                                    return;
+                                }
+                                jQuery(popoverElement).find("table").DataTable({
+                                    columnDefs: [
+                                        {orderable: false, targets: 3},
+                                        {orderSequence: ["desc", "asc"], targets: [1, 2]}
+                                    ]
+                                });
+                                // fill with the values of form with the EDL
+                                if ('decision' in label) {
+                                    let value = label.decision;
+                                    if (value === null) {
+                                        value = ''
+                                    }
+                                    popoverElement.querySelector('input[type=checkbox][value="' + value + '"]').checked = true;
+                                }
+                            });
+                        }
                     });
                 });
 
