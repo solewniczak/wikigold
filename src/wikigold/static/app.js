@@ -151,6 +151,21 @@ class Index extends App {
             checkbox.addEventListener("change", that.applyNgramsDisplaySettings);
         });
 
+        // key shortcuts for ngrams display
+        document.addEventListener('keydown', event => {
+            if (event.target.tagName === 'INPUT' ) {
+                return;
+            }
+            for (let i = 0; i < that.maxNgrams; i++) {
+                if (event.code === "Digit" + (i+1)) {
+                    ngramsDisplayCheckboxes[i].checked ^= 1;
+                    that.applyNgramsDisplaySettings();
+                    return;
+                }
+            }
+
+        });
+
         // tooltips for Wikipedia's articles
         new bootstrap.Tooltip(document.body, {
             selector: '[data-bs-toggle="tooltip"]',
