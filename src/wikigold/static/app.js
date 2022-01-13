@@ -31,14 +31,15 @@ class Index extends App {
 
         if (that.url.searchParams.has('article')) {
             const articleId = that.url.searchParams.get('article');
+            that.lockForms();
             that.loadArticleById(articleId)
                 .then(result => {
                     searchForm.querySelector("input[name=title]").value = result.title;
                     if (that.url.searchParams.has('algorithm')) {
                         const algorithm = JSON.parse(that.url.searchParams.get('algorithm'));
-                        that.runAlgorithm(algorithm);
+                        return that.runAlgorithm(algorithm);
                     }
-                });
+                }).then(that.unlockForms);
         }
 
         searchForm.addEventListener("submit", event => {
@@ -46,24 +47,38 @@ class Index extends App {
             const formData = new FormData(searchForm);
             const title = formData.get('title');
             const article_source = formData.get('article_source');
+            that.lockForms();
             that.loadArticleByTitle(title, article_source)
                 .then(result => {
                     that.url.searchParams.set('article', result.id);
                     that.url.searchParams.delete('algorithm');
                     window.history.replaceState('', '', that.url.href);
-                });
+                }).then(that.unlockForms);
         });
 
         algorithmForm.addEventListener("submit", event => {
             event.preventDefault();
-            const formData = new FormData(algorithmForm);
-            const algorithm = Object.fromEntries(formData);
+            const algorithm = {};
+            const formControls = algorithmForm.querySelectorAll("[data-algorithm-parameter]");
+            formControls.forEach(formContorl => {
+                if (formContorl.type && formContorl.type === 'checkbox') {
+                    if (formContorl.checked) {
+                        algorithm[formContorl.name] = 1;
+                    } else {
+                        algorithm[formContorl.name] = 0;
+                    }
+                } else {
+                    algorithm[formContorl.name] = formContorl.value;
+                }
+            });
 
             that.url.searchParams.set('algorithm', JSON.stringify(algorithm));
             window.history.replaceState('', '', that.url.href);
 
+            that.lockForms();
             that.runAlgorithm(algorithm)
-                .then(that.applyNgramsDisplaySettings);
+                .then(that.applyNgramsDisplaySettings)
+                .then(that.unlockForms);
         });
 
         // modify EDL on user decision
@@ -151,6 +166,20 @@ class Index extends App {
                     that.previousPopover.hide();
                 }
             }
+        });
+    }
+
+    lockForms() {
+        const formElements = document.querySelectorAll("input, select, textarea, button");
+        formElements.forEach(formElement => {
+            formElement.disabled = true;
+        });
+    }
+
+    unlockForms() {
+        const formElements = document.querySelectorAll("input, select, textarea, button");
+        formElements.forEach(formElement => {
+            formElement.disabled = false;
         });
     }
 
@@ -347,11 +376,12 @@ class Index extends App {
         const article = document.querySelector("article");
 
         const articleId = that.url.searchParams.get('article');
+        const paragraphs = parseInt(document.querySelector("input[name=paragraphs]").value);
 
         if (!articleId) return;
 
         const requestUrl = that.requestUrl('/api/candidateLabels/' + articleId,
-            {'algorithm': JSON.stringify(algorithm)});
+            {'algorithm': JSON.stringify(algorithm), 'limit': paragraphs});
         return fetch(requestUrl, {
             method: 'GET'
         })
@@ -377,11 +407,14 @@ class Index extends App {
                     }
                 });
 
-                // remove old links
-                article.querySelectorAll("span:not(.ngram):not(.space):not(.char) ").forEach(span => {
+                // remove old link classes
+                const linkNgrams = article.querySelectorAll("span:not(.ngram):not(.space):not(.char)")
+                linkNgrams.forEach(span => {
                     span.className = "";
-                    // remove events
-                    span.replaceWith(span.cloneNode(true));
+                });
+                // remove events
+                linkNgrams.forEach(span => {
+                     span.replaceWith(span.cloneNode(true));
                 });
 
                 that.edl.forEach((label, labelIndex) => {

@@ -19,10 +19,13 @@ def word_tokenize_spans(text, language="english"):
             yield sentence_span_start+token_span_start, sentence_span_start+token_span_end
 
 
-def get_lines(article_id):
+def get_lines(article_id, limit=None):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     sql = "SELECT `id`, `content` FROM `lines` WHERE `article_id`=%s ORDER BY `nr`"
+    if limit:
+        sql += f" LIMIT {limit}"
+
     data = (article_id,)
     cursor.execute(sql, data)
 

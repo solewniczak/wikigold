@@ -113,19 +113,27 @@
                     <div class="col-auto">
                       <input class="form-control" name="title" id="title">
                       </div>
-                  </div>
+              </div>
               <button class="btn btn-outline-success" type="submit">Load content</button>
               </form>
               <form class="mb-4" id="algorithm-form">
-              <div class="mb-4">
+              <div class="mb-2">
                   <h5><label for="knowledge_base" class="col-form-label">Knowledge base</label></h5>
-                <select class="form-select form-select-sm" name="knowledge_base" id="knowledge_base">
+                <select class="form-select form-select-sm mb-2" name="knowledge_base" id="knowledge_base" data-algorithm-parameter>
                   {% for dump in dumps %}
                     <option value="{{ dump['id'] }}">
                       {{ dump['lang'] }}wiki-{{ dump['date'] }} | {{ dump['timestamp'] }}
                     </option>
                   {% endfor %}
                   </select>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-auto">
+                      <label for="paragraphs" class="col-form-label">Paragraphs limit</label>
+                    </div>
+                    <div class="col-auto">
+                      <input type="number" min="1" style="width: 5em" class="form-control" name="paragraphs" id="paragraphs" value="5">
+                      </div>
                 </div>
                   <fieldset class="mb-4">
                     <h6>Entity retrieval</h6>
@@ -134,7 +142,7 @@
                             <label for="retrieval" class="col-form-label">Algorithm</label>
                         </div>
                         <div class="col-auto">
-                            <select class="form-select" name="retrieval" id="retrieval">
+                            <select class="form-select" name="retrieval" id="retrieval" data-algorithm-parameter>
                               <option value="" {{ 'selected' if algorithm['retrieval'] == '' }}></option>
                               <option value="exact" {{ 'selected' if algorithm['retrieval'] == 'exact' }}>n-gram exact match</option>
                             </select>
@@ -142,7 +150,7 @@
                     </div>
                     <div class="form-check mb-2">
                       <input class="form-check-input" type="checkbox" name="skipstopwords" value="1"
-                             id="skipstopwords" {{ 'checked' if 'skipstopwords' in algorithm }}>
+                             id="skipstopwords" data-algorithm-parameter {{ 'checked' if 'skipstopwords' in algorithm }}>
                       <label class="form-check-label" for="skipstopwords">
                         Skip stop words
                       </label>
@@ -155,7 +163,7 @@
                                 <label for="algorithm" class="col-form-label">Algorithm</label>
                         </div>
                         <div class="col-auto">
-                            <select class="form-select" name="disambiguation" id="disambiguation">
+                            <select class="form-select" name="disambiguation" id="disambiguation" data-algorithm-parameter>
                               <option value="" {{ 'selected' if algorithm['disambiguation'] == '' }}></option>
                               <option value="exact" {{ 'selected' if algorithm['disambiguation'] == 'top' }}>top popularity</option>
                             </select>

@@ -63,8 +63,8 @@ def get_label_titles_dict(dump_id, candidate_labels):
     return label_titles_dict
 
 
-def get_labels_exact(article_id, algorithm_normalized_json):
-    lines = get_lines(article_id)
+def get_labels_exact(article_id, algorithm_normalized_json, limit=None):
+    lines = get_lines(article_id, limit)
 
     dump_id = algorithm_normalized_json['knowledge_base']
     stops = set(stopwords.words('english'))
