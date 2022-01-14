@@ -13,6 +13,7 @@ mwparallelparser==0.1.6
 mysql-connector-python==8.0.27
 nltk==3.6.5
 protobuf==3.19.0
+redis==4.0.2
 regex==2021.10.23
 requests==2.26.0
 tqdm==4.62.3
