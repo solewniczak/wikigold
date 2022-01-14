@@ -7,7 +7,7 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 from tqdm import tqdm
 
-from src.wikigold.db import get_db
+from .db import get_db
 
 
 def get_redis(dump_id=None):
