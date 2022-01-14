@@ -17,6 +17,11 @@ def get_redis(dump_id=None):
     return g.redis
 
 
+def cached_labels(dump_id):
+    r = get_redis(dump_id)
+    return r.dbsize()
+
+
 @click.command('cache-dump')
 @click.argument('dump_id')
 @with_appcontext

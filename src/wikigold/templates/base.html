@@ -31,6 +31,12 @@
             <li class="nav-item">
                 <a class="nav-link {% if active_page == 'edls' %} active {% endif %}" href="{{ url_for('wikigold.edls') }}">EDLs</a>
             </li>
+            {% if g.user['superuser'] %}
+                <span class="navbar-text ms-5">Admin:</span>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_page == 'admin.redis' %} active {% endif %}" href="{{ url_for('admin.redis') }}">Redis</a>
+                </li>
+            {% endif %}
           </ul>
           <ul class="navbar-nav">
             {% if g.user %}
@@ -61,7 +67,8 @@
         const prefix = {{config.get('PREFIX')|tojson}};
         const maxNgrams = {{config.get('MAX_NGRAMS')|tojson}};
         const constructorMap = {
-          index: Index
+          'index': Index,
+          'admin.redis': AdminRedis
         };
         const currentPageId = document.querySelector("body").id;
         if (currentPageId in constructorMap) {
