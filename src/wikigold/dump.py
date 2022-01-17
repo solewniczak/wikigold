@@ -268,8 +268,18 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
         elapsed = (time.time_ns() - start) / 1e9
         print(f'{elapsed:.2f} s')
 
+    def step_8():
+        print('step 8. count labels for dump...', end=' ')
+        start = time.time_ns()
+        sql_update_labels_count = '''UPDATE `dumps` SET `labels_count`=(SELECT COUNT(*) FROM labels WHERE `dump_id`=%s)
+                                        WHERE `id`=%s'''
+        cursor.execute(sql_update_labels_count, (dump_id, dump_id))
+        db.commit()
+        elapsed = (time.time_ns() - start) / 1e9
+        print(f'{elapsed:.2f} s')
+
     # apply selected steps
-    for step in range(start_step, 8):
+    for step in range(start_step, 9):
         locals()[f'step_{step}']()
 
     cursor.close()

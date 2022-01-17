@@ -15,8 +15,7 @@ def redis():
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
-    sql_select_dumps = '''SELECT id, lang, date, parser_name, parser_version, timestamp,
-                            (SELECT COUNT(*) FROM `labels`) AS labels_count FROM dumps ORDER BY id DESC'''
+    sql_select_dumps = '''SELECT id, lang, date, parser_name, parser_version, timestamp, labels_count FROM dumps ORDER BY id DESC'''
     cursor.execute(sql_select_dumps)
     dumps = []
     for row in cursor:

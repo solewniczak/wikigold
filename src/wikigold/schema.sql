@@ -13,6 +13,7 @@ CREATE TABLE `dumps` (
     `parser_name` CHAR(30) NOT NULL,
     `parser_version` CHAR(30) NOT NULL,
     `timestamp` TIMESTAMP NOT NULL,
+    `labels_count` INT UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
