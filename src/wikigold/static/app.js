@@ -219,7 +219,7 @@ class Index extends App {
     processLabelSpans(labelIndex, callback) {
         const that = this;
         const label_ngrams = that.labels_ngrams[labelIndex];
-        label_ngrams.ngrams.forEach((ngramIndex, i) => {
+        label_ngrams.ngrams.forEach((ngramIndex, index) => {
             const article = document.querySelector("article");
             const line = article.querySelectorAll("p")[label_ngrams.line];
             const ngram = line.querySelectorAll("span.ngram")[ngramIndex];
@@ -231,15 +231,24 @@ class Index extends App {
             }
             callback(span);
 
-            // not our last element - add class to a space
-            if (i < label_ngrams.ngrams.length-1) {
-                let span = ngram.nextSibling;
+            // if we are not processing the last element of the label, add class to a space span between ngrams
+            if (index < label_ngrams.ngrams.length-1) {
+                let spaceSpan = ngram.nextSibling;
                 for (let i = 0; i < label_ngrams.ngrams.length; i++) {
-                    span = span.firstChild;
+                    spaceSpan = spaceSpan.firstChild;
                 }
-                callback(span);
+                callback(spaceSpan);
             }
         });
+    }
+
+    getLabelSpans(labelIndex) {
+        const that = this;
+        const labelSpans = [];
+        that.processLabelSpans(labelIndex, span => {
+            labelSpans.push(span);
+        });
+        return labelSpans;
     }
 
     addLabelClass(labelIndex, className) {
@@ -267,12 +276,47 @@ class Index extends App {
     }
 
     addClassToOverlappingLabels(labelIndex, className) {
+        // const that = this;
+        // const label = that.edl[labelIndex];
+        // console.log(label);
+        // that.processOverlappingLabels(labelIndex, overlappingLabelIndex => {
+        //     const overlappingLabel = that.edl[labelIndex];
+        //     //console.log(overlappingLabel);
+        //     if (labelIndex !== overlappingLabelIndex && overlappingLabel.ngrams !== label.ngrams) {
+        //         that.addLabelClass(overlappingLabelIndex, className);
+        //     }
+        // });
         const that = this;
+        const labelSpans = that.getLabelSpans(labelIndex);
         that.processOverlappingLabels(labelIndex, overlappingLabelIndex => {
             if (labelIndex !== overlappingLabelIndex) {
-                that.addLabelClass(overlappingLabelIndex, className);
-            }
+                    that.processLabelSpans(overlappingLabelIndex, span => {
+                        // console.log(span);
+                        if (!labelSpans.includes(span)) {
+                            span.classList.add(className);
+                        }
+                    });
+                }
         });
+
+        // const that = this;
+        // const label_ngrams = that.labels_ngrams[labelIndex];
+        // const labelSpans = that.getLabelSpans(labelIndex);
+        // label_ngrams.ngrams.forEach(ngramIndex => {
+        //     // collect overlapping links
+        //     const overlappingLabelIndexes = that.ngrams_labels[label_ngrams.line][ngramIndex];
+        //     overlappingLabelIndexes.forEach(overlappingLabelIndex => {
+        //         // const overlappingLabelNgrams = that.labels_ngrams[overlappingLabelIndex];
+        //         if (labelIndex !== overlappingLabelIndex) {
+        //             // that.addLabelClass(overlappingLabelIndex, className);
+        //             that.processLabelSpans(overlappingLabelIndex, span => {
+        //                 if (!labelSpans.includes(span)) {
+        //                     span.classList.add(className);
+        //                 }
+        //             });
+        //         }
+        //     });
+        // });
     }
 
     removeClassFromOverlappingLabels(labelIndex, className) {
@@ -426,6 +470,7 @@ class Index extends App {
                 const linkNgrams = article.querySelectorAll("span:not(.ngram):not(.space):not(.char)")
                 linkNgrams.forEach(span => {
                     span.className = "";
+                    delete span.dataset.labels;
                 });
                 // remove events
                 linkNgrams.forEach(span => {
@@ -455,6 +500,13 @@ class Index extends App {
                         }
                         span.classList.add("ngram-link");
                         span.classList.add("ngram-link-" + label.ngrams);
+
+                        const spanLabels = [labelIndex];
+                        if ('labels' in span.dataset) {
+                            spanLabels.push(...JSON.parse(span.dataset.labels));
+                        }
+                        span.dataset.labels = JSON.stringify(spanLabels);
+
                         if ('decision' in label) {
                             span.classList.add("ngram-link-resolved");
                             if (label.decision === null) {
@@ -462,115 +514,155 @@ class Index extends App {
                             }
                             that.addClassToOverlappingLabels(labelIndex, 'ngram-link-covered');
                         }
-
-                        // If span have popover associated - don't create new one. Fix for overlapping links.
-                        if (bootstrap.Popover.getInstance(span) === null) {
-                            let popoverHtml = '<div style="min-width: 576px;">' +
-                                '<table class="table table-sm">' +
-                                '<thead><tr><th>Title</th>' +
-                                '<th title="<p>Article Counter</p><p>Number of Wikipedia links that points to this article.</p>" data-bs-toggle="tooltip">A</th>' +
-                                '<th title="<p>Lable-Article Counter</p><p>Number of Wikipedia links <b>with that label</b> that points to this article.</p>" data-bs-toggle="tooltip">L-A</th>' +
-                                '<th></th></tr></thead>' +
-                                '<tbody>';
-                            label.titles.forEach(article => {
-                                let tooltip = '';
-                                if (article.redirect_to_title) {
-                                    tooltip += '<p>Redirects to: ' + article.redirect_to_title + '</p>';
-                                }
-                                if (article.caption) {
-                                    tooltip += '<p>' + article.caption + '</p>';
-                                } else {
-                                    tooltip += '<p><i>no caption</i></p>';
-                                }
-
-                                popoverHtml += '<tr>' +
-                                    '<td class="align-middle"><label class="col-form-label">' +
-                                    '<a href="https://' + that.article.lang + '.wikipedia.org/wiki/' + article.title + '" target="_blank" ' +
-                                    'data-bs-toggle="tooltip" data-bs-placement="left" title="' + that.escapeAttribute(tooltip) + '">' +
-                                    article.title +
-                                    '</a>' +
-                                    '</label></td>' +
-                                    '<td>' + article.article_counter + '</td>' +
-                                    '<td>' + article.label_title_counter + '</td>' +
-                                    '<td class="align-middle">' +
-                                    '<input type="checkbox" class="form-check-input" name="correct_' + labelIndex + '" ' +
-                                    'value="' + article.article_id + '" ' +
-                                    'data-wikigold-label="' + labelIndex + '">' +
-                                    '</td>' +
-                                    '</tr>';
-                            });
-                            popoverHtml += '</tbody>' +
-                                '<tfoot><tr>' +
-                                '<td class="align-middle">' +
-                                '<label class="col-form-label"><em>none</em></label>' +
-                                '</td>' +
-                                '<td></td><td></td>' +
-                                '<td class="align-middle">' +
-                                '<input type="checkbox" class="form-check-input decisionMenuOption" ' +
-                                'name="correct_' + labelIndex + '" ' +
-                                'value="" data-wikigold-label="' + labelIndex + '">' +
-                                '</td>' +
-                                '</tr>';
-                            popoverHtml += '</tfoot></table></div>';
-
-                            // create popovers
-                            const popover = new bootstrap.Popover(span, {
-                                "title": label.name,
-                                "html": true,
-                                "sanitize": false,
-                                "content": popoverHtml,
-                                "contanier": "body",
-                                "placement": "bottom",
-                                "trigger": "manual",
-                                "template": '<div class="popover ngram-popover-' + label.ngrams + '" role="tooltip">' +
-                                    '<div class="popover-arrow"></div>' +
-                                    '<h3 class="popover-header"></h3>' +
-                                    '<div class="popover-body"></div>' +
-                                    '</div>'
-                            });
-
-                            // only one popover at time - stop event propagation
-                            span.addEventListener('click', event => {
-                                // check if ngram is active
-                                if (span.classList.contains('ngram-link') && !span.classList.contains('ngram-link-covered')) {
-                                    event.stopPropagation();
-                                    if (that.previousPopover !== popover) {
-                                        if (that.previousPopover) {
-                                            that.previousPopover.hide();
-                                        }
-                                        popover.show();
-                                        that.previousPopover = popover;
-                                    } else if (popover.getTipElement().offsetParent === null) {
-                                        popover.show();
-                                    }
-                                }
-                            });
-
-                            span.addEventListener('inserted.bs.popover', event => {
-                                const popoverElement = popover.getTipElement();
-                                //apply to only visible popovers
-                                if (popoverElement.offsetParent === null) {
-                                    return;
-                                }
-                                jQuery(popoverElement).find("table").DataTable({
-                                    columnDefs: [
-                                        {orderable: false, targets: 3},
-                                        {orderSequence: ["desc", "asc"], targets: [1, 2]}
-                                    ]
-                                });
-                                // fill with the values of form with the EDL
-                                if ('decision' in label) {
-                                    let value = label.decision;
-                                    if (value === null) {
-                                        value = ''
-                                    }
-                                    popoverElement.querySelector('input[type=checkbox][value="' + value + '"]').checked = true;
-                                }
-                            });
-                        }
                     });
                 });
 
+                article.querySelectorAll('.ngram-link').forEach(span => {
+                    const spanLabels = JSON.parse(span.dataset.labels);
+                    const labelClasses = []; // css classes for label tab and tab's content
+                    spanLabels.forEach((labelIndex, index) => {
+                        labelClasses[index] = ['', ''];
+                    });
+                    let hasDecision = null;
+                    spanLabels.forEach((labelIndex, index) => {
+                        const label = that.edl[labelIndex];
+                        if ('decision' in label) {
+                            hasDecision = index;
+                        }
+                    });
+                    // disable all tabs except that with decision
+                    if (hasDecision !== null) {
+                        spanLabels.forEach((labelIndex, index) => {
+                            labelClasses[index] = ['disabled', ''];
+                        });
+                        labelClasses[hasDecision] = ['active', 'active show'];
+                    } else { // by default first tab is active
+                        labelClasses[0] = ['active', 'active show'];
+                    }
+
+                    let title = '<nav><div class="nav nav-tabs" id="nav-tab" role="tablist" style="padding: .5rem 1rem 0;">';
+                    spanLabels.forEach((labelIndex, index) => {
+                       const label = that.edl[labelIndex];
+                       title += '<button class="nav-link ' + labelClasses[index][0] + '" data-bs-toggle="tab" data-bs-target="#label' + labelIndex + '" ' +
+                           'type="button" role="tab">' + label.name + '</button>';
+                    });
+                    title += '</div></nav>';
+
+                    let popoverHtml = '<div style="min-width: 576px;" class="tab-content" id="nav-tabContent">';
+                    spanLabels.forEach((labelIndex, index) => {
+                        const label = that.edl[labelIndex];
+                        popoverHtml += '<div class="tab-pane fade ' + labelClasses[index][1] + '" id="label' + labelIndex + '" role="tabpanel">' +
+                        '<table class="table table-sm">' +
+                        '<thead><tr><th>Title</th>' +
+                        '<th title="<p>Article Counter</p><p>Number of Wikipedia links that points to this article.</p>" data-bs-toggle="tooltip">A</th>' +
+                        '<th title="<p>Lable-Article Counter</p><p>Number of Wikipedia links <b>with that label</b> that points to this article.</p>" data-bs-toggle="tooltip">L-A</th>' +
+                        '<th></th></tr></thead>' +
+                        '<tbody>';
+                        label.titles.forEach(article => {
+                            let tooltip = '';
+                            if (article.redirect_to_title) {
+                                tooltip += '<p>Redirects to: ' + article.redirect_to_title + '</p>';
+                            }
+                            if (article.caption) {
+                                tooltip += '<p>' + article.caption + '</p>';
+                            } else {
+                                tooltip += '<p><i>no caption</i></p>';
+                            }
+
+                            popoverHtml += '<tr>' +
+                                '<td class="align-middle"><label class="col-form-label">' +
+                                '<a href="https://' + that.article.lang + '.wikipedia.org/wiki/' + article.title + '" target="_blank" ' +
+                                'data-bs-toggle="tooltip" data-bs-placement="left" title="' + that.escapeAttribute(tooltip) + '">' +
+                                article.title +
+                                '</a>' +
+                                '</label></td>' +
+                                '<td>' + article.article_counter + '</td>' +
+                                '<td>' + article.label_title_counter + '</td>' +
+                                '<td class="align-middle">' +
+                                '<input type="checkbox" class="form-check-input" name="correct_' + labelIndex + '" ' +
+                                'value="' + article.article_id + '" ' +
+                                'data-wikigold-label="' + labelIndex + '">' +
+                                '</td>' +
+                                '</tr>';
+                        });
+                        popoverHtml += '</tbody>' +
+                            '<tfoot><tr>' +
+                            '<td class="align-middle">' +
+                            '<label class="col-form-label"><em>none</em></label>' +
+                            '</td>' +
+                            '<td></td><td></td>' +
+                            '<td class="align-middle">' +
+                            '<input type="checkbox" class="form-check-input decisionMenuOption" ' +
+                            'name="correct_' + labelIndex + '" ' +
+                            'value="" data-wikigold-label="' + labelIndex + '">' +
+                            '</td>' +
+                            '</tr>';
+                        popoverHtml += '</tfoot></table></div>';
+                    });
+                    popoverHtml += '</div>';
+
+                    // create popovers
+                    const popover = new bootstrap.Popover(span, {
+                        "title": title,
+                        "html": true,
+                        "sanitize": false,
+                        "content": popoverHtml,
+                        "contanier": "body",
+                        "placement": "bottom",
+                        "trigger": "manual",
+                        "template": '<div class="popover" role="tooltip">' +
+                            '<div class="popover-arrow"></div>' +
+                            '<div class="popover-header" style="padding:0; border-bottom:0;"></div>' +
+                            '<div class="popover-body"></div>' +
+                            '</div>'
+                    });
+
+
+                    // only one popover at time - stop event propagation
+                    span.onclick = event => {
+                        // check if ngram is active
+                        if (span.classList.contains('ngram-link') && !span.classList.contains('ngram-link-covered')) {
+                            event.stopPropagation();
+                            if (that.previousPopover !== popover) {
+                                if (that.previousPopover) {
+                                    that.previousPopover.hide();
+                                }
+                                popover.show();
+                                that.previousPopover = popover;
+                            // cold start - when that.previousPopover isn't filled already
+                            } else if (popover.getTipElement().offsetParent === null) {
+                                popover.show();
+                            }
+                        }
+                    }
+
+                    span.addEventListener('inserted.bs.popover', event => {
+                        const popoverElement = popover.getTipElement();
+                        //apply to only visible popovers
+                        if (popoverElement.offsetParent === null) {
+                            return;
+                        }
+                        // fill with the values of form with the EDL
+                        spanLabels.forEach(labelIndex => {
+                            const label = that.edl[labelIndex];
+                            const labelDiv = popoverElement.querySelector('#label' + labelIndex);
+                            if ('decision' in label) {
+                                let value = label.decision;
+                                if (value === null) {
+                                    value = ''
+                                }
+                                labelDiv.querySelector('input[type=checkbox][value="' + value + '"]').checked = true;
+                            }
+                        });
+                        // creating DataTable must go after selecting input value
+                        jQuery(popoverElement).find("table").DataTable({
+                            columnDefs: [
+                                {orderable: false, targets: 3},
+                                {orderSequence: ["desc", "asc"], targets: [1, 2]}
+                            ]
+                        });
+                    });
+                });
             });
     }
 }
