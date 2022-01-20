@@ -293,7 +293,6 @@ class Index extends App {
         that.processOverlappingLabels(labelIndex, overlappingLabelIndex => {
             if (labelIndex !== overlappingLabelIndex) {
                     that.processLabelSpans(overlappingLabelIndex, span => {
-                        // console.log(span);
                         if (!labelSpans.includes(span)) {
                             span.classList.add(className);
                         }
