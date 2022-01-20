@@ -102,6 +102,18 @@ class Index extends App {
                     }
                 });
 
+                // lock and unlock tabs for overlapping links
+                const popoverElement = checkbox.closest('.popover');
+                if (checkbox_value === -1) {
+                    popoverElement.querySelectorAll('.nav-link').forEach(navLink => {
+                        navLink.classList.remove('disabled');
+                    });
+                } else {
+                    popoverElement.querySelectorAll('.nav-link:not(.active)').forEach(navLink => {
+                        navLink.classList.add('disabled');
+                    });
+                }
+
                 // update decision locally
                 that.removeLabelClass(labelIndex, 'ngram-link-resolved');
                 that.removeLabelClass(labelIndex, 'ngram-link-none');
@@ -276,16 +288,6 @@ class Index extends App {
     }
 
     addClassToOverlappingLabels(labelIndex, className) {
-        // const that = this;
-        // const label = that.edl[labelIndex];
-        // console.log(label);
-        // that.processOverlappingLabels(labelIndex, overlappingLabelIndex => {
-        //     const overlappingLabel = that.edl[labelIndex];
-        //     //console.log(overlappingLabel);
-        //     if (labelIndex !== overlappingLabelIndex && overlappingLabel.ngrams !== label.ngrams) {
-        //         that.addLabelClass(overlappingLabelIndex, className);
-        //     }
-        // });
         const that = this;
         const labelSpans = that.getLabelSpans(labelIndex);
         that.processOverlappingLabels(labelIndex, overlappingLabelIndex => {
@@ -298,25 +300,6 @@ class Index extends App {
                     });
                 }
         });
-
-        // const that = this;
-        // const label_ngrams = that.labels_ngrams[labelIndex];
-        // const labelSpans = that.getLabelSpans(labelIndex);
-        // label_ngrams.ngrams.forEach(ngramIndex => {
-        //     // collect overlapping links
-        //     const overlappingLabelIndexes = that.ngrams_labels[label_ngrams.line][ngramIndex];
-        //     overlappingLabelIndexes.forEach(overlappingLabelIndex => {
-        //         // const overlappingLabelNgrams = that.labels_ngrams[overlappingLabelIndex];
-        //         if (labelIndex !== overlappingLabelIndex) {
-        //             // that.addLabelClass(overlappingLabelIndex, className);
-        //             that.processLabelSpans(overlappingLabelIndex, span => {
-        //                 if (!labelSpans.includes(span)) {
-        //                     span.classList.add(className);
-        //                 }
-        //             });
-        //         }
-        //     });
-        // });
     }
 
     removeClassFromOverlappingLabels(labelIndex, className) {
@@ -519,31 +502,11 @@ class Index extends App {
 
                 article.querySelectorAll('.ngram-link').forEach(span => {
                     const spanLabels = JSON.parse(span.dataset.labels);
-                    const labelClasses = []; // css classes for label tab and tab's content
-                    spanLabels.forEach((labelIndex, index) => {
-                        labelClasses[index] = ['', ''];
-                    });
-                    let hasDecision = null;
-                    spanLabels.forEach((labelIndex, index) => {
-                        const label = that.edl[labelIndex];
-                        if ('decision' in label) {
-                            hasDecision = index;
-                        }
-                    });
-                    // disable all tabs except that with decision
-                    if (hasDecision !== null) {
-                        spanLabels.forEach((labelIndex, index) => {
-                            labelClasses[index] = ['disabled', ''];
-                        });
-                        labelClasses[hasDecision] = ['active', 'active show'];
-                    } else { // by default first tab is active
-                        labelClasses[0] = ['active', 'active show'];
-                    }
 
                     let title = '<nav><div class="nav nav-tabs" id="nav-tab" role="tablist" style="padding: .5rem 1rem 0;">';
                     spanLabels.forEach((labelIndex, index) => {
                        const label = that.edl[labelIndex];
-                       title += '<button class="nav-link ' + labelClasses[index][0] + '" data-bs-toggle="tab" data-bs-target="#label' + labelIndex + '" ' +
+                       title += '<button class="nav-link" data-bs-toggle="tab" data-bs-target="#label' + labelIndex + '" ' +
                            'type="button" role="tab">' + label.name + '</button>';
                     });
                     title += '</div></nav>';
@@ -551,7 +514,7 @@ class Index extends App {
                     let popoverHtml = '<div style="min-width: 576px;" class="tab-content" id="nav-tabContent">';
                     spanLabels.forEach((labelIndex, index) => {
                         const label = that.edl[labelIndex];
-                        popoverHtml += '<div class="tab-pane fade ' + labelClasses[index][1] + '" id="label' + labelIndex + '" role="tabpanel">' +
+                        popoverHtml += '<div class="tab-pane fade" id="label' + labelIndex + '" role="tabpanel">' +
                         '<table class="table table-sm">' +
                         '<thead><tr><th>Title</th>' +
                         '<th title="<p>Article Counter</p><p>Number of Wikipedia links that points to this article.</p>" data-bs-toggle="tooltip">A</th>' +
@@ -610,7 +573,8 @@ class Index extends App {
                         "contanier": "body",
                         "placement": "bottom",
                         "trigger": "manual",
-                        "template": '<div class="popover" role="tooltip">' +
+                        // data-labels allow checkbox event handle the tabs enabling/disabling correctly
+                        "template": '<div class="popover" role="tooltip" data-labels="' + span.dataset.labels + '">' +
                             '<div class="popover-arrow"></div>' +
                             '<div class="popover-header" style="padding:0; border-bottom:0;"></div>' +
                             '<div class="popover-body"></div>' +
@@ -645,15 +609,28 @@ class Index extends App {
                         // fill with the values of form with the EDL
                         spanLabels.forEach(labelIndex => {
                             const label = that.edl[labelIndex];
-                            const labelDiv = popoverElement.querySelector('#label' + labelIndex);
+                            const labelDivId = '#label' + labelIndex;
+                            const labelDiv = popoverElement.querySelector(labelDivId);
                             if ('decision' in label) {
                                 let value = label.decision;
                                 if (value === null) {
                                     value = ''
                                 }
                                 labelDiv.querySelector('input[type=checkbox][value="' + value + '"]').checked = true;
+                                labelDiv.classList.add('active', 'show');
+                                popoverElement.querySelector('.nav-link[data-bs-target="' + labelDivId + '"]')
+                                    .classList.add('active');
+                                popoverElement.querySelectorAll('.nav-link:not(.active)').forEach(navLink => {
+                                    navLink.classList.add('disabled');
+                                });
                             }
                         });
+                        // activate first tab if there is no decision
+                        if (popoverElement.querySelector('.nav-link.active') === null) {
+                            popoverElement.querySelector('.nav-link:first-child').classList.add('active');
+                            popoverElement.querySelector('.tab-pane:first-child').classList.add('active', 'show');
+                        }
+
                         // creating DataTable must go after selecting input value
                         jQuery(popoverElement).find("table").DataTable({
                             columnDefs: [
