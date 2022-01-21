@@ -58,25 +58,15 @@ class Index extends App {
 
         algorithmForm.addEventListener("submit", event => {
             event.preventDefault();
-            const algorithm = {};
-            const formControls = algorithmForm.querySelectorAll("[data-algorithm-parameter]");
-            formControls.forEach(formContorl => {
-                if (formContorl.type && formContorl.type === 'checkbox') {
-                    if (formContorl.checked) {
-                        algorithm[formContorl.name] = 1;
-                    } else {
-                        algorithm[formContorl.name] = 0;
-                    }
-                } else {
-                    algorithm[formContorl.name] = formContorl.value;
-                }
-            });
-
-            that.url.searchParams.set('algorithm', JSON.stringify(algorithm));
-            window.history.replaceState('', '', that.url.href);
+            const formData = new FormData(algorithmForm);
+            const algorithm = Object.fromEntries(formData);
 
             that.lockForms();
             that.runAlgorithm(algorithm)
+                .then(result => {
+                    that.url.searchParams.set('algorithm', result.algorithm_key);
+                    window.history.replaceState('', '', that.url.href);
+                })
                 .then(that.applyNgramsDisplaySettings)
                 .then(that.unlockForms);
         });
@@ -417,18 +407,18 @@ class Index extends App {
         const article = document.querySelector("article");
 
         const articleId = that.url.searchParams.get('article');
-        const paragraphs = parseInt(document.querySelector("input[name=paragraphs]").value);
+        // const paragraphs = parseInt(document.querySelector("input[name=paragraphs]").value);
 
         if (!articleId) return;
 
         const requestUrl = that.requestUrl('/api/candidateLabels/' + articleId,
-            {'algorithm': JSON.stringify(algorithm), 'limit': paragraphs});
+            {'algorithm': JSON.stringify(algorithm)});
         return fetch(requestUrl, {
             method: 'GET'
         })
             .then(response => response.json())
             .then(result => {
-                that.edl = result;
+                that.edl = result.edl;
                 that.ngrams_labels = {};
                 that.labels_ngrams = {};
                 that.edl.forEach((label, labelIndex) => {
@@ -506,7 +496,9 @@ class Index extends App {
                     spanLabels.forEach((labelIndex, index) => {
                        const label = that.edl[labelIndex];
                        title += '<button class="nav-link" data-bs-toggle="tab" data-bs-target="#label' + labelIndex + '" ' +
-                           'type="button" role="tab">' + label.name + '</button>';
+                           'type="button" role="tab">' +
+                           '<span class="ngram-tab ngram-tab-' + label.ngrams + '">' + label.name + '</span> (' + label.counter + ')' +
+                           '</button>';
                     });
                     title += '</div></nav>';
 
@@ -639,6 +631,7 @@ class Index extends App {
                         });
                     });
                 });
+                return result;
             });
     }
 }

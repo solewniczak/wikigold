@@ -56,24 +56,28 @@
         max-width: none;
     }
 
-    .ngram-popover-1 {
-        border-color: var(--ngram-color-1);
+    .ngram-tab {
+        border-bottom: 1px solid;
     }
 
-    .ngram-popover-2 {
-        border-color: var(--ngram-color-2);
+    .ngram-tab-1 {
+        border-bottom-color: var(--ngram-color-1);
     }
 
-    .ngram-popover-3 {
-        border-color: var(--ngram-color-3);
+    .ngram-tab-2 {
+        border-bottom-color: var(--ngram-color-2);
     }
 
-    .ngram-popover-4 {
-        border-color: var(--ngram-color-4);
+    .ngram-tab-3 {
+        border-bottom-color: var(--ngram-color-3);
     }
 
-    .ngram-popover-5 {
-        border-color: var(--ngram-color-5);
+    .ngram-tab-4 {
+        border-bottom-color: var(--ngram-color-4);
+    }
+
+    .ngram-tab-5 {
+        border-bottom-color: var(--ngram-color-5);
     }
 
     .wikipedia-link-red {
@@ -93,7 +97,7 @@
           <article style="line-height:{{config.get('MAX_NGRAMS')*5 + 5}}px;"></article>
       </div>
       <div class="col">
-          <div class="position-fixed">
+          <div>
               <form class="mb-4" id="search-form">
                   <div class="mb-2">
                       <h5><label for="article_source" class="col-form-label">Source</label></h5>
@@ -118,7 +122,7 @@
               <form class="mb-4" id="algorithm-form">
               <div class="mb-2">
                   <h5><label for="knowledge_base" class="col-form-label">Knowledge base</label></h5>
-                <select class="form-select form-select-sm mb-2" name="knowledge_base" id="knowledge_base" data-algorithm-parameter>
+                <select class="form-select form-select-sm mb-2" name="knowledge_base" id="knowledge_base">
                   {% for dump in dumps %}
                     <option value="{{ dump['id'] }}">
                       {{ dump['lang'] }}wiki-{{ dump['date'] }} | {{ dump['timestamp'] }}
@@ -128,10 +132,11 @@
                 </div>
                 <div class="row mb-4">
                     <div class="col-auto">
-                      <label for="paragraphs" class="col-form-label">Paragraphs limit</label>
+                      <label for="paragraphs_limit" class="col-form-label">Paragraphs limit</label>
                     </div>
                     <div class="col-auto">
-                      <input type="number" min="1" style="width: 5em" class="form-control" name="paragraphs" id="paragraphs" value="5">
+                      <input type="number" min="1" style="width: 5em" class="form-control"
+                             name="paragraphs_limit" id="paragraphs_limit" value="5">
                       </div>
                 </div>
                   <fieldset class="mb-4">
@@ -141,28 +146,41 @@
                             <label for="retrieval" class="col-form-label">Algorithm</label>
                         </div>
                         <div class="col-auto">
-                            <select class="form-select" name="retrieval" id="retrieval" data-algorithm-parameter>
+                            <select class="form-select" name="retrieval" id="retrieval">
                               <option value="" {{ 'selected' if algorithm['retrieval'] == '' }}></option>
                               <option value="exact" {{ 'selected' if algorithm['retrieval'] == 'exact' }}>n-gram exact match</option>
                             </select>
                         </div>
                     </div>
-                    <div class="form-check mb-2">
-                      <input class="form-check-input" type="checkbox" name="skipstopwords" value="1"
-                             id="skipstopwords" data-algorithm-parameter {{ 'checked' if 'skipstopwords' in algorithm }}>
-                      <label class="form-check-label" for="skipstopwords">
-                        Skip stop words
-                      </label>
+                    <div class="row mb-2">
+                        <div class="col-auto">
+                            <label for="skip_stop_words" class="col-form-label">Skip stop words</label>
+                        </div>
+                        <div class="col-auto">
+                            <select class="form-select" name="skip_stop_words" id="skip_stop_words">
+                              <option value="0" {{ 'selected' if algorithm['skip_stop_words'] == False }}>No</option>
+                              <option value="1" {{ 'selected' if algorithm['skip_stop_words'] == True }}>Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-auto">
+                          <label for="min_label_count" class="col-form-label">Min. label count</label>
+                        </div>
+                        <div class="col-auto">
+                          <input type="number" min="1" style="width: 5em" class="form-control"
+                                 name="min_label_count" id="min_label_count" value="1">
+                        </div>
                     </div>
                 </fieldset>
                 <fieldset class="mb-2">
                     <h6>Entity disambiguation</h6>
                     <div class="row">
                         <div class="col-auto">
-                                <label for="algorithm" class="col-form-label">Algorithm</label>
+                                <label for="disambiguation" class="col-form-label">Algorithm</label>
                         </div>
                         <div class="col-auto">
-                            <select class="form-select" name="disambiguation" id="disambiguation" data-algorithm-parameter>
+                            <select class="form-select" name="disambiguation" id="disambiguation">
                               <option value="" {{ 'selected' if algorithm['disambiguation'] == '' }}></option>
                               <option value="exact" {{ 'selected' if algorithm['disambiguation'] == 'top' }}>top popularity</option>
                             </select>

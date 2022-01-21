@@ -105,14 +105,45 @@ def get_user_decisions(article_id, algorithm_normalized_json_key):
 
 
 def normalize_algorithm_json(algorithm):
+    """
+    Method returns the string key that unambiguously identifies the algorithm and the algotithm parameters.
+
+    Returns:
+        string: The key of the algorithm.
+        Dict: The parameters of algorithm with resolved default values.
+    """
+
+    # Default values
+    algorithm_defaults = {
+        'knowledge_base': None,
+        'paragraphs_limit': None,
+        'retrieval': '',
+        'skip_stop_words': False,
+        'min_label_count': 1,
+        'disambiguation': ''
+    }
+
     algorithm_parsed = json.loads(algorithm)
 
-    algorithm_parsed['knowledge_base'] = int(algorithm_parsed['knowledge_base'])
+    # Parse parameters
+    if 'knowledge_base' in algorithm_parsed:
+        algorithm_parsed['knowledge_base'] = int(algorithm_parsed['knowledge_base'])
+    if 'skip_stop_words' in algorithm_parsed:
+        algorithm_parsed['skip_stop_words'] = bool(int(algorithm_parsed['skip_stop_words']))
+    if 'min_label_count' in algorithm_parsed:
+        algorithm_parsed['min_label_count'] = int(algorithm_parsed['min_label_count'])
 
-    if algorithm_parsed['retrieval'] == 'exact':
-        if 'skipstopwords' not in algorithm_parsed:
-            algorithm_parsed['skipstopwords'] = False
-        else:
-            algorithm_parsed['skipstopwords'] = bool(int(algorithm_parsed['skipstopwords']))
+    # Apply default values
+    for default_key, default_value in algorithm_defaults.items():
+        if default_key not in algorithm_parsed:
+            algorithm_parsed[default_key] = default_value
 
-    return json.dumps(algorithm_parsed, sort_keys=True), algorithm_parsed
+    # Algorithm key omits default values
+    algorithm_key = {key: value for key, value in algorithm_parsed.items() if algorithm_parsed[key] != algorithm_defaults[key]}
+
+    # Conditional key removals
+    if 'disambiguation' not in algorithm_key:
+        if 'paragraphs_limit' in algorithm_key:
+            del algorithm_key['paragraphs_limit']
+
+    return json.dumps(algorithm_key, sort_keys=True), algorithm_parsed

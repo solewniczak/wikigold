@@ -64,14 +64,10 @@ def get_candidate_labels(article_id):
     if 'algorithm' not in request.args:
         abort(400, "retrieval algorithm not given")
 
-    limit=None
-    if 'limit' in request.args:
-        limit = int(request.args['limit'])
-
     algorithm_normalized_json_key, algorithm_normalized_json = normalize_algorithm_json(request.args['algorithm'])
 
     if algorithm_normalized_json['retrieval'] == 'exact':
-        labels = get_labels_exact(article_id, algorithm_normalized_json, limit=limit)
+        labels = get_labels_exact(article_id, algorithm_normalized_json)
     else:
         abort(400, "unknown retrieval algorithm")
 
@@ -81,7 +77,7 @@ def get_candidate_labels(article_id):
         if (label['line'], label['start'], label['ngrams']) in decisions_dict:
             label['decision'] = decisions_dict[(label['line'], label['start'], label['ngrams'])]
 
-    return jsonify(labels)
+    return jsonify({'edl': labels, 'algorithm_key': algorithm_normalized_json_key})
 
 
 @bp.route('/decision', methods=('POST',))

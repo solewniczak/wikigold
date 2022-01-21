@@ -8,7 +8,7 @@ from nltk.corpus import stopwords
 from .helper import get_lines
 
 
-def get_label_titles_dict(dump_id, candidate_labels):
+def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1):
     r = get_redis(dump_id)
     db = get_db()
 
@@ -34,9 +34,10 @@ def get_label_titles_dict(dump_id, candidate_labels):
                     `articles`.`counter` AS `article_counter`, `articles`.`caption`, `articles`.`redirect_to_title`
                     FROM `current_labels` JOIN `labels` ON `current_labels`.`id` = `labels`.`id`
                                           JOIN `labels_articles` ON `current_labels`.`id` = `labels_articles`.`label_id`
-                                          JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`'''
+                                          JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
+                    WHERE `labels`.`counter` >= %s'''
 
-    cursor.execute(sql)
+    cursor.execute(sql, (min_label_count, ))
 
     label_titles_dict = {}
     for row in cursor:
@@ -63,8 +64,8 @@ def get_label_titles_dict(dump_id, candidate_labels):
     return label_titles_dict
 
 
-def get_labels_exact(article_id, algorithm_normalized_json, limit=None):
-    lines = get_lines(article_id, limit)
+def get_labels_exact(article_id, algorithm_normalized_json):
+    lines = get_lines(article_id, algorithm_normalized_json['paragraphs_limit'])
 
     dump_id = algorithm_normalized_json['knowledge_base']
     stops = set(stopwords.words('english'))
@@ -84,7 +85,7 @@ def get_labels_exact(article_id, algorithm_normalized_json, limit=None):
                 label_end = line_tokens[token_nr + ngrams - 1][1] # end of the last gram
                 label = line_content[label_start:label_end]
 
-                if algorithm_normalized_json['skipstopwords'] and label in stops:
+                if algorithm_normalized_json['skip_stop_words'] and label in stops:
                     continue
 
                 candidate_labels.append({
@@ -94,11 +95,12 @@ def get_labels_exact(article_id, algorithm_normalized_json, limit=None):
                     'ngrams': ngrams,
                 })
 
-    label_titles_dict = get_label_titles_dict(dump_id, candidate_labels)
+    label_titles_dict = get_label_titles_dict(dump_id, candidate_labels, algorithm_normalized_json['min_label_count'])
     labels = []
     for candidate_label in candidate_labels:
         label_name = candidate_label['name']
         if label_name in label_titles_dict:
+            candidate_label['counter'] = label_titles_dict[label_name]['counter']
             candidate_label['titles'] = label_titles_dict[label_name]['titles']
             labels.append(candidate_label)
 

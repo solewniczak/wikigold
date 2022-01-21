@@ -9,6 +9,7 @@ from werkzeug.exceptions import abort
 
 from .auth import login_required
 from .db import get_db
+from .helper import normalize_algorithm_json
 
 bp = Blueprint('wikigold', __name__)
 
@@ -24,10 +25,13 @@ def index():
     dumps = cursor.fetchall()
     cursor.close()
 
-    algorithm = {'algorithm': ''}
-    if 'algorithm' in request.args:
-        algorithm = json.loads(request.args['algorithm'])
-    return render_template('wikigold/index.html', algorithm=algorithm, dumps=dumps)
+    try:
+        algorithm = request.args['algorithm']
+    except KeyError:
+        algorithm = '{}'
+
+    algorithm_key, algorithm_parsed = normalize_algorithm_json(algorithm)
+    return render_template('wikigold/index.html', algorithm=algorithm_parsed, dumps=dumps)
 
 
 @bp.route('/edls')
