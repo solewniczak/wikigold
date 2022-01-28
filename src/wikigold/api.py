@@ -6,6 +6,7 @@ from flask import (
 )
 
 from .db import get_db
+from .disambiguation import commonness
 from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions
 from .labels import get_labels_exact
 from .mediawikixml import normalize_title
@@ -65,11 +66,17 @@ def get_candidate_labels(article_id):
         abort(400, "retrieval algorithm not given")
 
     algorithm_normalized_json_key, algorithm_normalized_json = normalize_algorithm_json(request.args['algorithm'])
+    lines = get_lines(article_id, algorithm_normalized_json['paragraphs_limit'])
 
     if algorithm_normalized_json['retrieval'] == 'exact':
-        labels = get_labels_exact(article_id, algorithm_normalized_json)
+        labels = get_labels_exact(lines, knowledge_base=algorithm_normalized_json['knowledge_base'],
+                                  skip_stop_words=algorithm_normalized_json['skip_stop_words'],
+                                  min_label_count=algorithm_normalized_json['min_label_count'])
     else:
         abort(400, "unknown retrieval algorithm")
+
+    if algorithm_normalized_json['disambiguation'] == 'commonness':
+        commonness(labels)
 
     # apply saved decisions
     decisions_dict = get_user_decisions(article_id, algorithm_normalized_json_key)

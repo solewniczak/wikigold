@@ -1,11 +1,7 @@
-from nltk.tokenize.treebank import TreebankWordDetokenizer
-
 from .cache import get_redis
 from .db import get_db
 from flask import current_app, g
 from nltk.corpus import stopwords
-
-from .helper import get_lines
 
 
 def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1):
@@ -64,10 +60,7 @@ def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1):
     return label_titles_dict
 
 
-def get_labels_exact(article_id, algorithm_normalized_json):
-    lines = get_lines(article_id, algorithm_normalized_json['paragraphs_limit'])
-
-    dump_id = algorithm_normalized_json['knowledge_base']
+def get_labels_exact(lines, knowledge_base, skip_stop_words=False, min_label_count=1):
     stops = set(stopwords.words('english'))
 
     candidate_labels = []
@@ -85,7 +78,7 @@ def get_labels_exact(article_id, algorithm_normalized_json):
                 label_end = line_tokens[token_nr + ngrams - 1][1] # end of the last gram
                 label = line_content[label_start:label_end]
 
-                if algorithm_normalized_json['skip_stop_words'] and label in stops:
+                if skip_stop_words and label in stops:
                     continue
 
                 candidate_labels.append({
@@ -95,7 +88,7 @@ def get_labels_exact(article_id, algorithm_normalized_json):
                     'ngrams': ngrams,
                 })
 
-    label_titles_dict = get_label_titles_dict(dump_id, candidate_labels, algorithm_normalized_json['min_label_count'])
+    label_titles_dict = get_label_titles_dict(knowledge_base, candidate_labels, min_label_count)
     labels = []
     for candidate_label in candidate_labels:
         label_name = candidate_label['name']

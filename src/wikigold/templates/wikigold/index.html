@@ -148,7 +148,7 @@
                         <div class="col-auto">
                             <select class="form-select" name="retrieval" id="retrieval">
                               <option value="" {{ 'selected' if algorithm['retrieval'] == '' }}></option>
-                              <option value="exact" {{ 'selected' if algorithm['retrieval'] == 'exact' }}>n-gram exact match</option>
+                              <option value="exact" {{ 'selected' if algorithm['retrieval'] == 'exact' }}>n-grams exact</option>
                             </select>
                         </div>
                     </div>
@@ -182,7 +182,7 @@
                         <div class="col-auto">
                             <select class="form-select" name="disambiguation" id="disambiguation">
                               <option value="" {{ 'selected' if algorithm['disambiguation'] == '' }}></option>
-                              <option value="exact" {{ 'selected' if algorithm['disambiguation'] == 'top' }}>top popularity</option>
+                              <option value="commonness" {{ 'selected' if algorithm['disambiguation'] == 'commonness' }}>Commonness</option>
                             </select>
                         </div>
                     </div>
