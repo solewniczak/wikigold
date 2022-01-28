@@ -509,7 +509,7 @@ class Index extends App {
                         '<table class="table table-sm">' +
                         '<thead><tr><th>Title</th>' +
                         '<th title="<p>Article Counter</p><p>Number of Wikipedia links that points to this article.</p>" data-bs-toggle="tooltip">A</th>' +
-                        '<th title="<p>Lable-Article Counter</p><p>Number of Wikipedia links <b>with that label</b> that points to this article.</p>" data-bs-toggle="tooltip">L-A</th>' +
+                        '<th title="<p>Label-Article Counter</p><p>The number of Wikipedia links <b>with that label</b> that points to this article.</p>" data-bs-toggle="tooltip">L-A</th>' +
                         '<th></th></tr></thead>' +
                         '<tbody>';
                         label.titles.forEach(article => {

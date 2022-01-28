@@ -120,6 +120,7 @@ def normalize_algorithm_json(algorithm):
         'retrieval': '',
         'skip_stop_words': False,
         'min_label_count': 1,
+        'min_label_articles_count': 1,
         'disambiguation': ''
     }
 

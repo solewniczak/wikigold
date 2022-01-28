@@ -4,7 +4,7 @@ from flask import current_app, g
 from nltk.corpus import stopwords
 
 
-def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1):
+def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1, min_label_articles_count=1):
     r = get_redis(dump_id)
     db = get_db()
 
@@ -31,9 +31,9 @@ def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1):
                     FROM `current_labels` JOIN `labels` ON `current_labels`.`id` = `labels`.`id`
                                           JOIN `labels_articles` ON `current_labels`.`id` = `labels_articles`.`label_id`
                                           JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
-                    WHERE `labels`.`counter` >= %s'''
+                    WHERE `labels`.`counter` >= %s AND `labels_articles`.`counter` >= %s'''
 
-    cursor.execute(sql, (min_label_count, ))
+    cursor.execute(sql, (min_label_count, min_label_articles_count))
 
     label_titles_dict = {}
     for row in cursor:
@@ -60,7 +60,7 @@ def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1):
     return label_titles_dict
 
 
-def get_labels_exact(lines, knowledge_base, skip_stop_words=False, min_label_count=1):
+def get_labels_exact(lines, knowledge_base, skip_stop_words=False, min_label_count=1, min_label_articles_count=1):
     stops = set(stopwords.words('english'))
 
     candidate_labels = []
@@ -88,7 +88,7 @@ def get_labels_exact(lines, knowledge_base, skip_stop_words=False, min_label_cou
                     'ngrams': ngrams,
                 })
 
-    label_titles_dict = get_label_titles_dict(knowledge_base, candidate_labels, min_label_count)
+    label_titles_dict = get_label_titles_dict(knowledge_base, candidate_labels, min_label_count, min_label_articles_count)
     labels = []
     for candidate_label in candidate_labels:
         label_name = candidate_label['name']
