@@ -110,6 +110,17 @@ class Index extends App {
                 that.removeClassFromOverlappingLabels(labelIndex, 'ngram-link-covered');
                 if (checkbox_value === -1) {
                     delete label.decision;
+                    that.processOverlappingLabels(labelIndex, overlappingLabelIndex => {
+                        let hasAnyResolved = false;
+                        that.processOverlappingLabels(overlappingLabelIndex, overlappingLabelForOverlappingLabelIndex => {
+                            if (that.edl[overlappingLabelForOverlappingLabelIndex].hasOwnProperty("decision")) {
+                                hasAnyResolved = true;
+                            }
+                        });
+                        if (hasAnyResolved === true) {
+                            that.addLabelClass(overlappingLabelIndex, 'ngram-link-covered');
+                        }
+                    });
                 } else {
                     label.decision = checkbox_value;
                     that.addLabelClass(labelIndex, 'ngram-link-resolved');
