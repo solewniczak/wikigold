@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime
 
 
@@ -80,10 +81,33 @@ def get_candidate_labels(article_id):
         commonness(labels)
 
     # apply saved decisions
-    decisions_dict = get_user_decisions(article_id, algorithm_normalized_json_key)
+    user_decisions_dict = get_user_decisions(article_id, algorithm_normalized_json_key)
     for label in labels:
-        if (label['line'], label['start'], label['ngrams']) in decisions_dict:
-            label['decision'] = decisions_dict[(label['line'], label['start'], label['ngrams'])]
+        if (label['line'], label['start'], label['ngrams']) in user_decisions_dict:
+            label['decision'] = user_decisions_dict[(label['line'], label['start'], label['ngrams'])]
+
+    # clear overlapping decisions
+    labels_overlap = defaultdict(list)
+    for label in labels:
+        for ngram_idx in range(label['start'], label['start']+label['ngrams']):
+            labels_overlap[label['line'], ngram_idx].append(label)
+
+    for overlapping_labels in labels_overlap.values():
+        labels_with_disambiguation = [label for label in overlapping_labels if 'disambiguation' in label]
+        if len(labels_with_disambiguation) > 1:
+            label_to_preserve = None
+            for label in overlapping_labels:
+                # user decisions has priority before disambiguation algorithm
+                if (label['line'], label['start'], label['ngrams']) in user_decisions_dict:
+                    label_to_preserve = label
+                    break
+            if label_to_preserve is None:
+                label_to_preserve = max([label for label in overlapping_labels if 'disambiguation' in label],
+                                        key=lambda label: label['disambiguation']['rating'])
+
+            for label in overlapping_labels:
+                if label != label_to_preserve:
+                    label.pop('decision', None)
 
     return jsonify({'edl': labels, 'algorithm_key': algorithm_normalized_json_key})
 

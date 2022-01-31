@@ -136,7 +136,7 @@
                     </div>
                     <div class="col-auto">
                       <input type="number" min="1" style="width: 5em" class="form-control"
-                             name="paragraphs_limit" id="paragraphs_limit" value="5">
+                             name="paragraphs_limit" id="paragraphs_limit" value="{{ algorithm['paragraphs_limit'] }}">
                       </div>
                 </div>
                   <fieldset class="mb-4">
@@ -169,7 +169,7 @@
                         </div>
                         <div class="col-auto">
                           <input type="number" min="1" style="width: 5em" class="form-control"
-                                 name="min_label_count" id="min_label_count" value="1">
+                                 name="min_label_count" id="min_label_count" value="{{ algorithm['min_label_count'] }}">
                         </div>
                     </div>
                       <div class="row mb-2">
@@ -178,7 +178,7 @@
                         </div>
                         <div class="col-auto">
                           <input type="number" min="1" style="width: 5em" class="form-control"
-                                 name="min_label_articles_count" id="min_label_articles_count" value="1">
+                                 name="min_label_articles_count" id="min_label_articles_count" value="{{ algorithm['min_label_articles_count'] }}">
                         </div>
                     </div>
                 </fieldset>

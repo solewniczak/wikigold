@@ -143,7 +143,7 @@ def normalize_algorithm_json(algorithm):
     algorithm_key = {key: value for key, value in algorithm_parsed.items() if algorithm_parsed[key] != algorithm_defaults[key]}
 
     # Conditional key removals
-    if 'disambiguation' not in algorithm_key or 'disambiguation' == 'commonness':
+    if 'disambiguation' not in algorithm_key or algorithm_key['disambiguation'] == 'commonness':
         if 'paragraphs_limit' in algorithm_key:
             del algorithm_key['paragraphs_limit']
 
