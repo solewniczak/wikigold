@@ -87,6 +87,7 @@ CREATE TABLE `labels_articles` (
 
 CREATE TABLE `wikipedia_decisions` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `source_article_id` INT UNSIGNED NOT NULL,
     `source_line_id` INT UNSIGNED NOT NULL,
     `start` INT UNSIGNED NOT NULL,
     `length` INT UNSIGNED NOT NULL,

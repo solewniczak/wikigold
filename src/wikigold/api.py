@@ -7,7 +7,7 @@ from flask import (
 )
 
 from .db import get_db
-from .disambiguation import commonness
+from .disambiguation import rate_by_commonness, rate_by_topic_proximity
 from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions
 from .labels import get_labels_exact
 from .mediawikixml import normalize_title
@@ -78,7 +78,13 @@ def get_candidate_labels(article_id):
         abort(400, "unknown retrieval algorithm")
 
     if algorithm_normalized_json['disambiguation'] == 'commonness':
-        commonness(labels)
+        rate_by_commonness(labels)
+    elif algorithm_normalized_json['disambiguation'] == 'topic_proximity':
+        rate_by_topic_proximity(labels)
+
+    for label in labels:
+        if 'disambiguation' in label:
+            label['decision'] = label['disambiguation']['article_id']
 
     # apply saved decisions
     user_decisions_dict = get_user_decisions(article_id, algorithm_normalized_json_key)

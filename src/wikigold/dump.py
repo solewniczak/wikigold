@@ -149,7 +149,7 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
 
         sql_add_line = "INSERT INTO `lines` (`article_id`, `nr`, `content`) VALUES (%s, %s, %s)"
         sql_add_wikipedia_decision = '''INSERT INTO `wikipedia_decisions`
-        (`source_line_id`, `start`, `length`, `label`, `destination_title`, `dump_id`) VALUES (%s, %s, %s, %s, %s, %s)'''
+        (`source_article_id`, `source_line_id`, `start`, `length`, `label`, `destination_title`, `dump_id`) VALUES (%s, %s, %s, %s, %s, %s, %s)'''
 
         with xml_dump_stream() as dump:
             for title, lines, redirect_to, wikipedia_decisions in iterate_xml_dump_parsed(dump, metadata, early_stopping):
@@ -190,7 +190,7 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
                                           f"exceeds maximum length ({title_maximum_length})")
                                     continue
 
-                                data_wikipedia_decision = (line_id, link['start'], link['length'], label, destination, dump_id)
+                                data_wikipedia_decision = (article_id, line_id, link['start'], link['length'], label, destination, dump_id)
                                 cursor.execute(sql_add_wikipedia_decision, data_wikipedia_decision)
                 db.commit()
 
