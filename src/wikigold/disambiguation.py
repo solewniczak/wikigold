@@ -31,27 +31,17 @@ def backlinks(article_ids):
 
     cursor = db.cursor(dictionary=True)
 
-    sql = '''CREATE TEMPORARY TABLE `current_articles` (
-                `id` INT UNSIGNED NOT NULL
-            ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin'''
-    cursor.execute(sql)
+    article_ids_str = ','.join(map(str, article_ids))
 
-    sql_insert_to_current_articles = 'INSERT INTO `current_articles` VALUES (%s)'
-    for article_id in article_ids:
-        data = (article_id, )
-        cursor.execute(sql_insert_to_current_articles, data)
-
-    sql = '''SELECT `current_articles`.`id`, `lines`.`article_id`
-            FROM `current_articles`
-            JOIN `wikipedia_decisions` ON `current_articles`.`id` = `wikipedia_decisions`.`destination_article_id`
-            JOIN `lines` ON `wikipedia_decisions`.`source_line_id` = `lines`.`id`'''
+    sql = f'SELECT `destination_article_id`, `source_article_id` ' \
+          f'FROM `wikipedia_decisions` WHERE `destination_article_id` IN ({article_ids_str})'
     cursor.execute(sql)
 
     backlinks = defaultdict(set)
     for row in cursor:
-        id = row['id']
-        article_id = row['article_id']
-        backlinks[id].add(article_id)
+        destination_article_id = row['destination_article_id']
+        source_article_id = row['source_article_id']
+        backlinks[destination_article_id].add(source_article_id)
 
     cursor.close()
     return backlinks

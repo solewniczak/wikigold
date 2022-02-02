@@ -96,6 +96,7 @@ CREATE TABLE `wikipedia_decisions` (
     `destination_title` VARCHAR(255) NOT NULL,
     `destination_article_id` INT UNSIGNED NULL,
     `dump_id` INT UNSIGNED NULL,
+    FOREIGN KEY (`source_article_id`) REFERENCES `articles` (`id`),
     FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`),
     FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`),
     FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`),
