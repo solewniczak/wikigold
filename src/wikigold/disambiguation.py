@@ -1,4 +1,5 @@
 from collections import defaultdict
+from math import log2
 
 from .db import get_db
 
@@ -28,11 +29,9 @@ def get_context_terms(labels, commonness_threshold=0.9):
 
 def backlinks(article_ids):
     db = get_db()
-
     cursor = db.cursor(dictionary=True)
 
     article_ids_str = ','.join(map(str, article_ids))
-
     sql = f'SELECT `destination_article_id`, `source_article_id` ' \
           f'FROM `wikipedia_decisions` WHERE `destination_article_id` IN ({article_ids_str})'
     cursor.execute(sql)
@@ -47,8 +46,51 @@ def backlinks(article_ids):
     return backlinks
 
 
-def rate_by_topic_proximity(labels):
+def semantic_relatedness(article_a_backlinks, article_b_backlinks, articles_count):
+    aN = len(article_a_backlinks)
+    bN = len(article_b_backlinks)
+    abN = len(article_a_backlinks & article_b_backlinks)
+    N = articles_count
+
+    if abN == 0 or aN == 0 and bN == 0 or N == 0:
+        return 0
+
+    sr = (log2(max(aN, bN)) - log2(abN))/(log2(N) - log2(min(aN,bN)))
+    return sr
+
+
+def avg_semantic_relatedness(article_id, backlinks, articles_count):
+    sum_sr = 0.0
+    for destination_article_id, destination_article_backlinks in backlinks.items():
+        if destination_article_id != article_id:
+            sum_sr += semantic_relatedness(backlinks[article_id], destination_article_backlinks, articles_count)
+    return sum_sr/(len(backlinks)-1)
+
+
+def rate_by_topic_proximity(labels, dump_id):
     rate_by_commonness(labels)
     context_terms = get_context_terms(labels)
-    context_terms_backlinks = backlinks([label['disambiguation']['article_id'] for label in context_terms])
-    pass
+    unique_articles_ids = set([label['disambiguation']['article_id'] for label in context_terms])
+    context_terms_backlinks = backlinks(unique_articles_ids)
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    sql_select_articles_count = 'SELECT `articles_count` FROM dumps WHERE id=%s'
+    cursor.execute(sql_select_articles_count, (dump_id, ))
+    articles_count = cursor.fetchone()['articles_count']
+
+    sr_for_context_terms = {}
+    sum_sr_for_context_terms = 0.0
+    for context_term_article_id in unique_articles_ids:
+        sr_for_context_term = avg_semantic_relatedness(context_term_article_id, context_terms_backlinks, articles_count)
+        sr_for_context_terms[context_term_article_id] = sr_for_context_term
+        sum_sr_for_context_terms += sr_for_context_term
+
+    avg_sr_for_context_terms = sum_sr_for_context_terms/len(context_terms)
+
+    for label in context_terms:
+        context_term_article_id = label['disambiguation']['article_id']
+        context_term_sr = sr_for_context_terms[context_term_article_id]
+        if context_term_sr >= avg_sr_for_context_terms:
+            label['disambiguation']['context_term'] = True
+            label['disambiguation']['semantic_relatedness'] = context_term_sr

@@ -19,7 +19,7 @@ services:
 
   db:
     image: mariadb:10.6.2
-    command: mysqld --innodb-buffer-pool-size=8589934592 # 8GiB
+    # command: mysqld --innodb-buffer-pool-size=8589934592 # 8GiB - for dump import only
     ports:
       - "3306:3306"
     environment:
