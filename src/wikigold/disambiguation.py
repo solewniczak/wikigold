@@ -70,19 +70,18 @@ def semantic_relatedness(article_a_backlinks, article_b_backlinks, articles_coun
     return sr
 
 
-def avg_semantic_relatedness(article_id, backlinks, articles_count):
+def avg_semantic_relatedness(backlinks, article_id, other_articles_ids, articles_count):
     sum_sr = 0.0
-    for destination_article_id, destination_article_backlinks in backlinks.items():
-        if destination_article_id != article_id:
-            sum_sr += semantic_relatedness(backlinks[article_id], destination_article_backlinks, articles_count)
+    for other_article_id in other_articles_ids:
+        sum_sr += semantic_relatedness(backlinks[article_id], backlinks[other_article_id], articles_count)
     return sum_sr/(len(backlinks)-1)
 
 
 def rate_by_topic_proximity(labels, dump_id):
-    rate_by_commonness(labels)
-    context_terms = get_context_terms(labels)
-    unique_context_terms_articles_ids = set([label['disambiguation']['article_id'] for label in context_terms])
-    context_terms_backlinks = backlinks(unique_context_terms_articles_ids)
+    unique_articles_ids = set()
+    for label in labels:
+        unique_articles_ids.update([title['article_id'] for title in label['titles']])
+    articles_backlinks = backlinks(unique_articles_ids)
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -90,28 +89,37 @@ def rate_by_topic_proximity(labels, dump_id):
     cursor.execute(sql_select_articles_count, (dump_id, ))
     articles_count = cursor.fetchone()['articles_count']
 
+    rate_by_commonness(labels)
+    context_terms = get_context_terms(labels)
+
     sr_for_context_terms = {}
     sum_sr_for_context_terms = 0.0
+    unique_context_terms_articles_ids = set([label['disambiguation']['article_id'] for label in context_terms])
     for context_term_article_id in unique_context_terms_articles_ids:
-        sr_for_context_term = avg_semantic_relatedness(context_term_article_id, context_terms_backlinks, articles_count)
+        other_articles_ids = [article_id for article_id in unique_context_terms_articles_ids if article_id != context_term_article_id]
+        sr_for_context_term = avg_semantic_relatedness(articles_backlinks, context_term_article_id, other_articles_ids, articles_count)
         sr_for_context_terms[context_term_article_id] = sr_for_context_term
         sum_sr_for_context_terms += sr_for_context_term
 
     avg_sr_for_context_terms = sum_sr_for_context_terms/len(context_terms)
 
+    unique_context_terms_articles_ids = set()  # some context terms will be removed, so clean the set
     for label in context_terms:
         context_term_article_id = label['disambiguation']['article_id']
         context_term_sr = sr_for_context_terms[context_term_article_id]
         if context_term_sr >= avg_sr_for_context_terms:
             label['disambiguation']['context_term'] = True
+            label['disambiguation']['rating'] = 1.0 # context terms always on top
             label['disambiguation']['semantic_relatedness'] = context_term_sr
-        else:
-            del context_terms_backlinks[context_term_article_id]
+            unique_context_terms_articles_ids.add(context_term_article_id)
 
-    unique_ambiguous_terms_articles_ids = set()
     for label in labels:
         if 'context_term' not in label['disambiguation']:
-            unique_ambiguous_terms_articles_ids.update([title['article_id'] for title in label['titles']])
-
-    ambiguous_terms_backlinks = backlinks(unique_ambiguous_terms_articles_ids)
-    pass
+            for title in label['titles']:
+                article_id = title['article_id']
+                sr_for_meaning = avg_semantic_relatedness(articles_backlinks, article_id,
+                                                          unique_context_terms_articles_ids, articles_count)
+                title['semantic_relatedness'] = sr_for_meaning
+            article_with_max_sr = max(label['titles'], key=lambda title: title['semantic_relatedness'])
+            label['disambiguation']['article_id'] = article_with_max_sr['article_id']
+            label['disambiguation']['rating'] = article_with_max_sr['semantic_relatedness']
