@@ -1,6 +1,7 @@
 from collections import defaultdict
 from math import log2
 
+from .cache import get_cached_backlinks
 from .db import get_db
 
 
@@ -28,21 +29,31 @@ def get_context_terms(labels, commonness_threshold=0.9):
 
 
 def backlinks(article_ids):
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-
-    article_ids_str = ','.join(map(str, article_ids))
-    sql = f'SELECT `destination_article_id`, `source_article_id` ' \
-          f'FROM `wikipedia_decisions` WHERE `destination_article_id` IN ({article_ids_str})'
-    cursor.execute(sql)
-
+    no_cached = []
     backlinks = defaultdict(set)
-    for row in cursor:
-        destination_article_id = row['destination_article_id']
-        source_article_id = row['source_article_id']
-        backlinks[destination_article_id].add(source_article_id)
+    # loads backlinks from cache
+    for article_id in article_ids:
+        article_backlinks = get_cached_backlinks(article_id)
+        if article_backlinks is None:
+            no_cached.append(article_id)
+        else:
+            backlinks[article_id] = set(article_backlinks.keys())
 
-    cursor.close()
+    if len(no_cached) > 0:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+
+        article_ids_str = ','.join(map(str, no_cached))
+        sql = f'SELECT `destination_article_id`, `source_article_id` ' \
+              f'FROM `wikipedia_decisions` WHERE `destination_article_id` IN ({article_ids_str})'
+        cursor.execute(sql)
+
+        for row in cursor:
+            destination_article_id = row['destination_article_id']
+            source_article_id = row['source_article_id']
+            backlinks[destination_article_id].add(source_article_id)
+
+        cursor.close()
     return backlinks
 
 
@@ -70,8 +81,8 @@ def avg_semantic_relatedness(article_id, backlinks, articles_count):
 def rate_by_topic_proximity(labels, dump_id):
     rate_by_commonness(labels)
     context_terms = get_context_terms(labels)
-    unique_articles_ids = set([label['disambiguation']['article_id'] for label in context_terms])
-    context_terms_backlinks = backlinks(unique_articles_ids)
+    unique_context_terms_articles_ids = set([label['disambiguation']['article_id'] for label in context_terms])
+    context_terms_backlinks = backlinks(unique_context_terms_articles_ids)
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -81,7 +92,7 @@ def rate_by_topic_proximity(labels, dump_id):
 
     sr_for_context_terms = {}
     sum_sr_for_context_terms = 0.0
-    for context_term_article_id in unique_articles_ids:
+    for context_term_article_id in unique_context_terms_articles_ids:
         sr_for_context_term = avg_semantic_relatedness(context_term_article_id, context_terms_backlinks, articles_count)
         sr_for_context_terms[context_term_article_id] = sr_for_context_term
         sum_sr_for_context_terms += sr_for_context_term
@@ -94,3 +105,13 @@ def rate_by_topic_proximity(labels, dump_id):
         if context_term_sr >= avg_sr_for_context_terms:
             label['disambiguation']['context_term'] = True
             label['disambiguation']['semantic_relatedness'] = context_term_sr
+        else:
+            del context_terms_backlinks[context_term_article_id]
+
+    unique_ambiguous_terms_articles_ids = set()
+    for label in labels:
+        if 'context_term' not in label['disambiguation']:
+            unique_ambiguous_terms_articles_ids.update([title['article_id'] for title in label['titles']])
+
+    ambiguous_terms_backlinks = backlinks(unique_ambiguous_terms_articles_ids)
+    pass

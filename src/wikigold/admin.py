@@ -20,7 +20,7 @@ def redis():
     dumps = []
     for row in cursor:
         dump = row
-        dump['cached_labels'] = cached_labels(dump['id'])
+        dump['cached_labels'] = cached_labels()
         dumps.append(dump)
 
     cursor.close()
