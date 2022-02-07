@@ -1,6 +1,4 @@
-import time
-
-from .cache import get_redis, get_cached_label, get_cached_label_titles, add_label_titles_to_cache
+from .cache import get_cached_label, get_cached_label_titles, add_label_titles_to_cache
 from .db import get_db
 from flask import current_app, g
 from nltk.corpus import stopwords
@@ -37,13 +35,13 @@ def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1, min_labe
             }
 
     if len(no_cached_labels_ids) > 0:
-        candidate_labels_ids_str = ','.join([str(label_id) for label_id in no_cached_labels_ids])
+        no_cached_labels_ids_str = ','.join([str(label_id) for label_id in no_cached_labels_ids])
 
         sql = f'''SELECT `labels_articles`.`label_id`, `labels_articles`.`article_id`, `labels_articles`.`title`,
                         `labels_articles`.`counter` AS `label_title_counter`, `articles`.`counter` AS `article_counter`,
                         `articles`.`caption`, `articles`.`redirect_to_title`
                         FROM `labels_articles` JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
-                        WHERE `labels_articles`.`label_id` IN ({candidate_labels_ids_str})'''
+                        WHERE `labels_articles`.`label_id` IN ({no_cached_labels_ids_str})'''
         cursor.execute(sql)
 
         label_titles_from_db_dict = {}
