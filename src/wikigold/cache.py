@@ -11,8 +11,17 @@ from tqdm import tqdm
 from .db import get_db
 
 
-def get_redis(db=0):
-    """db=0 is default for redis"""
+def get_redis(db_name=None):
+    db_mappings = {
+        'labels': 1,
+        'backlinks': 2,
+    }
+
+    if db_name is None:
+        db = 0
+    else:
+        db = db_mappings[db_name]
+
     if 'redis' not in g:
         g.redis = {}
 
@@ -22,31 +31,32 @@ def get_redis(db=0):
     return g.redis[db]
 
 
-def get_labels_cache():
-    return get_redis(1)
-
-
-def get_backlinks_cache():
-    return get_redis(2)
-
-
 def get_cached_backlinks(article_id):
-    backlinks = get_backlinks_cache().get(article_id)
+    r = get_redis('backlinks')
+    backlinks = r.get(article_id)
     if backlinks is not None:
         backlinks = pickle.loads(backlinks)
     return backlinks
 
 
-def cached_labels():
-    r = get_labels_cache()
-    return r.dbsize()
+def add_backlinks_to_cache(article_id, backlinks):
+    r = get_redis('backlinks')
+    r.set(article_id, pickle.dumps(backlinks))
 
 
-@click.command('cache-dump')
+def get_cached_label_id(label):
+    r = get_redis('labels')
+    label_id = r.get(label)
+    if label_id is not None:
+        label_id = int(label_id)
+    return label_id
+
+
+@click.command('cache-labels')
 @click.argument('dump_id')
 @with_appcontext
-def cache_dump_command(dump_id):
-    r = get_labels_cache()
+def cache_labels_command(dump_id):
+    r = get_redis('labels')
     db = get_db()
 
     cursor = db.cursor(dictionary=True)
@@ -73,7 +83,6 @@ def cache_dump_command(dump_id):
 @click.option('-s', '--start-page', type=int, default=0)
 @with_appcontext
 def cache_backlinks_command(dump_id, page_size, start_page):
-    r = get_backlinks_cache()
     db = get_db()
 
     cursor = db.cursor(dictionary=True)
@@ -108,16 +117,14 @@ def cache_backlinks_command(dump_id, page_size, start_page):
                 if destination_article_id in backlinks:
                     backlinks[destination_article_id][source_article_id] += 1
                 else:
-                    article_backlinks = r.get(destination_article_id)
+                    article_backlinks = get_cached_backlinks(destination_article_id)
                     if article_backlinks is None:
                         article_backlinks = Counter()
-                    else:
-                        article_backlinks = pickle.loads(article_backlinks)
                     article_backlinks[source_article_id] += 1
                     backlinks[destination_article_id] = article_backlinks
 
             for destination_article_id, article_backlinks in backlinks.items():
-                r.set(destination_article_id, pickle.dumps(article_backlinks))
+                add_backlinks_to_cache(destination_article_id, article_backlinks)
             pbar.update(1)
         cursor.close()
 
@@ -125,8 +132,8 @@ def cache_backlinks_command(dump_id, page_size, start_page):
 @click.command('flush-db')
 @click.argument('db')
 @with_appcontext
-def flush_dumpdb_command(db):
-    r = get_redis(db)
+def flush_db_command(db_name):
+    r = get_redis(db_name)
     r.flushdb()
 
 
@@ -138,7 +145,7 @@ def flush_all_command():
 
 
 def init_app(app):
-    app.cli.add_command(cache_dump_command)
-    app.cli.add_command(flush_dumpdb_command)
+    app.cli.add_command(cache_labels_command)
+    app.cli.add_command(flush_db_command)
     app.cli.add_command(flush_all_command)
     app.cli.add_command(cache_backlinks_command)

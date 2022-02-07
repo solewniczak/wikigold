@@ -1,7 +1,7 @@
 from collections import defaultdict
 from math import log2
 
-from .cache import get_cached_backlinks
+from .cache import get_cached_backlinks, add_backlinks_to_cache
 from .db import get_db
 
 
@@ -52,8 +52,12 @@ def backlinks(article_ids):
             destination_article_id = row['destination_article_id']
             source_article_id = row['source_article_id']
             backlinks[destination_article_id].add(source_article_id)
-
         cursor.close()
+
+        # add missing backlinks to cache
+        for destination_article_id, article_backlinks in backlinks.items():
+            add_backlinks_to_cache(destination_article_id, article_backlinks)
+
     return backlinks
 
 

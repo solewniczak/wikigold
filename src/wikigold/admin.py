@@ -3,7 +3,7 @@ from flask import (
 )
 
 from .auth import superuser
-from .cache import cached_labels, get_redis
+from .cache import get_redis
 from .db import get_db
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -12,6 +12,7 @@ redis = Blueprint('redis', __name__, url_prefix='/redis')
 @bp.route('/redis')
 @superuser
 def redis():
+    r = get_redis('labels')
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
@@ -20,7 +21,7 @@ def redis():
     dumps = []
     for row in cursor:
         dump = row
-        dump['cached_labels'] = cached_labels()
+        dump['cached_labels'] = r.dbsize()
         dumps.append(dump)
 
     cursor.close()
@@ -39,7 +40,8 @@ def redis_flush_labels(dump_id):
 @bp.route('/redis/countCachedLabels/<int:dump_id>')
 @superuser
 def redis_count_cached_labels(dump_id):
-    return jsonify({'cached_labels': cached_labels(dump_id)})
+    r = get_redis('labels')
+    return jsonify({'cached_labels': r.dbsize()})
 
 
 @bp.route('/redis/cacheLabels/<int:dump_id>')
