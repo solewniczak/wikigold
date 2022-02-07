@@ -1,6 +1,6 @@
 import time
 
-from .cache import get_redis, get_cached_label_id
+from .cache import get_redis, get_cached_label
 from .db import get_db
 from flask import current_app, g
 from nltk.corpus import stopwords
@@ -14,25 +14,39 @@ def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1, min_labe
     start_time = time.time_ns()
 
     candidate_labels_unique = set(map(lambda candidate_label: candidate_label['name'], candidate_labels))
-    candidate_labels_ids = []
-    for label_name in candidate_labels_unique:
-        id = get_cached_label_id(label_name)
-        if id is not None:
-            candidate_labels_ids.append(str(id))
-    candidate_labels_ids_str = ','.join(candidate_labels_ids)
-    sql = f'''SELECT `labels`.`label`, `labels`.`counter` AS `label_counter`,
-                    `labels_articles`.`article_id`, `labels_articles`.`title`, `labels_articles`.`counter` AS `label_title_counter`,
-                    `articles`.`counter` AS `article_counter`, `articles`.`caption`, `articles`.`redirect_to_title`
-                    FROM `labels` JOIN `labels_articles` ON `labels`.`id` = `labels_articles`.`label_id`
-                                  JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
-                    WHERE `labels`.`id` IN ({candidate_labels_ids_str})
-                                  AND `labels`.`counter` >= %s AND `labels_articles`.`counter` >= %s'''
+    candidate_labels_dict = {}
 
-    cursor.execute(sql, (min_label_count, min_label_articles_count))
+    for label_name in candidate_labels_unique:
+        label_data = get_cached_label(label_name)
+        if label_data is not None:
+            label_id, label_counter = label_data
+            if label_counter >= min_label_count:
+                candidate_labels_dict[label_id] = {'label_name': label_name, 'label_counter': label_counter}
+    candidate_labels_ids_str = ','.join([str(key) for key in candidate_labels_dict.keys()])
+
+
+
+    sql = f'''SELECT `labels_articles`.`label_id`, `labels_articles`.`article_id`, `labels_articles`.`title`,
+                    `labels_articles`.`counter` AS `label_title_counter`, `articles`.`counter` AS `article_counter`,
+                    `articles`.`caption`, `articles`.`redirect_to_title`
+                    FROM `labels_articles` JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
+                    WHERE `labels_articles`.`label_id` IN ({candidate_labels_ids_str})
+                        AND `labels_articles`.`counter` >= %s'''
+
+    cursor.execute(sql, (min_label_articles_count, ))
 
     label_titles_dict = {}
     for row in cursor:
-        label_name = row['label']
+        label_data = candidate_labels_dict[row['label_id']]
+        label_name = label_data['label_name']
+        label_counter = label_data['label_counter']
+
+        if label_name not in label_titles_dict:
+            label_titles_dict[label_name] = {
+                'counter': label_counter,
+                'titles': []
+            }
+
         title = {
             'article_id': row['article_id'],
             'title': row['title'],
@@ -43,16 +57,11 @@ def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1, min_labe
         }
         if title['caption'] is not None:
             title['caption'] = title['caption'].decode('utf-8')
-        if label_name not in label_titles_dict:
-            label_titles_dict[label_name] = {
-                'counter': row['label_counter'],
-                'titles': [title]
-            }
-        else:
-            label_titles_dict[label_name]['titles'].append(title)
-    cursor.close()
+        label_titles_dict[label_name]['titles'].append(title)
 
-    print('runtime: ', (time.time_ns() - start_time)/1000000000)
+    print('runtime: ', (time.time_ns() - start_time) / 1000000000)
+
+    cursor.close()
 
     return label_titles_dict
 

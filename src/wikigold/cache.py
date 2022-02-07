@@ -1,5 +1,5 @@
 import pickle
-from collections import Counter
+from collections import Counter, defaultdict
 
 import redis
 
@@ -15,6 +15,7 @@ def get_redis(db_name=None):
     db_mappings = {
         'labels': 1,
         'backlinks': 2,
+        'labels_titles': 3
     }
 
     if db_name is None:
@@ -44,35 +45,80 @@ def add_backlinks_to_cache(article_id, backlinks):
     r.set(article_id, pickle.dumps(backlinks))
 
 
-def get_cached_label_id(label):
+def get_cached_label(label_name):
+    """Returns tuple: label_id, label_counter"""
     r = get_redis('labels')
-    label_id = r.get(label)
-    if label_id is not None:
-        label_id = int(label_id)
-    return label_id
+    label = r.get(label_name)
+    if label is not None:
+        label = pickle.loads(label)
+    return label
+
+
+def add_label_to_cache(label_name, label_id, label_counter):
+    r = get_redis('labels')
+    value = (label_id, label_counter)
+    r.set(label_name, pickle.dumps(value))
+
+
+# @click.command('cache-labels')
+# @click.argument('dump_id')
+# @with_appcontext
+# def cache_labels_command(dump_id):
+#     db = get_db()
+#
+#     cursor = db.cursor(dictionary=True)
+#
+#     sql = 'SELECT `labels_count` FROM `dumps` WHERE `id`=%s'
+#     cursor.execute(sql, (dump_id,))
+#     labels_count = cursor.fetchone()['labels_count']
+#     print(f'labels count: {labels_count}')
+#
+#     sql = f'''SELECT `labels`.`label`, `labels`.`counter` AS `label_counter`,
+#                     `labels_articles`.`article_id`, `labels_articles`.`title`, `labels_articles`.`counter` AS `label_title_counter`,
+#                     `articles`.`counter` AS `article_counter`, `articles`.`caption`, `articles`.`redirect_to_title`
+#                         FROM `labels` JOIN `labels_articles` ON `labels`.`id` = `labels_articles`.`label_id`
+#                                       JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`'''
+#     cursor.execute(sql)
+#
+#     labels = {}
+#     with tqdm(total=labels_count) as pbar:
+#         for row in cursor:
+#             label = row['label']
+#             if label not in labels:
+#                 labels[label] = {
+#                     'counter': row['label_counter'],
+#                     'titles': []
+#                 }
+#             labels[label]['titles'].append({
+#                 'article_id': row['article_id'],
+#                 'title': row['title'],
+#                 'label_title_counter': row['label_title_counter'],
+#                 'article_counter': row['article_counter'],
+#                 'redirect_to_title': row['redirect_to_title']
+#             })
+#             pbar.update(1)
+#     cursor.close()
 
 
 @click.command('cache-labels')
 @click.argument('dump_id')
 @with_appcontext
 def cache_labels_command(dump_id):
-    r = get_redis('labels')
     db = get_db()
 
     cursor = db.cursor(dictionary=True)
 
-    sql = 'SELECT COUNT(*) AS "counter" FROM `labels`'
-    cursor.execute(sql)
-    counter = cursor.fetchone()['counter']
+    sql = 'SELECT `labels_count` FROM `dumps` WHERE `id`=%s'
+    cursor.execute(sql, (dump_id,))
+    labels_count = cursor.fetchone()['labels_count']
+    print(f'labels count: {labels_count}')
 
-    sql = '''SELECT `id`, `label` FROM `labels` WHERE `labels`.`dump_id`=%s'''
+    sql = '''SELECT `id`, `label`, `counter` AS `label_counter` FROM `labels` WHERE `labels`.`dump_id`=%s'''
     data = (dump_id,)
     cursor.execute(sql, data)
-    with tqdm(total=counter) as pbar:
+    with tqdm(total=labels_count) as pbar:
         for row in cursor:
-            key = row['label']
-            value = row['id']
-            r.set(key, value)
+            add_label_to_cache(row['label'], row['id'], row['label_counter'])
             pbar.update(1)
     cursor.close()
 
@@ -130,7 +176,7 @@ def cache_backlinks_command(dump_id, page_size, start_page):
 
 
 @click.command('flush-db')
-@click.argument('db')
+@click.argument('db_name')
 @with_appcontext
 def flush_db_command(db_name):
     r = get_redis(db_name)
