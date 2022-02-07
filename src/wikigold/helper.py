@@ -133,6 +133,8 @@ def normalize_algorithm_json(algorithm):
         algorithm_parsed['skip_stop_words'] = bool(int(algorithm_parsed['skip_stop_words']))
     if 'min_label_count' in algorithm_parsed:
         algorithm_parsed['min_label_count'] = int(algorithm_parsed['min_label_count'])
+    if 'min_label_articles_count' in algorithm_parsed:
+        algorithm_parsed['min_label_articles_count'] = int(algorithm_parsed['min_label_articles_count'])
 
     # Apply default values
     for default_key, default_value in algorithm_defaults.items():

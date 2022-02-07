@@ -60,44 +60,17 @@ def add_label_to_cache(label_name, label_id, label_counter):
     r.set(label_name, pickle.dumps(value))
 
 
-# @click.command('cache-labels')
-# @click.argument('dump_id')
-# @with_appcontext
-# def cache_labels_command(dump_id):
-#     db = get_db()
-#
-#     cursor = db.cursor(dictionary=True)
-#
-#     sql = 'SELECT `labels_count` FROM `dumps` WHERE `id`=%s'
-#     cursor.execute(sql, (dump_id,))
-#     labels_count = cursor.fetchone()['labels_count']
-#     print(f'labels count: {labels_count}')
-#
-#     sql = f'''SELECT `labels`.`label`, `labels`.`counter` AS `label_counter`,
-#                     `labels_articles`.`article_id`, `labels_articles`.`title`, `labels_articles`.`counter` AS `label_title_counter`,
-#                     `articles`.`counter` AS `article_counter`, `articles`.`caption`, `articles`.`redirect_to_title`
-#                         FROM `labels` JOIN `labels_articles` ON `labels`.`id` = `labels_articles`.`label_id`
-#                                       JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`'''
-#     cursor.execute(sql)
-#
-#     labels = {}
-#     with tqdm(total=labels_count) as pbar:
-#         for row in cursor:
-#             label = row['label']
-#             if label not in labels:
-#                 labels[label] = {
-#                     'counter': row['label_counter'],
-#                     'titles': []
-#                 }
-#             labels[label]['titles'].append({
-#                 'article_id': row['article_id'],
-#                 'title': row['title'],
-#                 'label_title_counter': row['label_title_counter'],
-#                 'article_counter': row['article_counter'],
-#                 'redirect_to_title': row['redirect_to_title']
-#             })
-#             pbar.update(1)
-#     cursor.close()
+def get_cached_label_titles(label_name):
+    r = get_redis('labels_titles')
+    label_titles = r.get(label_name)
+    if label_titles is not None:
+        label_titles = pickle.loads(label_titles)
+    return label_titles
+
+
+def add_label_titles_to_cache(label_name, titles):
+    r = get_redis('labels_titles')
+    r.set(label_name, pickle.dumps(titles))
 
 
 @click.command('cache-labels')
