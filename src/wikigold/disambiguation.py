@@ -17,7 +17,7 @@ def rate_by_commonness(labels):
     for label in labels:
         most_common_article = max(label['titles'], key=lambda title: title['commonness'])
         label['disambiguation'] = {
-            'article_id': most_common_article['article_id'],
+            'candidate_article_id': most_common_article['article_id'],
             'rating': most_common_article['commonness'],
         }
 
@@ -81,7 +81,30 @@ def avg_semantic_relatedness(backlinks, article_id, other_articles_ids, articles
     return sum_sr/(len(backlinks)-1)
 
 
-def rate_by_topic_proximity(labels, dump_id):
+def count_tokens_in_lines(lines):
+    return sum([len(line['tokens']) for line in lines])
+
+
+def apply_links_to_text_ratio(labels, lines, links_to_text_ratio=0.12):
+    tokens_in_text = count_tokens_in_lines(lines)
+    tokens_to_links = int(links_to_text_ratio * tokens_in_text)
+    labels_sorted = sorted(labels, key=lambda label: label['disambiguation']['rating'])
+    labels_overlap = defaultdict(list)  # store information about labels overlapping
+    while tokens_to_links > 0 and len(labels_sorted) > 0:
+        label = labels_sorted.pop()
+        overlap = False
+        for ngram_idx in range(label['start'], label['start'] + label['ngrams']):
+            if len(labels_overlap[label['line'], ngram_idx]) > 0:
+                overlap = True
+
+        if not overlap:
+            label['disambiguation']['article_id'] = label['disambiguation']['candidate_article_id']
+            tokens_to_links -= label['ngrams']
+            for ngram_idx in range(label['start'], label['start'] + label['ngrams']):
+                labels_overlap[label['line'], ngram_idx].append(label)
+
+
+def rate_by_topic_proximity(labels, dump_id, max_context_terms=20):
     unique_articles_ids = set()
     for label in labels:
         unique_articles_ids.update([title['article_id'] for title in label['titles']])
@@ -98,7 +121,7 @@ def rate_by_topic_proximity(labels, dump_id):
 
     sr_for_context_terms = {}
     sum_sr_for_context_terms = 0.0
-    unique_context_terms_articles_ids = set([label['disambiguation']['article_id'] for label in context_terms])
+    unique_context_terms_articles_ids = set([label['disambiguation']['candidate_article_id'] for label in context_terms])
     for context_term_article_id in unique_context_terms_articles_ids:
         other_articles_ids = [article_id for article_id in unique_context_terms_articles_ids if article_id != context_term_article_id]
         sr_for_context_term = avg_semantic_relatedness(articles_backlinks, context_term_article_id, other_articles_ids, articles_count)
@@ -109,7 +132,7 @@ def rate_by_topic_proximity(labels, dump_id):
 
     unique_context_terms_articles_ids = set()  # some context terms will be removed, so clean the set
     for label in context_terms:
-        context_term_article_id = label['disambiguation']['article_id']
+        context_term_article_id = label['disambiguation']['candidate_article_id']
         context_term_sr = sr_for_context_terms[context_term_article_id]
         if context_term_sr >= avg_sr_for_context_terms:
             label['disambiguation']['context_term'] = True
@@ -125,5 +148,7 @@ def rate_by_topic_proximity(labels, dump_id):
                                                           unique_context_terms_articles_ids, articles_count)
                 title['semantic_relatedness'] = sr_for_meaning
             article_with_max_sr = max(label['titles'], key=lambda title: title['semantic_relatedness'])
-            label['disambiguation']['article_id'] = article_with_max_sr['article_id']
+            label['disambiguation']['candidate_article_id'] = article_with_max_sr['article_id']
             label['disambiguation']['rating'] = article_with_max_sr['semantic_relatedness']
+
+

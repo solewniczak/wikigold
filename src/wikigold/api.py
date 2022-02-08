@@ -7,7 +7,7 @@ from flask import (
 )
 
 from .db import get_db
-from .disambiguation import rate_by_commonness, rate_by_topic_proximity
+from .disambiguation import rate_by_commonness, rate_by_topic_proximity, apply_links_to_text_ratio
 from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions
 from .labels import get_labels_exact
 from .mediawikixml import normalize_title
@@ -82,8 +82,11 @@ def get_candidate_labels(article_id):
     elif algorithm_normalized_json['disambiguation'] == 'topic_proximity':
         rate_by_topic_proximity(labels, algorithm_normalized_json['knowledge_base'])
 
+    if algorithm_normalized_json['disambiguation'] != '':
+        apply_links_to_text_ratio(labels, lines)
+
     for label in labels:
-        if 'disambiguation' in label:
+        if 'article_id' in label['disambiguation']:
             label['decision'] = label['disambiguation']['article_id']
 
     # apply saved decisions
@@ -91,29 +94,6 @@ def get_candidate_labels(article_id):
     for label in labels:
         if (label['line'], label['start'], label['ngrams']) in user_decisions_dict:
             label['decision'] = user_decisions_dict[(label['line'], label['start'], label['ngrams'])]
-
-    # clear overlapping decisions
-    labels_overlap = defaultdict(list)
-    for label in labels:
-        for ngram_idx in range(label['start'], label['start']+label['ngrams']):
-            labels_overlap[label['line'], ngram_idx].append(label)
-
-    for overlapping_labels in labels_overlap.values():
-        labels_with_disambiguation = [label for label in overlapping_labels if 'disambiguation' in label]
-        if len(labels_with_disambiguation) > 1:
-            label_to_preserve = None
-            for label in overlapping_labels:
-                # user decisions has priority before disambiguation algorithm
-                if (label['line'], label['start'], label['ngrams']) in user_decisions_dict:
-                    label_to_preserve = label
-                    break
-            if label_to_preserve is None:
-                label_to_preserve = max([label for label in overlapping_labels if 'disambiguation' in label],
-                                        key=lambda label: label['disambiguation']['rating'])
-
-            for label in overlapping_labels:
-                if label != label_to_preserve:
-                    label.pop('decision', None)
 
     return jsonify({'edl': labels, 'algorithm_key': algorithm_normalized_json_key})
 
