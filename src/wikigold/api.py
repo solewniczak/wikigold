@@ -83,7 +83,7 @@ def get_candidate_labels(article_id):
         rate_by_topic_proximity(labels, algorithm_normalized_json['knowledge_base'])
 
     if algorithm_normalized_json['disambiguation'] != '':
-        apply_links_to_text_ratio(labels, lines)
+        apply_links_to_text_ratio(labels, lines, 0.2)
 
     for label in labels:
         if 'article_id' in label['disambiguation']:

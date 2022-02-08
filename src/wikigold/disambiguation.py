@@ -130,15 +130,21 @@ def rate_by_topic_proximity(labels, dump_id, max_context_terms=20):
 
     avg_sr_for_context_terms = sum_sr_for_context_terms/len(context_terms)
 
-    unique_context_terms_articles_ids = set()  # some context terms will be removed, so clean the set
     for label in context_terms:
         context_term_article_id = label['disambiguation']['candidate_article_id']
         context_term_sr = sr_for_context_terms[context_term_article_id]
         if context_term_sr >= avg_sr_for_context_terms:
-            label['disambiguation']['context_term'] = True
-            label['disambiguation']['rating'] = 1.0 # context terms always on top
-            label['disambiguation']['semantic_relatedness'] = context_term_sr
-            unique_context_terms_articles_ids.add(context_term_article_id)
+            label['disambiguation']['context_term_sr'] = context_term_sr
+
+    context_terms = [label for label in context_terms if 'context_term_sr' in label['disambiguation']]
+    context_terms.sort(key=lambda label: label['disambiguation']['context_term_sr'], reverse=True)
+    context_terms = context_terms[:max_context_terms]  # filter out the worst context terms
+
+    unique_context_terms_articles_ids = set([label['disambiguation']['candidate_article_id'] for label in context_terms
+                                             if 'context_term' in label['disambiguation']]) # update context terms articles ids
+
+    for label in context_terms:
+        label['disambiguation']['rating'] = 1.0  # context terms always included
 
     for label in labels:
         if 'context_term' not in label['disambiguation']:
