@@ -489,15 +489,22 @@ class Index extends App {
                             spanLabels.push(...JSON.parse(span.dataset.labels));
                         }
                         span.dataset.labels = JSON.stringify(spanLabels);
-
-                        if ('decision' in label) {
-                            span.classList.add("ngram-link-resolved");
-                            if (label.decision === null) {
-                                span.classList.add("ngram-link-none");
-                            }
-                            that.addClassToOverlappingLabels(labelIndex, 'ngram-link-covered');
-                        }
                     });
+                });
+
+                // apply decisions
+                that.edl.forEach((label, labelIndex) => {
+                    if ('decision' in label) {
+                        that.removeLabelClass(labelIndex, 'ngram-link-resolved');
+                        that.removeLabelClass(labelIndex, 'ngram-link-none');
+                        that.removeClassFromOverlappingLabels(labelIndex, 'ngram-link-covered');
+
+                        that.addLabelClass(labelIndex, 'ngram-link-resolved');
+                        if (label.decision === null) {
+                            that.addLabelClass(labelIndex, 'ngram-link-none');
+                        }
+                        that.addClassToOverlappingLabels(labelIndex, 'ngram-link-covered');
+                    }
                 });
 
                 article.querySelectorAll('.ngram-link').forEach(span => {
