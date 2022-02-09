@@ -16,3 +16,8 @@ UPDATE `dumps` SET `articles_count`=(SELECT COUNT(*) FROM articles WHERE `dump_i
 ALTER TABLE dumps ADD  `wikipedia_decisions_count` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `articles_count`;
 UPDATE `dumps` SET `wikipedia_decisions_count`=(SELECT COUNT(*) FROM `wikipedia_decisions` WHERE `dump_id`=1)
                                                 WHERE `id`=1;
+
+ALTER TABLE dumps ADD  `labels_articles_count` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `wikipedia_decisions_count`;
+UPDATE `dumps` SET `labels_articles_count`=
+    (SELECT COUNT(*) FROM `labels_articles` JOIN `labels` ON `labels_articles`.`label_id`=`labels`.`id` WHERE `dump_id`=1)
+                                                WHERE `id`=1;

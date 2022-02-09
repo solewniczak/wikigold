@@ -1,5 +1,5 @@
 import pickle
-from collections import Counter
+from collections import Counter, defaultdict
 
 import redis
 
@@ -96,6 +96,64 @@ def cache_labels_command(dump_id):
     cursor.close()
 
 
+@click.command('cache-labels-articles')
+@click.argument('dump_id')
+@with_appcontext
+def cache_labels_articles_command(dump_id):
+    db = get_db()
+
+    cursor = db.cursor(dictionary=True)
+    sql = 'SELECT `labels_articles_count` FROM `dumps` WHERE `id`=%s'
+    cursor.execute(sql, (dump_id,))
+    labels_articles_count = cursor.fetchone()['labels_articles_count']
+    print(f'labels articles count: {labels_articles_count}')
+
+    sql = '''SELECT `labels_articles`.`label_id`, `labels_articles`.`article_id`, `labels_articles`.`title`,
+                        `labels_articles`.`counter` AS `label_title_counter`, `articles`.`counter` AS `article_counter`,
+                        `articles`.`caption`, `articles`.`redirect_to_id`, `articles`.`redirect_to_title`,
+                        `redirect_article`.`counter` AS `redirect_article_counter`
+                        FROM `labels_articles` JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
+                        LEFT JOIN `articles` `redirect_article` ON `redirect_article`.`id` = `articles`.`redirect_to_id`
+                        WHERE `articles`.`dump_id`=%s'''
+    data = (dump_id,)
+    cursor.execute(sql, data)
+    labels = defaultdict(dict) # label_id -> dict of titles
+    with tqdm(total=labels_articles_count) as pbar:
+        for row in cursor:
+            label_id = row['label_id']
+            if row['redirect_to_id'] is not None:  # redirects may update the records
+                redirect_to_id = row['redirect_to_id']
+                if redirect_to_id in labels[label_id]:
+                    title = labels[label_id][redirect_to_id]
+                    title['label_title_counter'] += row['label_title_counter']
+                    title['article_counter'] += row['redirect_article_counter']
+                else:
+                    title = {
+                        'article_id': row['redirect_to_id'],
+                        'title': row['redirect_to_title'],
+                        'label_title_counter': row['label_title_counter'],
+                        'article_counter': row['redirect_article_counter'],
+                        'caption': row['caption'],
+                    }
+                    if title['caption'] is not None:
+                        title['caption'] = title['caption'].decode('utf-8')
+                    labels[label_id][redirect_to_id] = title
+            else:
+                article_id = row['article_id']
+                title = {
+                    'article_id': row['article_id'],
+                    'title': row['title'],
+                    'label_title_counter': row['label_title_counter'],
+                    'article_counter': row['article_counter'],
+                    'caption': row['caption'],
+                }
+                if title['caption'] is not None:
+                    title['caption'] = title['caption'].decode('utf-8')
+                labels[label_id]['titles'][article_id] = title
+            pbar.update(1)
+    cursor.close()
+
+
 @click.command('cache-backlinks')
 @click.argument('dump_id', type=int)
 @click.option('-p', '--page-size', type=int, default=500000)
@@ -165,6 +223,8 @@ def flush_all_command():
 
 def init_app(app):
     app.cli.add_command(cache_labels_command)
+    app.cli.add_command(cache_labels_articles_command)
+    app.cli.add_command(cache_backlinks_command)
     app.cli.add_command(flush_db_command)
     app.cli.add_command(flush_all_command)
-    app.cli.add_command(cache_backlinks_command)
+

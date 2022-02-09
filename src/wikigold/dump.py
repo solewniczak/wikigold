@@ -274,14 +274,23 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
         sql_update_labels_count = '''UPDATE `dumps` SET `labels_count`=(SELECT COUNT(*) FROM labels WHERE `dump_id`=%s)
                                         WHERE `id`=%s'''
         cursor.execute(sql_update_labels_count, (dump_id, dump_id))
+
         sql_update_labels_count = '''UPDATE `dumps` SET `articles_count`=
                                 (SELECT COUNT(*) FROM articles WHERE `dump_id`=%s AND `redirect_to_title` IS NULL)
                                                 WHERE `id`=%s'''
         cursor.execute(sql_update_labels_count, (dump_id, dump_id))
+
         sql_update_wikipedia_decisions_count = '''UPDATE `dumps` SET `wikipedia_decisions_count`=
                                         (SELECT COUNT(*) FROM `wikipedia_decisions` WHERE `dump_id`=%s)
                                                         WHERE `id`=%s'''
         cursor.execute(sql_update_wikipedia_decisions_count, (dump_id, dump_id))
+
+        sql_update_labels_articles_count = '''UPDATE `dumps` SET `labels_articles_count`= (SELECT COUNT(*)
+            FROM `labels_articles` JOIN `labels` ON `labels_articles`.`label_id`=`labels`.`id` WHERE `dump_id`=%s)
+                                                WHERE `id`=%s'''
+        cursor.execute(sql_update_labels_articles_count, (dump_id, dump_id))
+
+
         db.commit()
         elapsed = (time.time_ns() - start) / 1e9
         print(f'{elapsed:.2f} s')

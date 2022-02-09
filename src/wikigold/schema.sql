@@ -15,6 +15,8 @@ CREATE TABLE `dumps` (
     `timestamp` TIMESTAMP NOT NULL,
     `labels_count` INT UNSIGNED NOT NULL DEFAULT 0,
     `articles_count` INT UNSIGNED NOT NULL DEFAULT 0,
+    `wikipedia_decisions_count` INT UNSIGNED NOT NULL DEFAULT 0,
+    `labels_articles_count` INT UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
