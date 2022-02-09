@@ -1,5 +1,5 @@
 import pickle
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 import redis
 
@@ -34,7 +34,7 @@ def get_redis(db_name=None):
 
 def get_cached_backlinks(article_id):
     r = get_redis('backlinks')
-    backlinks = r.get(article_id)
+    backlinks = r.get(str(article_id))
     if backlinks is not None:
         backlinks = pickle.loads(backlinks)
     return backlinks
@@ -186,18 +186,18 @@ def cache_backlinks_command(dump_id, page_size, start_page):
             data = (start_id, end_id)
             cursor.execute(sql, data)
 
-            backlinks = {}
+            backlinks = set()
             for row in cursor:
                 destination_article_id = row['destination_article_id']
                 source_article_id = row['source_article_id']
 
                 if destination_article_id in backlinks:
-                    backlinks[destination_article_id][source_article_id] += 1
+                    backlinks[destination_article_id].add(source_article_id)
                 else:
                     article_backlinks = get_cached_backlinks(destination_article_id)
                     if article_backlinks is None:
-                        article_backlinks = Counter()
-                    article_backlinks[source_article_id] += 1
+                        article_backlinks = set()
+                    article_backlinks.add(source_article_id)
                     backlinks[destination_article_id] = article_backlinks
 
             for destination_article_id, article_backlinks in backlinks.items():

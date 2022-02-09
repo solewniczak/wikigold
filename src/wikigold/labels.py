@@ -39,8 +39,10 @@ def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1, min_labe
 
         sql = f'''SELECT `labels_articles`.`label_id`, `labels_articles`.`article_id`, `labels_articles`.`title`,
                         `labels_articles`.`counter` AS `label_title_counter`, `articles`.`counter` AS `article_counter`,
-                        `articles`.`caption`, `articles`.`redirect_to_title`
+                        `articles`.`caption`, `articles`.`redirect_to_id`, `articles`.`redirect_to_title`,
+                        `redirect_article`.`counter` AS `redirect_article_counter`
                         FROM `labels_articles` JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
+                        LEFT JOIN `articles` `redirect_article` ON `redirect_article`.`id` = `articles`.`redirect_to_id`
                         WHERE `labels_articles`.`label_id` IN ({no_cached_labels_ids_str})'''
         cursor.execute(sql)
 
@@ -53,21 +55,43 @@ def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1, min_labe
             if label_name not in label_titles_from_db_dict:
                 label_titles_from_db_dict[label_name] = {
                     'counter': label_counter,
-                    'titles': []
+                    'titles': {}
                 }
+            titles_dict = label_titles_from_db_dict[label_name]['titles']
 
-            title = {
-                'article_id': row['article_id'],
-                'title': row['title'],
-                'label_title_counter': row['label_title_counter'],
-                'article_counter': row['article_counter'],
-                'caption': row['caption'],
-                'redirect_to_title': row['redirect_to_title']
-            }
-            if title['caption'] is not None:
-                title['caption'] = title['caption'].decode('utf-8')
-            label_titles_from_db_dict[label_name]['titles'].append(title)
+            if row['redirect_to_id'] is not None:  # redirects may update the records
+                redirect_to_id = row['redirect_to_id']
+                if redirect_to_id in titles_dict:
+                    title = titles_dict[redirect_to_id]
+                    title['label_title_counter'] += row['label_title_counter']
+                    title['article_counter'] += row['redirect_article_counter']
+                else:
+                    title = {
+                        'article_id': row['redirect_to_id'],
+                        'title': row['redirect_to_title'],
+                        'label_title_counter': row['label_title_counter'],
+                        'article_counter': row['redirect_article_counter'],
+                        'caption': row['caption'],
+                    }
+                    if title['caption'] is not None:
+                        title['caption'] = title['caption'].decode('utf-8')
+                    titles_dict[redirect_to_id] = title
+            else:
+                article_id = row['article_id']
+                title = {
+                    'article_id': row['article_id'],
+                    'title': row['title'],
+                    'label_title_counter': row['label_title_counter'],
+                    'article_counter': row['article_counter'],
+                    'caption': row['caption'],
+                }
+                if title['caption'] is not None:
+                    title['caption'] = title['caption'].decode('utf-8')
+                titles_dict[article_id] = title
         cursor.close()
+
+        for label_name, label_data in label_titles_from_db_dict.items():
+            label_data['titles'] = list(label_data['titles'].values()) # titles should be list, not dictionary
 
         # add missing label_titles to cache
         for label_name, label_data in label_titles_from_db_dict.items():

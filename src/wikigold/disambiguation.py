@@ -37,9 +37,11 @@ def backlinks(article_ids):
         if article_backlinks is None:
             no_cached.append(article_id)
         else:
-            backlinks[article_id] = set(article_backlinks.keys())
+            backlinks[article_id] = article_backlinks
 
     if len(no_cached) > 0:
+        backlinks_from_db = defaultdict(set)
+
         db = get_db()
         cursor = db.cursor(dictionary=True)
 
@@ -51,12 +53,14 @@ def backlinks(article_ids):
         for row in cursor:
             destination_article_id = row['destination_article_id']
             source_article_id = row['source_article_id']
-            backlinks[destination_article_id].add(source_article_id)
+            backlinks_from_db[destination_article_id].add(source_article_id)
         cursor.close()
 
         # add missing backlinks to cache
-        for destination_article_id, article_backlinks in backlinks.items():
+        for destination_article_id, article_backlinks in backlinks_from_db.items():
             add_backlinks_to_cache(destination_article_id, article_backlinks)
+
+        backlinks.update(backlinks_from_db)
 
     return backlinks
 
