@@ -1,2 +1,3 @@
-Remove "none" option from decision list (as an option).
+Remove "none" option from decision list (as an option). (maybe better not)
 Add "Article not found" information.
+Print debug infomration about disambiguation phrase: used context terms, etc.

@@ -121,7 +121,9 @@ def normalize_algorithm_json(algorithm):
         'skip_stop_words': False,
         'min_label_count': 1,
         'min_label_articles_count': 1,
-        'disambiguation': ''
+        'disambiguation': '',
+        'links_to_text_ratio': 0.12,
+        'max_context_terms': 20
     }
 
     algorithm_parsed = json.loads(algorithm)
@@ -135,6 +137,10 @@ def normalize_algorithm_json(algorithm):
         algorithm_parsed['min_label_count'] = int(algorithm_parsed['min_label_count'])
     if 'min_label_articles_count' in algorithm_parsed:
         algorithm_parsed['min_label_articles_count'] = int(algorithm_parsed['min_label_articles_count'])
+    if 'links_to_text_ratio' in algorithm_parsed:
+        algorithm_parsed['links_to_text_ratio'] = float(algorithm_parsed['links_to_text_ratio'])
+    if 'max_context_terms' in algorithm_parsed:
+        algorithm_parsed['max_context_terms'] = int(algorithm_parsed['max_context_terms'])
 
     # Apply default values
     for default_key, default_value in algorithm_defaults.items():

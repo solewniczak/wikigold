@@ -80,10 +80,10 @@ def get_candidate_labels(article_id):
     if algorithm_normalized_json['disambiguation'] == 'commonness':
         rate_by_commonness(labels)
     elif algorithm_normalized_json['disambiguation'] == 'topic_proximity':
-        rate_by_topic_proximity(labels, algorithm_normalized_json['knowledge_base'])
+        rate_by_topic_proximity(labels, algorithm_normalized_json['knowledge_base'], algorithm_normalized_json['max_context_terms'])
 
     if algorithm_normalized_json['disambiguation'] != '':
-        apply_links_to_text_ratio(labels, lines, 0.2)
+        apply_links_to_text_ratio(labels, lines, algorithm_normalized_json['links_to_text_ratio'])
 
     for label in labels:
         if 'article_id' in label['disambiguation']:
