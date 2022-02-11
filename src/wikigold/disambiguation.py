@@ -1,6 +1,8 @@
 from collections import defaultdict
 from math import log2
 
+from flask import current_app
+
 from .cache import get_cached_backlinks
 from .db import get_db
 
@@ -80,7 +82,7 @@ def apply_links_to_text_ratio(labels, lines, links_to_text_ratio=0.12):
                 labels_overlap[label['line'], ngram_idx].append(label)
 
 
-def rate_by_topic_proximity(labels, dump_id, max_context_terms=20):
+def rate_by_topic_proximity(labels, max_context_terms=20):
     unique_articles_ids = set()
     for label in labels:
         unique_articles_ids.update([title['article_id'] for title in label['titles']])
@@ -89,7 +91,7 @@ def rate_by_topic_proximity(labels, dump_id, max_context_terms=20):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     sql_select_articles_count = 'SELECT `articles_count` FROM dumps WHERE id=%s'
-    cursor.execute(sql_select_articles_count, (dump_id, ))
+    cursor.execute(sql_select_articles_count, (current_app.config['KNOWLEDGE_BASE'], ))
     articles_count = cursor.fetchone()['articles_count']
 
     rate_by_commonness(labels)

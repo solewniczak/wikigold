@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 
@@ -60,6 +61,31 @@ def get_article(id):
     return jsonify(article)
 
 
+@bp.route('/articles', methods=('GET',))
+def get_articles():
+    if 'ids' not in request.args:
+        abort(400, "article ids not given")
+
+    articles_ids = json.loads(request.args['ids'])
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    article_ids_str = ','.join(map(str, articles_ids))
+    sql = f'SELECT `id`, `title`, `caption` FROM `articles` WHERE `id` IN ({article_ids_str})'
+    cursor.execute(sql)
+    articles_dict = {}
+    for row in cursor:
+        article = {
+            'title': row['title'],
+            'caption': row['caption']
+        }
+        if article['caption'] is not None:
+            article['caption'] = article['caption'].decode('utf-8')
+        articles_dict[row['id']] = article
+
+    return jsonify(articles_dict)
+
+
 @bp.route('/candidateLabels/<int:article_id>', methods=('GET',))
 def get_candidate_labels(article_id):
     if 'algorithm' not in request.args:
@@ -78,7 +104,7 @@ def get_candidate_labels(article_id):
     if algorithm_normalized_json['disambiguation'] == 'commonness':
         rate_by_commonness(labels)
     elif algorithm_normalized_json['disambiguation'] == 'topic_proximity':
-        rate_by_topic_proximity(labels, algorithm_normalized_json['knowledge_base'], algorithm_normalized_json['max_context_terms'])
+        rate_by_topic_proximity(labels, algorithm_normalized_json['max_context_terms'])
 
     if algorithm_normalized_json['disambiguation'] != '':
         apply_links_to_text_ratio(labels, lines, algorithm_normalized_json['links_to_text_ratio'])

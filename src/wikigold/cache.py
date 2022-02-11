@@ -33,6 +33,8 @@ def get_cached_backlinks(article_id):
     backlinks = r.get(str(article_id))
     if backlinks is not None:
         backlinks = pickle.loads(backlinks)
+    else:
+        backlinks = set()  # the article which doesn't exist has no backlinks
     return backlinks
 
 

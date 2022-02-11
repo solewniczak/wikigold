@@ -1,6 +1,5 @@
 from .cache import get_cached_label
-from .db import get_db
-from flask import current_app, g
+from flask import current_app
 from nltk.corpus import stopwords
 
 
@@ -21,38 +20,47 @@ def get_label_titles_dict(candidate_labels, min_label_count=1, min_label_article
     label_articles_dict = {label_name: label for label_name, label in label_articles_dict.items()
                            if len(label['articles']) > 0}
 
+    # it's more natural for JS to have articles as list, not dictionary
+    for label in label_articles_dict.values():
+        label['articles'] = [{'article_id': article_id,
+                              'article_counter': article['article_counter'],
+                              'label_article_counter': article['label_article_counter'],
+                              } for article_id, article in label['articles'].items()]
+
+    return label_articles_dict
+
     # get articles titles and captions from db
     # TODO: Maybe it will be better to replace it with ajax
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    unique_articles_ids = set()
-    for label in label_articles_dict.values():
-        unique_articles_ids.update(label['articles'].keys())
-
-    article_ids_str = ','.join(map(str, unique_articles_ids))
-    sql = f'SELECT `id`, `title`, `caption` FROM `articles` WHERE `id` IN ({article_ids_str})'
-    cursor.execute(sql)
-    articles_dict = {row['id']: row for row in cursor}
-    label_titles_dict = {}
-    for label_name, label in label_articles_dict.items():
-        titles = []
-        for article_id, article in label['articles'].items():
-            title = {
-                'article_id': article_id,
-                'title': articles_dict[article_id]['title'],
-                'label_title_counter': article['label_article_counter'],
-                'article_counter': article['article_counter'],
-                'caption': articles_dict[article_id]['caption'],
-            }
-            if title['caption'] is not None:
-                title['caption'] = title['caption'].decode('utf-8')
-            titles.append(title)
-        label_titles_dict[label_name] = {
-            'counter': label['label_counter'],
-            'titles': titles
-        }
-
-    return label_titles_dict
+    # db = get_db()
+    # cursor = db.cursor(dictionary=True)
+    # unique_articles_ids = set()
+    # for label in label_articles_dict.values():
+    #     unique_articles_ids.update(label['articles'].keys())
+    #
+    # article_ids_str = ','.join(map(str, unique_articles_ids))
+    # sql = f'SELECT `id`, `title`, `caption` FROM `articles` WHERE `id` IN ({article_ids_str})'
+    # cursor.execute(sql)
+    # articles_dict = {row['id']: row for row in cursor}
+    # label_titles_dict = {}
+    # for label_name, label in label_articles_dict.items():
+    #     titles = []
+    #     for article_id, article in label['articles'].items():
+    #         title = {
+    #             'article_id': article_id,
+    #             'title': articles_dict[article_id]['title'],
+    #             'label_title_counter': article['label_article_counter'],
+    #             'article_counter': article['article_counter'],
+    #             'caption': articles_dict[article_id]['caption'],
+    #         }
+    #         if title['caption'] is not None:
+    #             title['caption'] = title['caption'].decode('utf-8')
+    #         titles.append(title)
+    #     label_titles_dict[label_name] = {
+    #         'counter': label['label_counter'],
+    #         'titles': titles
+    #     }
+    #
+    # return label_titles_dict
 
 
 def get_labels_exact(lines, skip_stop_words=False, min_label_count=1, min_label_articles_count=1):
@@ -88,8 +96,8 @@ def get_labels_exact(lines, skip_stop_words=False, min_label_count=1, min_label_
     for candidate_label in candidate_labels:
         label_name = candidate_label['name']
         if label_name in label_titles_dict:
-            candidate_label['counter'] = label_titles_dict[label_name]['counter']
-            candidate_label['titles'] = label_titles_dict[label_name]['titles']
+            candidate_label['label_counter'] = label_titles_dict[label_name]['label_counter']
+            candidate_label['articles'] = label_titles_dict[label_name]['articles']
             labels.append(candidate_label)
 
     return labels

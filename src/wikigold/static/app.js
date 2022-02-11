@@ -507,6 +507,7 @@ class Index extends App {
                     }
                 });
 
+
                 article.querySelectorAll('.ngram-link').forEach(span => {
                     const spanLabels = JSON.parse(span.dataset.labels);
 
@@ -515,7 +516,7 @@ class Index extends App {
                        const label = that.edl[labelIndex];
                        title += '<button class="nav-link" data-bs-toggle="tab" data-bs-target="#label' + labelIndex + '" ' +
                            'type="button" role="tab">' +
-                           '<span class="ngram-tab ngram-tab-' + label.ngrams + '">' + label.name + '</span> (' + label.counter + ')' +
+                           '<span class="ngram-tab ngram-tab-' + label.ngrams + '">' + label.name + '</span> (' + label.label_counter + ')' +
                            '</button>';
                     });
                     title += '</div></nav>';
@@ -530,26 +531,26 @@ class Index extends App {
                         '<th title="<p>Label-Article Counter</p><p>The number of Wikipedia links <b>with that label</b> that points to this article.</p>" data-bs-toggle="tooltip">L-A</th>' +
                         '<th></th></tr></thead>' +
                         '<tbody>';
-                        label.titles.forEach(article => {
-                            let tooltip = '';
-                            if (article.redirect_to_title) {
-                                tooltip += '<p>Redirects to: ' + article.redirect_to_title + '</p>';
-                            }
-                            if (article.caption) {
-                                tooltip += '<p>' + article.caption + '</p>';
-                            } else {
-                                tooltip += '<p><i>no caption</i></p>';
-                            }
+                        label.articles.forEach(article => {
+                            // let tooltip = '';
+                            // if (article.redirect_to_title) {
+                            //     tooltip += '<p>Redirects to: ' + article.redirect_to_title + '</p>';
+                            // }
+                            // if (article.caption) {
+                            //     tooltip += '<p>' + article.caption + '</p>';
+                            // } else {
+                            //     tooltip += '<p><i>no caption</i></p>';
+                            // }
 
                             popoverHtml += '<tr>' +
-                                '<td class="align-middle"><label class="col-form-label">' +
-                                '<a href="https://' + that.article.lang + '.wikipedia.org/wiki/' + article.title + '" target="_blank" ' +
-                                'data-bs-toggle="tooltip" data-bs-placement="left" title="' + that.escapeAttribute(tooltip) + '">' +
-                                article.title +
-                                '</a>' +
+                                '<td class="align-middle"><label class="col-form-label" data-article-id="' + article.article_id + '">' +
+                                // '<a href="https://' + that.article.lang + '.wikipedia.org/wiki/' + article.title + '" target="_blank" ' +
+                                // 'data-bs-toggle="tooltip" data-bs-placement="left" title="' + that.escapeAttribute(tooltip) + '">' +
+                                // article.title +
+                                // '</a>' +
                                 '</label></td>' +
                                 '<td>' + article.article_counter + '</td>' +
-                                '<td>' + article.label_title_counter + '</td>' +
+                                '<td>' + article.label_article_counter + '</td>' +
                                 '<td class="align-middle">' +
                                 '<input type="checkbox" class="form-check-input" name="correct_' + labelIndex + '" ' +
                                 'value="' + article.article_id + '" ' +
@@ -615,6 +616,25 @@ class Index extends App {
                         if (popoverElement.offsetParent === null) {
                             return;
                         }
+
+                        // load articles titles and captions
+                        const articlesIds = [];
+                        popoverElement.querySelectorAll('label[data-article-id]').forEach(articleLabel =>  {
+                            const articleId = parseInt(articleLabel.dataset.articleId);
+                            articlesIds.push(articleId);
+                        });
+                        const requestUrl = that.requestUrl('/api/articles', {'ids': JSON.stringify(articlesIds)});
+                        fetch(requestUrl, {
+                            method: 'GET'
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            popoverElement.querySelectorAll('label[data-article-id]').forEach(articleLabel =>  {
+                                const articleId = parseInt(articleLabel.dataset.articleId);
+                                articleLabel.textContent = result[articleId].title;
+                            });
+                        });
+
                         // fill with the values of form with the EDL
                         spanLabels.forEach(labelIndex => {
                             const label = that.edl[labelIndex];
