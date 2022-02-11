@@ -532,22 +532,8 @@ class Index extends App {
                         '<th></th></tr></thead>' +
                         '<tbody>';
                         label.articles.forEach(article => {
-                            // let tooltip = '';
-                            // if (article.redirect_to_title) {
-                            //     tooltip += '<p>Redirects to: ' + article.redirect_to_title + '</p>';
-                            // }
-                            // if (article.caption) {
-                            //     tooltip += '<p>' + article.caption + '</p>';
-                            // } else {
-                            //     tooltip += '<p><i>no caption</i></p>';
-                            // }
-
                             popoverHtml += '<tr>' +
                                 '<td class="align-middle"><label class="col-form-label" data-article-id="' + article.article_id + '">' +
-                                // '<a href="https://' + that.article.lang + '.wikipedia.org/wiki/' + article.title + '" target="_blank" ' +
-                                // 'data-bs-toggle="tooltip" data-bs-placement="left" title="' + that.escapeAttribute(tooltip) + '">' +
-                                // article.title +
-                                // '</a>' +
                                 '</label></td>' +
                                 '<td>' + article.article_counter + '</td>' +
                                 '<td>' + article.label_article_counter + '</td>' +
@@ -631,41 +617,49 @@ class Index extends App {
                         .then(result => {
                             popoverElement.querySelectorAll('label[data-article-id]').forEach(articleLabel =>  {
                                 const articleId = parseInt(articleLabel.dataset.articleId);
-                                articleLabel.textContent = result[articleId].title;
+                                const title = result[articleId].title;
+                                const caption = result[articleId].caption;
+                                const articleLink = document.createElement("a");
+                                articleLink.textContent = title;
+                                articleLink.href = "https://" + that.article.lang + ".wikipedia.org/wiki/" + title;
+                                articleLink.target = "_blank";
+                                articleLink.dataset.bsToggle = "tooltip";
+                                articleLink.dataset.bsPlacement = "left";
+                                articleLink.title = caption;
+                                articleLabel.appendChild(articleLink);
                             });
-                        });
-
-                        // fill with the values of form with the EDL
-                        spanLabels.forEach(labelIndex => {
-                            const label = that.edl[labelIndex];
-                            const labelDivId = '#label' + labelIndex;
-                            const labelDiv = popoverElement.querySelector(labelDivId);
-                            if ('decision' in label) {
-                                let value = label.decision;
-                                if (value === null) {
-                                    value = ''
+                            // fill with the values of form with the EDL
+                            spanLabels.forEach(labelIndex => {
+                                const label = that.edl[labelIndex];
+                                const labelDivId = '#label' + labelIndex;
+                                const labelDiv = popoverElement.querySelector(labelDivId);
+                                if ('decision' in label) {
+                                    let value = label.decision;
+                                    if (value === null) {
+                                        value = ''
+                                    }
+                                    labelDiv.querySelector('input[type=checkbox][value="' + value + '"]').checked = true;
+                                    labelDiv.classList.add('active', 'show');
+                                    popoverElement.querySelector('.nav-link[data-bs-target="' + labelDivId + '"]')
+                                        .classList.add('active');
+                                    popoverElement.querySelectorAll('.nav-link:not(.active)').forEach(navLink => {
+                                        navLink.classList.add('disabled');
+                                    });
                                 }
-                                labelDiv.querySelector('input[type=checkbox][value="' + value + '"]').checked = true;
-                                labelDiv.classList.add('active', 'show');
-                                popoverElement.querySelector('.nav-link[data-bs-target="' + labelDivId + '"]')
-                                    .classList.add('active');
-                                popoverElement.querySelectorAll('.nav-link:not(.active)').forEach(navLink => {
-                                    navLink.classList.add('disabled');
-                                });
+                            });
+                            // activate first tab if there is no decision
+                            if (popoverElement.querySelector('.nav-link.active') === null) {
+                                popoverElement.querySelector('.nav-link:first-child').classList.add('active');
+                                popoverElement.querySelector('.tab-pane:first-child').classList.add('active', 'show');
                             }
-                        });
-                        // activate first tab if there is no decision
-                        if (popoverElement.querySelector('.nav-link.active') === null) {
-                            popoverElement.querySelector('.nav-link:first-child').classList.add('active');
-                            popoverElement.querySelector('.tab-pane:first-child').classList.add('active', 'show');
-                        }
 
-                        // creating DataTable must go after selecting input value
-                        jQuery(popoverElement).find("table").DataTable({
-                            columnDefs: [
-                                {orderable: false, targets: 3},
-                                {orderSequence: ["desc", "asc"], targets: [1, 2]}
-                            ]
+                            // creating DataTable must go after selecting input value
+                            jQuery(popoverElement).find("table").DataTable({
+                                columnDefs: [
+                                    {orderable: false, targets: 3},
+                                    {orderSequence: ["desc", "asc"], targets: [1, 2]}
+                                ]
+                            });
                         });
                     });
                 });
