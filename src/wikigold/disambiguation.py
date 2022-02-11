@@ -1,7 +1,7 @@
 from collections import defaultdict
 from math import log2
 
-from .cache import get_cached_backlinks, add_backlinks_to_cache
+from .cache import get_cached_backlinks
 from .db import get_db
 
 
@@ -29,38 +29,10 @@ def get_context_terms(labels, commonness_threshold=0.9):
 
 
 def backlinks(article_ids):
-    no_cached = []
-    backlinks = defaultdict(set)
+    backlinks = {}
     # loads backlinks from cache
     for article_id in article_ids:
-        article_backlinks = get_cached_backlinks(article_id)
-        if article_backlinks is None:
-            no_cached.append(article_id)
-        else:
-            backlinks[article_id] = article_backlinks
-
-    if len(no_cached) > 0:
-        backlinks_from_db = defaultdict(set)
-
-        db = get_db()
-        cursor = db.cursor(dictionary=True)
-
-        article_ids_str = ','.join(map(str, no_cached))
-        sql = f'SELECT `destination_article_id`, `source_article_id` ' \
-              f'FROM `wikipedia_decisions` WHERE `destination_article_id` IN ({article_ids_str})'
-        cursor.execute(sql)
-
-        for row in cursor:
-            destination_article_id = row['destination_article_id']
-            source_article_id = row['source_article_id']
-            backlinks_from_db[destination_article_id].add(source_article_id)
-        cursor.close()
-
-        # add missing backlinks to cache
-        for destination_article_id, article_backlinks in backlinks_from_db.items():
-            add_backlinks_to_cache(destination_article_id, article_backlinks)
-
-        backlinks.update(backlinks_from_db)
+        backlinks[article_id] = get_cached_backlinks(article_id)
 
     return backlinks
 
