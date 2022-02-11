@@ -30,15 +30,15 @@ def get_redis(db_name=None):
 
 def get_cached_backlinks(article_id):
     r = get_redis('backlinks')
-    backlinks = r.get(str(article_id))
-    if backlinks is not None:
-        backlinks = pickle.loads(backlinks)
-    return backlinks
+    article_backlinks = r.get(article_id)
+    if article_backlinks is not None:
+        article_backlinks = pickle.loads(article_backlinks)
+    return article_backlinks
 
 
-def add_backlinks_to_cache(article_id, backlinks):
+def add_backlinks_to_cache(article_id, article_backlinks):
     r = get_redis('backlinks')
-    r.set(article_id, pickle.dumps(backlinks))
+    r.set(article_id, pickle.dumps(article_backlinks))
 
 
 def get_cached_label(label_name):
@@ -175,11 +175,11 @@ def cache_backlinks_command(dump_id, page_size, start_page):
             pbar.set_description(f'processing ids from {start_id} to {end_id}')
 
             sql = f'SELECT `destination_article_id`, `source_article_id`  FROM `wikipedia_decisions`' \
-                  f'WHERE `id` BETWEEN %s AND %s'
+                  f'WHERE `destination_article_id` IS NOT NULL AND `id` BETWEEN %s AND %s'
             data = (start_id, end_id)
             cursor.execute(sql, data)
 
-            backlinks = set()
+            backlinks = {}
             for row in cursor:
                 destination_article_id = row['destination_article_id']
                 source_article_id = row['source_article_id']
