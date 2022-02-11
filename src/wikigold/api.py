@@ -1,4 +1,3 @@
-from collections import defaultdict
 from datetime import datetime
 
 
@@ -86,7 +85,7 @@ def get_candidate_labels(article_id):
         apply_links_to_text_ratio(labels, lines, algorithm_normalized_json['links_to_text_ratio'])
 
     for label in labels:
-        if 'article_id' in label['disambiguation']:
+        if 'disambiguation' in label and 'article_id' in label['disambiguation']:
             label['decision'] = label['disambiguation']['article_id']
 
     # apply saved decisions

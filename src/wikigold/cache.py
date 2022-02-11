@@ -1,8 +1,5 @@
 import pickle
-from collections import defaultdict
-
 import redis
-
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
@@ -15,7 +12,6 @@ def get_redis(db_name=None):
     db_mappings = {
         'labels': 1,
         'backlinks': 2,
-        'labels_titles': 3
     }
 
     if db_name is None:
@@ -46,7 +42,6 @@ def add_backlinks_to_cache(article_id, backlinks):
 
 
 def get_cached_label(label_name):
-    """Returns tuple: label_id, label_counter"""
     r = get_redis('labels')
     label = r.get(label_name)
     if label is not None:
@@ -54,104 +49,102 @@ def get_cached_label(label_name):
     return label
 
 
-def add_label_to_cache(label_name, label_id, label_counter):
+def add_label_to_cache(label_name, label):
     r = get_redis('labels')
-    value = (label_id, label_counter)
-    r.set(label_name, pickle.dumps(value))
-
-
-def get_cached_label_titles(label_name):
-    r = get_redis('labels_titles')
-    label_titles = r.get(label_name)
-    if label_titles is not None:
-        label_titles = pickle.loads(label_titles)
-    return label_titles
-
-
-def add_label_titles_to_cache(label_name, titles):
-    r = get_redis('labels_titles')
-    r.set(label_name, pickle.dumps(titles))
+    r.set(label_name, pickle.dumps(label))
 
 
 @click.command('cache-labels')
-@click.argument('dump_id')
+@click.argument('dump_id', type=int)
+@click.option('-p', '--page-size', type=int, default=500000)
+@click.option('-s', '--start-page', type=int, default=0)
 @with_appcontext
-def cache_labels_command(dump_id):
+def cache_labels_command(dump_id, page_size, start_page):
     db = get_db()
 
     cursor = db.cursor(dictionary=True)
-
-    sql = 'SELECT `labels_count` FROM `dumps` WHERE `id`=%s'
+    sql = 'SELECT COUNT(*) AS `articles_with_redirects_count` FROM `articles` WHERE `dump_id`=%s'
     cursor.execute(sql, (dump_id,))
-    labels_count = cursor.fetchone()['labels_count']
-    print(f'labels count: {labels_count}')
+    articles_with_redirects_count = cursor.fetchone()['articles_with_redirects_count']
+    print(f'articles with redirects count: {articles_with_redirects_count}')
 
-    sql = '''SELECT `id`, `label`, `counter` AS `label_counter` FROM `labels` WHERE `labels`.`dump_id`=%s'''
+    sql = '''SELECT `id`, `counter`, `redirect_to_id` FROM `articles` WHERE `articles`.`dump_id`=%s'''
     data = (dump_id,)
     cursor.execute(sql, data)
-    with tqdm(total=labels_count) as pbar:
+    articles = {}
+    redirects = {}
+    with tqdm(total=articles_with_redirects_count) as pbar:
         for row in cursor:
-            add_label_to_cache(row['label'], row['id'], row['label_counter'])
+            articles[row['id']] = row['counter']
+            if row['redirect_to_id'] is not None:
+                redirects[row['id']] = row['redirect_to_id']
             pbar.update(1)
-    cursor.close()
 
+    with tqdm(total=len(redirects)) as pbar:
+        for redirect_id, destination_id in redirects.items():
+            while destination_id in redirects:
+                destination_id = redirects[destination_id]
+            articles[destination_id] += articles[redirect_id] # update counters
+            redirects[redirect_id] = destination_id
+            pbar.update(1)
 
-@click.command('cache-labels-articles')
-@click.argument('dump_id')
-@with_appcontext
-def cache_labels_articles_command(dump_id):
-    db = get_db()
-
-    cursor = db.cursor(dictionary=True)
     sql = 'SELECT `labels_articles_count` FROM `dumps` WHERE `id`=%s'
     cursor.execute(sql, (dump_id,))
     labels_articles_count = cursor.fetchone()['labels_articles_count']
     print(f'labels articles count: {labels_articles_count}')
 
-    sql = '''SELECT `labels_articles`.`label_id`, `labels_articles`.`article_id`, `labels_articles`.`title`,
-                        `labels_articles`.`counter` AS `label_title_counter`, `articles`.`counter` AS `article_counter`,
-                        `articles`.`caption`, `articles`.`redirect_to_id`, `articles`.`redirect_to_title`,
-                        `redirect_article`.`counter` AS `redirect_article_counter`
-                        FROM `labels_articles` JOIN `articles` ON `articles`.`id` = `labels_articles`.`article_id`
-                        LEFT JOIN `articles` `redirect_article` ON `redirect_article`.`id` = `articles`.`redirect_to_id`
-                        WHERE `articles`.`dump_id`=%s'''
-    data = (dump_id,)
-    cursor.execute(sql, data)
-    labels = defaultdict(dict) # label_id -> dict of titles
-    with tqdm(total=labels_articles_count) as pbar:
-        for row in cursor:
-            label_id = row['label_id']
-            if row['redirect_to_id'] is not None:  # redirects may update the records
-                redirect_to_id = row['redirect_to_id']
-                if redirect_to_id in labels[label_id]:
-                    title = labels[label_id][redirect_to_id]
-                    title['label_title_counter'] += row['label_title_counter']
-                    title['article_counter'] += row['redirect_article_counter']
+    sql = '''SELECT MIN(`labels_articles`.`id`) AS `first_id` FROM `labels_articles`
+                JOIN `labels` ON `labels_articles`.`label_id` = `labels`.`id` WHERE `labels`.`dump_id`=%s'''
+    cursor.execute(sql, (dump_id,))
+    first_id = cursor.fetchone()['first_id']
+
+    print(f'first id: {first_id}')
+    steps = -(-labels_articles_count//page_size) - start_page
+    with tqdm(total=steps) as pbar:
+        for i in range(start_page*page_size, labels_articles_count, page_size):
+            start_id = first_id + i
+            end_id = min(start_id+page_size-1, labels_articles_count)
+
+            pbar.set_description(f'processing ids from {start_id} to {end_id}')
+
+            sql = f'''SELECT `labels`.`label`, `labels`.`counter` AS `label_counter`, `labels_articles`.`article_id`,
+                            `labels_articles`.`counter` AS `label_article_counter`
+                        FROM `labels_articles` JOIN `labels` ON `labels`.`id` = `labels_articles`.`label_id`
+                        WHERE `labels_articles`.`article_id` IS NOT NULL AND `labels_articles`.`id` BETWEEN %s AND %s'''
+            data = (start_id, end_id)
+            cursor.execute(sql, data)
+
+            labels = {}
+            for row in cursor:
+                label_name = row['label']
+                label_counter = row['label_counter']
+
+                if label_name in labels:
+                    label = labels[label_name]
                 else:
-                    title = {
-                        'article_id': row['redirect_to_id'],
-                        'title': row['redirect_to_title'],
-                        'label_title_counter': row['label_title_counter'],
-                        'article_counter': row['redirect_article_counter'],
-                        'caption': row['caption'],
-                    }
-                    if title['caption'] is not None:
-                        title['caption'] = title['caption'].decode('utf-8')
-                    labels[label_id][redirect_to_id] = title
-            else:
+                    label = get_cached_label(label_name)
+                    if label is None:
+                        label = {'label_counter': label_counter,
+                                 'articles': {}}
+                    labels[label_name] = label
+
+                label_articles = label['articles']
                 article_id = row['article_id']
-                title = {
-                    'article_id': row['article_id'],
-                    'title': row['title'],
-                    'label_title_counter': row['label_title_counter'],
-                    'article_counter': row['article_counter'],
-                    'caption': row['caption'],
-                }
-                if title['caption'] is not None:
-                    title['caption'] = title['caption'].decode('utf-8')
-                labels[label_id]['titles'][article_id] = title
+                if article_id in redirects:
+                    article_id = redirects[article_id]
+                article_counter = articles[article_id]
+
+                if article_id in label_articles:  # update counters
+                    label_articles[article_id]['label_article_counter'] += row['label_article_counter']
+                else:
+                    label_articles[article_id] = {'article_counter': article_counter,
+                                                  'label_article_counter': row['label_article_counter']}
+
+            for label_name, label_data in labels.items():
+                add_label_to_cache(label_name, label_data)
+
             pbar.update(1)
-    cursor.close()
+        cursor.close()
 
 
 @click.command('cache-backlinks')
@@ -223,7 +216,6 @@ def flush_all_command():
 
 def init_app(app):
     app.cli.add_command(cache_labels_command)
-    app.cli.add_command(cache_labels_articles_command)
     app.cli.add_command(cache_backlinks_command)
     app.cli.add_command(flush_db_command)
     app.cli.add_command(flush_all_command)
