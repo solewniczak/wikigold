@@ -13,6 +13,7 @@ services:
       - MYSQL_PASSWORD=changeme  # change to: openssl rand -base64 16
       - MYSQL_DATABASE=wikigold
       - PREFIX=/wikigold  # the path to application (must be the same as in proxy server)
+      - KNOWLEDGE_BASE=1
     ports:
       - "8000:8000"
 

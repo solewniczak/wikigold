@@ -120,27 +120,17 @@
               <button class="btn btn-outline-success" type="submit">Load content</button>
               </form>
               <form class="mb-4" id="algorithm-form">
-              <div class="mb-2">
-                  <h5><label for="knowledge_base" class="col-form-label">Knowledge base</label></h5>
-                <select class="form-select form-select-sm mb-2" name="knowledge_base" id="knowledge_base">
-                  {% for dump in dumps %}
-                    <option value="{{ dump['id'] }}">
-                      {{ dump['lang'] }}wiki-{{ dump['date'] }} | {{ dump['timestamp'] }}
-                    </option>
-                  {% endfor %}
-                  </select>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-auto">
-                      <label for="paragraphs_limit" class="col-form-label">Paragraphs limit</label>
-                    </div>
-                    <div class="col-auto">
-                      <input type="number" min="1" style="width: 5em" class="form-control"
-                             name="paragraphs_limit" id="paragraphs_limit" value="{{ algorithm['paragraphs_limit'] }}">
-                      </div>
-                </div>
                   <fieldset class="mb-4">
-                    <h6>Entity retrieval</h6>
+                    <h5>Entity retrieval</h5>
+                      <div class="row mb-2">
+                        <div class="col-auto">
+                          <label for="paragraphs_limit" class="col-form-label">Paragraphs limit</label>
+                        </div>
+                        <div class="col-auto">
+                          <input type="number" min="1" style="width: 5em" class="form-control"
+                                 name="paragraphs_limit" id="paragraphs_limit" value="{{ algorithm['paragraphs_limit'] }}">
+                          </div>
+                        </div>
                     <div class="row mb-2">
                         <div class="col-auto">
                             <label for="retrieval" class="col-form-label">Algorithm</label>
@@ -183,7 +173,7 @@
                     </div>
                 </fieldset>
                 <fieldset class="mb-2">
-                    <h6>Entity disambiguation</h6>
+                    <h5>Entity disambiguation</h5>
                     <div class="row mb-2">
                         <div class="col-auto">
                                 <label for="disambiguation" class="col-form-label">Algorithm</label>

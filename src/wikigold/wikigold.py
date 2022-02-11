@@ -3,7 +3,7 @@ import json
 
 import humanize
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
+    Blueprint, flash, g, redirect, render_template, request, url_for, current_app
 )
 from werkzeug.exceptions import abort
 
@@ -45,9 +45,9 @@ def edls():
                             `dumps`.`lang`, `dumps`.`date`, `dumps`.`parser_name`, `dumps`.`parser_version`
                             FROM `edls` JOIN articles ON `edls`.`article_id` = `articles`.`id`
                             JOIN dumps ON `articles`.`dump_id` = `dumps`.`id`
-                            WHERE `edls`.`user_id`=%s
+                            WHERE `edls`.`user_id`=%s AND `edls`.`knowledge_base_id`=%s
                             ORDER BY timestamp DESC'''
-    data_edls = (g.user['id'], )
+    data_edls = (g.user['id'], current_app.config['KNOWLEDGE_BASE'])
     cursor.execute(sql_select_edls, data_edls)
     my_edls = cursor.fetchall()
     my_edls_decoded = []

@@ -115,7 +115,6 @@ def normalize_algorithm_json(algorithm):
 
     # Default values
     algorithm_defaults = {
-        'knowledge_base': None,
         'paragraphs_limit': None,
         'retrieval': '',
         'skip_stop_words': False,
@@ -129,8 +128,6 @@ def normalize_algorithm_json(algorithm):
     algorithm_parsed = json.loads(algorithm)
 
     # Parse parameters
-    if 'knowledge_base' in algorithm_parsed:
-        algorithm_parsed['knowledge_base'] = int(algorithm_parsed['knowledge_base'])
     if 'skip_stop_words' in algorithm_parsed:
         algorithm_parsed['skip_stop_words'] = bool(int(algorithm_parsed['skip_stop_words']))
     if 'min_label_count' in algorithm_parsed:

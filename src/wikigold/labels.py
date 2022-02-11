@@ -4,7 +4,7 @@ from flask import current_app, g
 from nltk.corpus import stopwords
 
 
-def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1, min_label_articles_count=1):
+def get_label_titles_dict(candidate_labels, min_label_count=1, min_label_articles_count=1):
     candidate_labels_unique = set(map(lambda candidate_label: candidate_label['name'], candidate_labels))
     label_articles_dict = {}
     for label_name in candidate_labels_unique:
@@ -55,7 +55,7 @@ def get_label_titles_dict(dump_id, candidate_labels, min_label_count=1, min_labe
     return label_titles_dict
 
 
-def get_labels_exact(lines, knowledge_base, skip_stop_words=False, min_label_count=1, min_label_articles_count=1):
+def get_labels_exact(lines, skip_stop_words=False, min_label_count=1, min_label_articles_count=1):
     stops = set(stopwords.words('english'))
 
     candidate_labels = []
@@ -83,8 +83,7 @@ def get_labels_exact(lines, knowledge_base, skip_stop_words=False, min_label_cou
                     'ngrams': ngrams,
                 })
 
-    label_titles_dict = get_label_titles_dict(knowledge_base, candidate_labels, min_label_count,
-                                              min_label_articles_count)
+    label_titles_dict = get_label_titles_dict(candidate_labels, min_label_count, min_label_articles_count)
     labels = []
     for candidate_label in candidate_labels:
         label_name = candidate_label['name']

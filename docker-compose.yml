@@ -12,6 +12,7 @@ services:
       - MYSQL_DATABASE=wikigold
       - REDIS_URL=redis://redis:6379
       - PREFIX=/wikigold
+      - KNOWLEDGE_BASE=1
     ports:
       - "8000:8000"
     volumes:

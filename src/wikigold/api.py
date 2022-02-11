@@ -2,7 +2,7 @@ from datetime import datetime
 
 
 from flask import (
-    Blueprint, g, jsonify, request, abort, url_for, redirect
+    Blueprint, g, jsonify, request, abort, url_for, redirect, current_app
 )
 
 from .db import get_db
@@ -69,8 +69,7 @@ def get_candidate_labels(article_id):
     lines = get_lines(article_id, algorithm_normalized_json['paragraphs_limit'])
 
     if algorithm_normalized_json['retrieval'] == 'exact':
-        labels = get_labels_exact(lines, knowledge_base=algorithm_normalized_json['knowledge_base'],
-                                  skip_stop_words=algorithm_normalized_json['skip_stop_words'],
+        labels = get_labels_exact(lines, skip_stop_words=algorithm_normalized_json['skip_stop_words'],
                                   min_label_count=algorithm_normalized_json['min_label_count'],
                                   min_label_articles_count=algorithm_normalized_json['min_label_articles_count'])
     else:
@@ -106,7 +105,7 @@ def post_decision():
     algorithm_normalized_json_key, algorithm_normalized_json = normalize_algorithm_json(content['algorithm'])
     user_id = g.user['id']
     article_id = int(content['source_article_id'])
-    knowledge_base_id = algorithm_normalized_json['knowledge_base']
+    knowledge_base_id = current_app.config['KNOWLEDGE_BASE']
     source_line_nr = int(content['source_line_nr'])
     start = int(content['start'])
     length = int(content['length'])
