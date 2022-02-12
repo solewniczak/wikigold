@@ -33,6 +33,8 @@ def get_cached_backlinks(article_id):
     article_backlinks = r.get(article_id)
     if article_backlinks is not None:
         article_backlinks = pickle.loads(article_backlinks)
+    else:
+        article_backlinks = set()
     return article_backlinks
 
 
@@ -188,8 +190,6 @@ def cache_backlinks_command(dump_id, page_size, start_page):
                     backlinks[destination_article_id].add(source_article_id)
                 else:
                     article_backlinks = get_cached_backlinks(destination_article_id)
-                    if article_backlinks is None:
-                        article_backlinks = set()
                     article_backlinks.add(source_article_id)
                     backlinks[destination_article_id] = article_backlinks
 

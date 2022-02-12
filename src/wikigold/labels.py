@@ -29,39 +29,6 @@ def get_label_titles_dict(candidate_labels, min_label_count=1, min_label_article
 
     return label_articles_dict
 
-    # get articles titles and captions from db
-    # TODO: Maybe it will be better to replace it with ajax
-    # db = get_db()
-    # cursor = db.cursor(dictionary=True)
-    # unique_articles_ids = set()
-    # for label in label_articles_dict.values():
-    #     unique_articles_ids.update(label['articles'].keys())
-    #
-    # article_ids_str = ','.join(map(str, unique_articles_ids))
-    # sql = f'SELECT `id`, `title`, `caption` FROM `articles` WHERE `id` IN ({article_ids_str})'
-    # cursor.execute(sql)
-    # articles_dict = {row['id']: row for row in cursor}
-    # label_titles_dict = {}
-    # for label_name, label in label_articles_dict.items():
-    #     titles = []
-    #     for article_id, article in label['articles'].items():
-    #         title = {
-    #             'article_id': article_id,
-    #             'title': articles_dict[article_id]['title'],
-    #             'label_title_counter': article['label_article_counter'],
-    #             'article_counter': article['article_counter'],
-    #             'caption': articles_dict[article_id]['caption'],
-    #         }
-    #         if title['caption'] is not None:
-    #             title['caption'] = title['caption'].decode('utf-8')
-    #         titles.append(title)
-    #     label_titles_dict[label_name] = {
-    #         'counter': label['label_counter'],
-    #         'titles': titles
-    #     }
-    #
-    # return label_titles_dict
-
 
 def get_labels_exact(lines, skip_stop_words=False, min_label_count=1, min_label_articles_count=1):
     stops = set(stopwords.words('english'))

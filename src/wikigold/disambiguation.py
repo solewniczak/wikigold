@@ -7,17 +7,17 @@ from .cache import get_cached_backlinks
 from .db import get_db
 
 
-def add_commonness_to_titles(labels):
+def add_commonness_to_articles(labels):
     for label in labels:
-        article_counter_sum = sum([title['article_counter'] for title in label['titles']])
-        for title in label['titles']:
-            title['commonness'] = title['article_counter']/article_counter_sum
+        article_counter_sum = sum([article['article_counter'] for article in label['articles']])
+        for article in label['articles']:
+            article['commonness'] = article['article_counter']/article_counter_sum
 
 
 def rate_by_commonness(labels):
-    add_commonness_to_titles(labels)
+    add_commonness_to_articles(labels)
     for label in labels:
-        most_common_article = max(label['titles'], key=lambda title: title['commonness'])
+        most_common_article = max(label['articles'], key=lambda article: article['commonness'])
         label['disambiguation'] = {
             'candidate_article_id': most_common_article['article_id'],
             'rating': most_common_article['commonness'],
@@ -85,7 +85,7 @@ def apply_links_to_text_ratio(labels, lines, links_to_text_ratio=0.12):
 def rate_by_topic_proximity(labels, max_context_terms=20):
     unique_articles_ids = set()
     for label in labels:
-        unique_articles_ids.update([title['article_id'] for title in label['titles']])
+        unique_articles_ids.update([article['article_id'] for article in label['articles']])
     articles_backlinks = backlinks(unique_articles_ids)
 
     db = get_db()
@@ -126,12 +126,12 @@ def rate_by_topic_proximity(labels, max_context_terms=20):
 
     for label in labels:
         if 'context_term' not in label['disambiguation']:
-            for title in label['titles']:
-                article_id = title['article_id']
+            for article in label['articles']:
+                article_id = article['article_id']
                 sr_for_meaning = avg_semantic_relatedness(articles_backlinks, article_id,
                                                           unique_context_terms_articles_ids, articles_count)
-                title['semantic_relatedness'] = sr_for_meaning
-            article_with_max_sr = max(label['titles'], key=lambda title: title['semantic_relatedness'])
+                article['semantic_relatedness'] = sr_for_meaning
+            article_with_max_sr = max(label['articles'], key=lambda article: article['semantic_relatedness'])
             label['disambiguation']['candidate_article_id'] = article_with_max_sr['article_id']
             label['disambiguation']['rating'] = article_with_max_sr['semantic_relatedness']
 
