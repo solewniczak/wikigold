@@ -37,11 +37,12 @@ services:
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     volumes:
-      - /home/szyolewn/wikigold_redis:/data
-    #  - /home/szyolewn/wikigold_redis-conf:/usr/local/etc/redis
+      - redis-data:/data
 
   adminer:
     image: adminer
     ports:
       - "8080:8080"
 
+volumes:
+  redis-data:
