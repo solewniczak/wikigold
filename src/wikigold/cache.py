@@ -1,4 +1,6 @@
 import pickle
+from collections import defaultdict
+
 import redis
 import click
 from flask import current_app, g
@@ -6,6 +8,7 @@ from flask.cli import with_appcontext
 from tqdm import tqdm
 
 from .db import get_db
+from .helper import get_lines, ngrams
 
 
 def get_redis(db_name=None):
@@ -149,6 +152,65 @@ def cache_labels_command(dump_id, page_size, start_page):
         cursor.close()
 
 
+def get_wikipedia_decisions_labels_set(article_id):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    sql = '''SELECT `label` FROM `wikipedia_decisions` WHERE `source_article_id`=%s'''
+    data = (article_id,)
+    cursor.execute(sql, data)
+
+    labels = set()
+    for row in cursor:
+        labels.add(row['label'])
+    cursor.close()
+
+    return labels
+
+
+@click.command('cache-labels-counters')
+@click.argument('dump_id', type=int)
+@with_appcontext
+def cache_labels_counters_command(dump_id):
+    db = get_db()
+    r = get_redis('labels')
+
+    labels_counters = {}
+    nb_labels = r.dbsize()
+    with tqdm(total=nb_labels) as pbar:
+        for label_name in r.scan_iter("*"):
+            label_name = label_name.decode('utf-8')
+            labels_counters[label_name] = {'appeared_in': 0, 'as_link_in': 0}
+            pbar.update(1)
+
+    cursor = db.cursor(dictionary=True)
+    sql = 'SELECT `id` FROM `articles` WHERE `dump_id`=%s AND `redirect_to_title` IS NULL'
+    cursor.execute(sql, (dump_id, ))
+    articles_ids = [row['id'] for row in cursor]
+    cursor.close()
+
+    with tqdm(total=len(articles_ids)) as pbar:
+        for article_id in articles_ids:
+            try:
+                lines = get_lines(article_id)  # raises ValueError
+                wikipedia_labels_set = get_wikipedia_decisions_labels_set(article_id)
+                article_ngrams = {ngram['name'] for ngram in ngrams(lines)}
+                for label in article_ngrams:
+                    if label in labels_counters:
+                        labels_counters[label]['appeared_in'] += 1
+                        if label in wikipedia_labels_set:
+                            labels_counters[label]['as_link_in'] += 1
+            except ValueError:
+                print(f'cannot tokenize article: {article_id}. skipping')
+            pbar.update(1)
+
+    with tqdm(total=nb_labels) as pbar:
+        for label_name, label_counters in labels_counters.items():
+            label = get_cached_label(label_name)
+            label.update(label_counters)
+            add_label_to_cache(label_name, label)
+            pbar.update(1)
+
+
 @click.command('cache-backlinks')
 @click.argument('dump_id', type=int)
 @click.option('-p', '--page-size', type=int, default=500000)
@@ -216,6 +278,7 @@ def flush_all_command():
 
 def init_app(app):
     app.cli.add_command(cache_labels_command)
+    app.cli.add_command(cache_labels_counters_command)
     app.cli.add_command(cache_backlinks_command)
     app.cli.add_command(flush_db_command)
     app.cli.add_command(flush_all_command)

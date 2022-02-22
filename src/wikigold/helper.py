@@ -1,6 +1,6 @@
 import json
 
-from flask import g
+from flask import g, current_app
 from nltk import TreebankWordTokenizer
 from nltk.data import load
 
@@ -30,16 +30,43 @@ def get_lines(article_id, limit=None):
     cursor.execute(sql, data)
 
     lines = []
-    for row in cursor:
-        line_text = row['content'].decode('utf-8')
-        line_tokens = []
-        for (token_span_start, token_span_end) in word_tokenize_spans(line_text):
-            line_tokens.append((token_span_start, token_span_end))
-        lines.append({'content': line_text, 'tokens': line_tokens})
-
-    cursor.close()
+    try:
+        for row in cursor:
+            line_text = row['content'].decode('utf-8')
+            line_tokens = []
+            for (token_span_start, token_span_end) in word_tokenize_spans(line_text):
+                line_tokens.append((token_span_start, token_span_end))
+            lines.append({'content': line_text, 'tokens': line_tokens})
+    except ValueError:
+        cursor.reset()
+        raise
+    finally:
+        cursor.close()
 
     return lines
+
+
+def ngrams(lines):
+    for ngrams in range(1, current_app.config['MAX_NGRAMS'] + 1):
+        for line_nr, line in enumerate(lines):
+            line_content = line['content']
+            line_tokens = line['tokens']
+            for token_nr, token in enumerate(line_tokens):
+                # cannot construct ngram of length "ngrams" starting from "token"
+                if token_nr + ngrams > len(line_tokens):
+                    break
+
+                # continuous ngram model
+                label_start = line_tokens[token_nr][0]  # begin of the first gram
+                label_end = line_tokens[token_nr + ngrams - 1][1]  # end of the last gram
+                label = line_content[label_start:label_end]
+
+                yield {
+                    'name': label,
+                    'line': line_nr,
+                    'start': token_nr,
+                    'ngrams': ngrams,
+                }
 
 
 def get_wikipedia_decisions(article_id):
