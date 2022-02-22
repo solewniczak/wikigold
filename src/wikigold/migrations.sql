@@ -9,15 +9,6 @@ UPDATE `wikipedia_decisions` INNER JOIN `lines` ON `wikipedia_decisions`.`source
 
 ALTER TABLE `wikipedia_decisions` ADD CONSTRAINT FOREIGN KEY (`source_article_id`) REFERENCES `articles` (`id`);
 
-ALTER TABLE dumps ADD  `articles_count` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `labels_count`;
+ALTER TABLE dumps ADD  `articles_count` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `timestamp`;
 UPDATE `dumps` SET `articles_count`=(SELECT COUNT(*) FROM articles WHERE `dump_id`=1 AND `redirect_to_title` IS NULL)
                                                 WHERE `id`=1
-
-ALTER TABLE dumps ADD  `wikipedia_decisions_count` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `articles_count`;
-UPDATE `dumps` SET `wikipedia_decisions_count`=(SELECT COUNT(*) FROM `wikipedia_decisions` WHERE `dump_id`=1)
-                                                WHERE `id`=1;
-
-ALTER TABLE dumps ADD  `labels_articles_count` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `wikipedia_decisions_count`;
-UPDATE `dumps` SET `labels_articles_count`=
-    (SELECT COUNT(*) FROM `labels_articles` JOIN `labels` ON `labels_articles`.`label_id`=`labels`.`id` WHERE `dump_id`=1)
-                                                WHERE `id`=1;

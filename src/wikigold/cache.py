@@ -1,5 +1,4 @@
 import pickle
-from collections import defaultdict
 
 import redis
 import click
@@ -93,7 +92,8 @@ def cache_labels_command(dump_id, page_size, start_page):
             redirects[redirect_id] = destination_id
             pbar.update(1)
 
-    sql = 'SELECT `labels_articles_count` FROM `dumps` WHERE `id`=%s'
+    sql = '''SELECT COUNT(*) AS `labels_articles_count` FROM `labels_articles` 
+                JOIN `labels` ON `labels_articles`.`label_id`=`labels`.`id` WHERE `dump_id`=%s'''
     cursor.execute(sql, (dump_id,))
     labels_articles_count = cursor.fetchone()['labels_articles_count']
     print(f'labels articles count: {labels_articles_count}')
@@ -220,7 +220,7 @@ def cache_backlinks_command(dump_id, page_size, start_page):
     db = get_db()
 
     cursor = db.cursor(dictionary=True)
-    sql = 'SELECT `wikipedia_decisions_count` FROM `dumps` WHERE `id`=%s'
+    sql = 'SELECT COUNT(*) AS `wikipedia_decisions_count` FROM `wikipedia_decisions` WHERE `dump_id`=%s'
     cursor.execute(sql, (dump_id, ))
     wikipedia_decisions_count = cursor.fetchone()['wikipedia_decisions_count']
     print(f'wikipedia decisions count: {wikipedia_decisions_count}')
