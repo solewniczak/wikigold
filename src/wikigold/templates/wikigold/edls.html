@@ -10,7 +10,14 @@
               <h5 class="mb-1">{{ edl['title'] }}
                   <small style="font-weight:normal;font-size:60%;color:#6c757d;">{{ edl['lang'] }}wiki-{{ edl['date'] }} {{ edl['parser_name'] }} {{ edl['parser_version'] }}</small>
               </h5>
-              <small>{{ edl['timedelta'] }} ago</small>
+              <small>
+                  <i>{{ edl['timedelta'] }} ago</i>
+              </small>
+                <form action="{{ url_for('wikigold.edl_delete', id=edl['id']) }}" method="post">
+                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure?');">
+                    Delete
+                </button>
+              </form>
             </div>
             <p class="mb-1">{{ edl['algorithm'] }}</p>
             <small>{{ edl['caption'] }}</small>
