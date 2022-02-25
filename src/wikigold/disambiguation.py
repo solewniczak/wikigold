@@ -106,7 +106,7 @@ def rate_by_topic_proximity(labels, max_context_terms=20):
         sr_for_context_terms[context_term_article_id] = sr_for_context_term
         sum_sr_for_context_terms += sr_for_context_term
 
-    avg_sr_for_context_terms = sum_sr_for_context_terms/len(context_terms)
+    avg_sr_for_context_terms = sum_sr_for_context_terms/len(context_terms) # TODO: what if len(context_terms) == 0?
 
     for label in context_terms:
         context_term_article_id = label['disambiguation']['candidate_article_id']

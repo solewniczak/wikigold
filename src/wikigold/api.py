@@ -97,7 +97,8 @@ def get_candidate_labels(article_id):
     if algorithm_normalized_json['retrieval'] == 'exact':
         labels = get_labels_exact(lines, skip_stop_words=algorithm_normalized_json['skip_stop_words'],
                                   min_label_count=algorithm_normalized_json['min_label_count'],
-                                  min_label_articles_count=algorithm_normalized_json['min_label_articles_count'])
+                                  min_label_articles_count=algorithm_normalized_json['min_label_articles_count'],
+                                  min_link_probability=algorithm_normalized_json['min_link_probability'])
     else:
         abort(400, "unknown retrieval algorithm")
 

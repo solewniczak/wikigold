@@ -3,13 +3,15 @@ from flask import current_app
 from nltk.corpus import stopwords
 
 
-def get_label_titles_dict(candidate_labels, min_label_count=1, min_label_articles_count=1):
+def get_label_titles_dict(candidate_labels, min_label_count, min_label_articles_count, min_link_probability):
     candidate_labels_unique = set(map(lambda candidate_label: candidate_label['name'], candidate_labels))
     label_articles_dict = {}
     for label_name in candidate_labels_unique:
         label = get_cached_label(label_name)
-        if label is not None and label['label_counter'] >= min_label_count:
-            label_articles_dict[label_name] = label
+        if label is not None:
+            label['link_probability'] = label['as_link_in']/label['appeared_in']
+            if label['label_counter'] >= min_label_count and label['link_probability'] >= min_link_probability:
+                label_articles_dict[label_name] = label
 
     # apply filter on min L-A counter
     for label in label_articles_dict.values():
@@ -30,7 +32,7 @@ def get_label_titles_dict(candidate_labels, min_label_count=1, min_label_article
     return label_articles_dict
 
 
-def get_labels_exact(lines, skip_stop_words=False, min_label_count=1, min_label_articles_count=1):
+def get_labels_exact(lines, skip_stop_words=False, min_label_count=1, min_label_articles_count=1, min_link_probability=0.0):
     stops = set(stopwords.words('english'))
 
     candidate_labels = []
@@ -58,13 +60,14 @@ def get_labels_exact(lines, skip_stop_words=False, min_label_count=1, min_label_
                     'ngrams': ngrams,
                 })
 
-    label_titles_dict = get_label_titles_dict(candidate_labels, min_label_count, min_label_articles_count)
+    label_titles_dict = get_label_titles_dict(candidate_labels, min_label_count, min_label_articles_count, min_link_probability)
     labels = []
     for candidate_label in candidate_labels:
         label_name = candidate_label['name']
         if label_name in label_titles_dict:
             candidate_label['label_counter'] = label_titles_dict[label_name]['label_counter']
             candidate_label['articles'] = label_titles_dict[label_name]['articles']
+            candidate_label['link_probability'] = label_titles_dict[label_name]['link_probability']
             labels.append(candidate_label)
 
     return labels

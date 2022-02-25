@@ -149,6 +149,7 @@ def normalize_algorithm_json(algorithm):
         'min_label_articles_count': 1,
         'disambiguation': '',
         'links_to_text_ratio': 0.12,
+        'min_link_probability': 0.05,
         'max_context_terms': 20
     }
 
@@ -163,6 +164,8 @@ def normalize_algorithm_json(algorithm):
         algorithm_parsed['min_label_articles_count'] = int(algorithm_parsed['min_label_articles_count'])
     if 'links_to_text_ratio' in algorithm_parsed:
         algorithm_parsed['links_to_text_ratio'] = float(algorithm_parsed['links_to_text_ratio'])
+    if 'min_link_probability' in algorithm_parsed:
+        algorithm_parsed['min_link_probability'] = float(algorithm_parsed['min_link_probability'])
     if 'max_context_terms' in algorithm_parsed:
         algorithm_parsed['max_context_terms'] = int(algorithm_parsed['max_context_terms'])
 
