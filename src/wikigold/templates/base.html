@@ -61,8 +61,7 @@
         const prefix = {{config.get('PREFIX')|tojson}};
         const maxNgrams = {{config.get('MAX_NGRAMS')|tojson}};
         const constructorMap = {
-          'index': Index,
-          'admin.redis': AdminRedis
+          'index': Index
         };
         const currentPageId = document.querySelector("body").id;
         if (currentPageId in constructorMap) {
