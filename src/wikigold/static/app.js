@@ -44,16 +44,25 @@ class Index extends App {
 
         searchForm.addEventListener("submit", event => {
             event.preventDefault();
+            const searchInput = searchForm.querySelector("input");
+            const searchErrorMsg = searchInput.parentNode.querySelector(".invalid-feedback");
+
             const formData = new FormData(searchForm);
             const title = formData.get('title');
             const article_source = formData.get('article_source');
+
+            searchErrorMsg.style.display = "none";
+            searchInput.classList.remove("is-invalid");
             that.lockForms();
             that.loadArticleByTitle(title, article_source)
                 .then(result => {
                     that.url.searchParams.set('article', result.id);
                     that.url.searchParams.delete('algorithm');
                     window.history.replaceState('', '', that.url.href);
-                }).then(that.unlockForms);
+                }).catch(error => {
+                    searchInput.classList.add("is-invalid");
+                    searchErrorMsg.style.display = "block";
+                }).finally(that.unlockForms);
         });
 
         algorithmForm.addEventListener("submit", event => {
@@ -318,7 +327,13 @@ class Index extends App {
         return fetch(requestUrl, {
             method: 'GET'
         })
-            .then(response => response.json())
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error(response.status);
+                }
+            })
             .then(result => that.loadArticleFromResult(result));
     }
 
