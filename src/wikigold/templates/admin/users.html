@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% set active_page = "admin.users" %}
+
+{% block content %}
+<div class="container">
+<table class="table">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for user in users %}
+        <tr>
+            <td>{{ user['username'] }}</td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <form action="{{ url_for('admin.user_update', id=user['id']) }}" method="post">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <input class="form-control" name="password">
+                            </div>
+                            <div class="col">
+                                <button type="submit" class="btn btn-outline-primary btn-sm">
+                                    Change password
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <form action="{{ url_for('admin.user_delete', id=user['id']) }}" method="post">
+                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure?');">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

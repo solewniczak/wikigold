@@ -31,6 +31,12 @@
             <li class="nav-item">
                 <a class="nav-link {% if active_page == 'edls' %} active {% endif %}" href="{{ url_for('wikigold.edls') }}">EDLs</a>
             </li>
+          {% if g.user['superuser'] %}
+                <span class="navbar-text ms-5">Admin:</span>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_page == 'admin.users' %} active {% endif %}" href="{{ url_for('admin.users') }}">Users</a>
+                </li>
+            {% endif %}
           </ul>
           <ul class="navbar-nav">
             {% if g.user %}

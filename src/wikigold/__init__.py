@@ -58,3 +58,6 @@ app.add_url_rule('/', endpoint='index')
 
 from . import api
 app.register_blueprint(api.bp)
+
+from . import admin
+app.register_blueprint(admin.bp)
