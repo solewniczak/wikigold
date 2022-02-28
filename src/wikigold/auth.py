@@ -113,3 +113,23 @@ def superuser(view):
         return view(**kwargs)
 
     return wrapped_view
+
+
+@bp.route('/profile', methods=('GET', 'POST'))
+@login_required
+def profile():
+    if request.method == 'POST':
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        password = request.form['password']
+
+        if password == '':
+            flash('Password cannot be empty.', 'danger')
+        else:
+            sql = "UPDATE `users` SET `password`=%s WHERE `id`=%s"
+            data = (generate_password_hash(password), g.user['id'])
+            cursor.execute(sql, data)
+            db.commit()
+            cursor.close()
+            flash('Password has been updated.', 'success')
+    return render_template('auth/profile.html')

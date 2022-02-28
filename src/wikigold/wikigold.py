@@ -4,6 +4,7 @@ import humanize
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for, current_app, abort
 )
+from werkzeug.security import generate_password_hash
 
 from .auth import login_required
 from .db import get_db
