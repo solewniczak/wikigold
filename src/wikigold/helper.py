@@ -149,7 +149,7 @@ def normalize_algorithm_json(algorithm):
         'min_label_articles_count': 1,
         'disambiguation': '',
         'links_to_text_ratio': 0.12,
-        'min_link_probability': 0.05,
+        'min_link_probability': 0.0,
         'max_context_terms': 20
     }
 
