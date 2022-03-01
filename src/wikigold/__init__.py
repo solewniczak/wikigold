@@ -31,14 +31,16 @@ app.config.from_mapping(
     REDIS_URL = os.getenv('REDIS_URL', default='redis://localhost:6379'),
     PREFIX=os.getenv('PREFIX', default=''),
     KNOWLEDGE_BASE=os.getenv('KNOWLEDGE_BASE', default='1'),
-    MAX_NGRAMS=os.getenv('MAX_NGRAMS', default='5')
+    MAX_NGRAMS=os.getenv('MAX_NGRAMS', default='5'),
+    TOKENS_LIMIT=os.getenv('TOKENS_LIMIT', default='0') # 0 means no limit
 )
 app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=app.config['PREFIX'])
 
 # config types mapping
-app.config['MAX_NGRAMS'] = int(app.config['MAX_NGRAMS'])
 app.config['MYSQL_PORT'] = int(app.config['MYSQL_PORT'])
 app.config['KNOWLEDGE_BASE'] = int(app.config['KNOWLEDGE_BASE'])
+app.config['MAX_NGRAMS'] = int(app.config['MAX_NGRAMS'])
+app.config['TOKENS_LIMIT'] = int(app.config['TOKENS_LIMIT'])
 
 from . import db
 db.init_app(app)

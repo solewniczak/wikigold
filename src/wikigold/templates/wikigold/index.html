@@ -115,9 +115,7 @@
                     </div>
                     <div class="col-auto">
                       <input class="form-control" name="title" id="title">
-                      <div class="invalid-feedback">
-                          Page not found.
-                      </div>
+                      <div class="invalid-feedback"></div>
                     </div>
               </div>
               <button class="btn btn-outline-success" type="submit">Load content</button>
@@ -132,6 +130,7 @@
                         <div class="col-auto">
                           <input type="number" min="1" style="width: 5em" class="form-control"
                                  name="paragraphs_limit" id="paragraphs_limit" value="{{ algorithm['paragraphs_limit'] }}">
+                          <div class="invalid-feedback"></div>
                           </div>
                         </div>
                     <div class="row mb-2">
@@ -143,6 +142,7 @@
                               <option value="" {{ 'selected' if algorithm['retrieval'] == '' }}></option>
                               <option value="exact" {{ 'selected' if algorithm['retrieval'] == 'exact' }}>n-grams exact</option>
                             </select>
+                            <div class="invalid-feedback"></div>
                         </div>
                     </div>
                     <div class="row mb-2">

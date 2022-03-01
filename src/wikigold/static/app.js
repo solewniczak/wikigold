@@ -44,15 +44,12 @@ class Index extends App {
 
         searchForm.addEventListener("submit", event => {
             event.preventDefault();
-            const searchInput = searchForm.querySelector("input");
-            const searchErrorMsg = searchInput.parentNode.querySelector(".invalid-feedback");
 
             const formData = new FormData(searchForm);
             const title = formData.get('title');
             const article_source = formData.get('article_source');
 
-            searchErrorMsg.style.display = "none";
-            searchInput.classList.remove("is-invalid");
+            Array.from(searchForm.elements).forEach(element => element.classList.remove("is-invalid"));
             that.lockForms();
             that.loadArticleByTitle(title, article_source)
                 .then(result => {
@@ -60,8 +57,11 @@ class Index extends App {
                     that.url.searchParams.delete('algorithm');
                     window.history.replaceState('', '', that.url.href);
                 }).catch(error => {
-                    searchInput.classList.add("is-invalid");
-                    searchErrorMsg.style.display = "block";
+                    Object.keys(error).forEach(function(key) {
+                        const formElement = searchForm[key];
+                        formElement.classList.add("is-invalid");
+                        formElement.parentNode.querySelector(".invalid-feedback").textContent = error[key];
+                    })
                 }).finally(that.unlockForms);
         });
 
@@ -70,6 +70,7 @@ class Index extends App {
             const formData = new FormData(algorithmForm);
             const algorithm = Object.fromEntries(formData);
 
+            Array.from(algorithmForm.elements).forEach(element => element.classList.remove("is-invalid"));
             that.lockForms();
             that.runAlgorithm(algorithm)
                 .then(result => {
@@ -77,7 +78,13 @@ class Index extends App {
                     window.history.replaceState('', '', that.url.href);
                 })
                 .then(that.applyNgramsDisplaySettings)
-                .then(that.unlockForms);
+                .catch(error => {
+                    Object.keys(error).forEach(function(key) {
+                        const formElement = algorithmForm[key];
+                        formElement.classList.add("is-invalid");
+                        formElement.parentNode.querySelector(".invalid-feedback").textContent = error[key];
+                    })
+                }).finally(that.unlockForms);
         });
 
         // modify EDL on user decision
@@ -326,15 +333,13 @@ class Index extends App {
         const requestUrl = that.requestUrl('/api/article', {'title': title, 'article_source': article_source})
         return fetch(requestUrl, {
             method: 'GET'
-        })
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    throw new Error(response.status);
+        }).then(async (response) => {
+                const result = await response.json();
+                if (!response.ok) {
+                    throw result;
                 }
-            })
-            .then(result => that.loadArticleFromResult(result));
+                return result;
+        }).then(result => that.loadArticleFromResult(result));
     }
 
     loadArticleById(articleId) {
@@ -442,7 +447,13 @@ class Index extends App {
         return fetch(requestUrl, {
             method: 'GET'
         })
-            .then(response => response.json())
+            .then(async (response) => {
+                const result = await response.json();
+                if (!response.ok) {
+                    throw result;
+                }
+                return result;
+            })
             .then(result => {
                 that.edl = result.edl;
                 that.ngrams_labels = {};

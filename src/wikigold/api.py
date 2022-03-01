@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 from flask import (
-    Blueprint, g, jsonify, request, abort, url_for, redirect, current_app
+    Blueprint, g, jsonify, request, abort, url_for, redirect, current_app, make_response
 )
 
 from .db import get_db
@@ -34,7 +34,8 @@ def search_article():
     cursor.close()
 
     if article is None:
-        abort(404)
+        response = make_response(jsonify({'title': 'article not found'}), 404)
+        abort(response)
 
     return redirect(url_for('api.get_article', id=article['id']))
 
@@ -94,13 +95,20 @@ def get_candidate_labels(article_id):
     algorithm_normalized_json_key, algorithm_normalized_json = normalize_algorithm_json(request.args['algorithm'])
     lines = get_lines(article_id, algorithm_normalized_json['paragraphs_limit'])
 
+    if current_app.config['TOKENS_LIMIT'] > 0:  # 0 means no limit
+        tokens_count = sum([len(line['tokens']) for line in lines])
+        if tokens_count >= current_app.config['TOKENS_LIMIT']:
+            response = make_response(jsonify({'paragraphs_limit': 'tokens limit exceeded'}), 400)
+            abort(response)
+
     if algorithm_normalized_json['retrieval'] == 'exact':
         labels = get_labels_exact(lines, skip_stop_words=algorithm_normalized_json['skip_stop_words'],
                                   min_label_count=algorithm_normalized_json['min_label_count'],
                                   min_label_articles_count=algorithm_normalized_json['min_label_articles_count'],
                                   min_link_probability=algorithm_normalized_json['min_link_probability'])
     else:
-        abort(400, "unknown retrieval algorithm")
+        response = make_response(jsonify({'retrieval': 'unknown retrieval algorithm'}), 400)
+        abort(response)
 
     if algorithm_normalized_json['disambiguation'] == 'commonness':
         rate_by_commonness(labels)

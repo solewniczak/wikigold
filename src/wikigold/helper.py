@@ -133,7 +133,7 @@ def get_user_decisions(article_id, algorithm_normalized_json_key):
 
 def normalize_algorithm_json(algorithm):
     """
-    Method returns the string key that unambiguously identifies the algorithm and the algotithm parameters.
+    Method returns the string key that unambiguously identifies the algorithm and its parameters.
 
     Returns:
         string: The key of the algorithm.
