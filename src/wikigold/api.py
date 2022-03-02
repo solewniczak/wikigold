@@ -95,10 +95,11 @@ def get_candidate_labels(article_id):
     algorithm_normalized_json_key, algorithm_normalized_json = normalize_algorithm_json(request.args['algorithm'])
     lines = get_lines(article_id, algorithm_normalized_json['paragraphs_limit'])
 
-    if current_app.config['TOKENS_LIMIT'] > 0:  # 0 means no limit
+    tokens_limit = current_app.config['TOKENS_LIMIT']
+    if tokens_limit > 0:  # 0 means no limit
         tokens_count = sum([len(line['tokens']) for line in lines])
-        if tokens_count >= current_app.config['TOKENS_LIMIT']:
-            response = make_response(jsonify({'paragraphs_limit': 'tokens limit exceeded'}), 400)
+        if tokens_count >= tokens_limit:
+            response = make_response(jsonify({'paragraphs_limit': f'tokens limit ({tokens_limit}) exceeded'}), 400)
             abort(response)
 
     if algorithm_normalized_json['retrieval'] == 'exact':
