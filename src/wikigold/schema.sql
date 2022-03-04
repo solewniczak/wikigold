@@ -9,9 +9,9 @@ CREATE TABLE `users` (
 CREATE TABLE `dumps` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `lang` CHAR(10) NOT NULL,
-    `date` CHAR(8) NOT NULL,
-    `parser_name` CHAR(30) NOT NULL,
-    `parser_version` CHAR(30) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `parser_name` CHAR(30) NULL,
+    `parser_version` CHAR(30) NULL,
     `timestamp` TIMESTAMP NOT NULL,
     `articles_count` INT UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)

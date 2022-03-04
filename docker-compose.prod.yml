@@ -14,7 +14,7 @@ services:
       - MYSQL_DATABASE=wikigold
       - PREFIX=/wikigold  # the path to application (must be the same as in proxy server)
       - KNOWLEDGE_BASE=1
-      - TOKENS_LIMIT=1000
+      - TOKENS_LIMIT=2000
     ports:
       - "8000:8000"
 

@@ -35,6 +35,7 @@ class Index extends App {
             that.loadArticleById(articleId)
                 .then(result => {
                     searchForm.querySelector("input[name=title]").value = result.title;
+                    searchForm.querySelector("select[name=article_source]").value = result['dump_id'];
                     if (that.url.searchParams.has('algorithm')) {
                         const algorithm = JSON.parse(that.url.searchParams.get('algorithm'));
                         return that.runAlgorithm(algorithm);

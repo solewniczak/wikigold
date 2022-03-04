@@ -8,7 +8,7 @@
             <a href="{{ url_for('index', article=edl['article_id'], algorithm=edl['algorithm']) }}" class="list-group-item list-group-item-action">
             <div class="d-flex w-100 justify-content-between">
               <h5 class="mb-1">{{ edl['title'] }}
-                  <small style="font-weight:normal;font-size:60%;color:#6c757d;">{{ edl['lang'] }}wiki-{{ edl['date'] }} {{ edl['parser_name'] }} {{ edl['parser_version'] }}</small>
+                  <small style="font-weight:normal;font-size:60%;color:#6c757d;">{{ edl['name'] }} {{ edl['parser_name'] or '' }} {{ edl['parser_version'] or '' }}</small>
               </h5>
               <small>
                   <i>{{ edl['timedelta'] }} ago</i>

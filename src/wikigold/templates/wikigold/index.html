@@ -104,7 +104,7 @@
                       <select class="form-select form-select-sm" name="article_source" id="article_source">
                         {% for dump in dumps %}
                           <option value="{{ dump['id'] }}">
-                            {{ dump['lang'] }}wiki-{{ dump['date'] }} | {{ dump['timestamp'] }}
+                            {{ dump['name'] }} | {{ dump['timestamp'] }}
                           </option>
                         {% endfor %}
                       </select>

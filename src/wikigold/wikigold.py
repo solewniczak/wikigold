@@ -19,7 +19,7 @@ def index():
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
-    sql_select_dumps = "SELECT id, lang, date, parser_name, parser_version, timestamp FROM dumps ORDER BY id DESC"
+    sql_select_dumps = "SELECT id, lang, name, parser_name, parser_version, timestamp FROM dumps ORDER BY id DESC"
     cursor.execute(sql_select_dumps)
     dumps = cursor.fetchall()
     cursor.close()
@@ -41,7 +41,7 @@ def edls():
 
     sql_select_edls = '''SELECT `edls`.`id`, `edls`.`algorithm`, `edls`.`timestamp`, `edls`.`article_id`,
                             `articles`.`title`, `articles`.`caption`,
-                            `dumps`.`lang`, `dumps`.`date`, `dumps`.`parser_name`, `dumps`.`parser_version`
+                            `dumps`.`name`, `dumps`.`parser_name`, `dumps`.`parser_version`
                             FROM `edls` JOIN articles ON `edls`.`article_id` = `articles`.`id`
                             JOIN dumps ON `articles`.`dump_id` = `dumps`.`id`
                             WHERE `edls`.`user_id`=%s AND `edls`.`knowledge_base_id`=%s

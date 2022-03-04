@@ -114,8 +114,9 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
     if dump_id == -1:
         parser_name = mwparallelparser.__name__
         parser_version = mwparallelparser.__version__
-        sql_add_dump = "INSERT INTO dumps (`lang`, `date`, `parser_name`, `parser_version`, `timestamp`) VALUES (%s, %s, %s, %s, %s)"
-        data_dump = (lang, dump_date, parser_name, parser_version, datetime.now().isoformat())
+        sql_add_dump = "INSERT INTO dumps (`lang`, `name`, `parser_name`, `parser_version`, `timestamp`) VALUES (%s, %s, %s, %s, %s)"
+        name = f'{lang}wiki-{dump_date}'
+        data_dump = (lang, name, parser_name, parser_version, datetime.now().isoformat())
         cursor.execute(sql_add_dump, data_dump)
         dump_id = cursor.lastrowid
         db.commit()  # save dump into database
