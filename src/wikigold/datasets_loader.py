@@ -3,9 +3,7 @@ from datetime import datetime
 import pandas as pd
 
 import click
-from flask import current_app, g
 from flask.cli import with_appcontext
-from tqdm import tqdm
 
 from .db import get_db
 
