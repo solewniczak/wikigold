@@ -30,6 +30,15 @@ CREATE TABLE `articles` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
+CREATE TABLE `articles_metadata` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `article_id` INT UNSIGNED NOT NULL,
+    `key` VARCHAR(255) NOT NULL,
+    `value` LONGTEXT NULL,
+    FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`),
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
 CREATE TABLE `lines` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `nr` INT UNSIGNED NOT NULL,
