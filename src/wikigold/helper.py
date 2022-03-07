@@ -142,7 +142,7 @@ def normalize_algorithm_json(algorithm):
 
     # Default values
     algorithm_defaults = {
-        'paragraphs_limit': None,
+        'paragraphs_limit': '',  # must be string because can be empty
         'retrieval': '',
         'skip_stop_words': False,
         'min_label_count': 1,
