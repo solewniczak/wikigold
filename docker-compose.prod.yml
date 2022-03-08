@@ -12,6 +12,8 @@ services:
       - MYSQL_USER=root
       - MYSQL_PASSWORD=changeme  # change to: openssl rand -base64 16
       - MYSQL_DATABASE=wikigold
+      - REDIS_URL=redis://redis:6379
+      - BASEURL=http://localhost
       - PREFIX=/wikigold  # the path to application (must be the same as in proxy server)
       - KNOWLEDGE_BASE=1
       - TOKENS_LIMIT=2000
@@ -28,11 +30,15 @@ services:
     ports:
       - "3306:3306"
 
-  adminer:
-    image: adminer
+  redis:
+    image: redis:6.2.6
     restart: always
-    ports:
-      - "8080:8080"
+    command: redis-server
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - redis-data:/data
 
 volumes:
   dbdata:
+  redis-data:

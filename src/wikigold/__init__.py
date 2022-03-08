@@ -29,6 +29,7 @@ app.config.from_mapping(
     MYSQL_PASSWORD=os.getenv('MYSQL_PASSWORD', default=''),
     MYSQL_DATABASE=os.getenv('MYSQL_DATABASE', default='wikigold'),
     REDIS_URL = os.getenv('REDIS_URL', default='redis://localhost:6379'),
+    BASEURL=os.getenv('BASEURL', default=''),
     PREFIX=os.getenv('PREFIX', default=''),
     KNOWLEDGE_BASE=os.getenv('KNOWLEDGE_BASE', default='1'),
     MAX_NGRAMS=os.getenv('MAX_NGRAMS', default='5'),
@@ -41,6 +42,14 @@ app.config['MYSQL_PORT'] = int(app.config['MYSQL_PORT'])
 app.config['KNOWLEDGE_BASE'] = int(app.config['KNOWLEDGE_BASE'])
 app.config['MAX_NGRAMS'] = int(app.config['MAX_NGRAMS'])
 app.config['TOKENS_LIMIT'] = int(app.config['TOKENS_LIMIT'])
+
+# compose application url
+if app.config['BASEURL'] == '':
+    app_url = app.config['PREFIX'].rstrip('/')
+else:
+    app_url = app.config['BASEURL'].rstrip('/')+'/'+app.config['PREFIX'].strip('/')
+app.config['APPLICATION_URL'] = app_url
+
 
 from . import db
 db.init_app(app)
