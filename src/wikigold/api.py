@@ -8,7 +8,7 @@ from flask import (
 
 from .db import get_db
 from .disambiguation import rate_by_commonness, rate_by_topic_proximity, apply_links_to_text_ratio
-from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions
+from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions, absolute_url_for
 from .labels import get_labels_exact
 from .mediawikixml import normalize_title
 
@@ -37,7 +37,7 @@ def search_article():
         response = make_response(jsonify({'title': 'article not found'}), 404)
         abort(response)
 
-    return redirect(url_for('api.get_article', id=article['id']))
+    return redirect(absolute_url_for('api.get_article', id=article['id']))
 
 
 @bp.route('/article/<int:id>', methods=('GET',))

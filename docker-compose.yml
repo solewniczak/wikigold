@@ -11,7 +11,7 @@ services:
       - MYSQL_PASSWORD=changeme
       - MYSQL_DATABASE=wikigold
       - REDIS_URL=redis://redis:6379
-      - BASEURL=http://localhost:8000
+      - BASE_URL=https://localhost
       - PREFIX=/wikigold
       - KNOWLEDGE_BASE=1
       - TOKENS_LIMIT=2000

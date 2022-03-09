@@ -1,10 +1,18 @@
 import json
 
-from flask import g, current_app
+from flask import g, current_app, url_for
 from nltk import TreebankWordTokenizer
 from nltk.data import load
 
 from .db import get_db
+
+
+def absolute_url_for(endpoint, **values):
+    url = url_for(endpoint, **values)
+    if current_app.config['BASE_URL'] != '':
+        url = current_app.config['BASE_URL'].rstrip('/') + '/' + url
+
+    return url
 
 
 def word_tokenize_spans(text, language="english"):
