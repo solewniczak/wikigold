@@ -13,7 +13,7 @@ services:
       - MYSQL_PASSWORD=changeme  # change to: openssl rand -base64 16
       - MYSQL_DATABASE=wikigold
       - REDIS_URL=redis://redis:6379
-      - BASE_URL=http://localhost
+      - BASE_URL=http://localhost  # might be required if application is behind proxy
       - PREFIX=/wikigold  # the path to application (must be the same as in proxy server)
       - KNOWLEDGE_BASE=1
       - TOKENS_LIMIT=2000

@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 from flask import (
-    Blueprint, g, jsonify, request, abort, url_for, redirect, current_app, make_response
+    Blueprint, g, jsonify, request, abort, redirect, current_app, make_response
 )
 
 from .db import get_db
