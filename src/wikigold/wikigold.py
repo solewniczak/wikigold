@@ -4,11 +4,10 @@ import humanize
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for, current_app, abort
 )
-from werkzeug.security import generate_password_hash
 
 from .auth import login_required
 from .db import get_db
-from .helper import normalize_algorithm_json
+from .helper import normalize_algorithm_json, absolute_url_for
 
 bp = Blueprint('wikigold', __name__)
 
@@ -93,4 +92,4 @@ def edl_delete(id):
     cursor.close()
 
     flash('The edl has been deleted.', 'success')
-    return redirect(url_for('wikigold.edls'))
+    return redirect(absolute_url_for('wikigold.edls'))

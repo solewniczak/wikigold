@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urljoin
 
 from flask import g, current_app, url_for
 from nltk import TreebankWordTokenizer
@@ -8,10 +9,11 @@ from .db import get_db
 
 
 def absolute_url_for(endpoint, **values):
-    url = url_for(endpoint, **values)
     if current_app.config['BASE_URL'] != '':
-        url = current_app.config['BASE_URL'].rstrip('/') + '/' + url
-
+        relative_url = url_for(endpoint, **values)
+        url = urljoin(current_app.config['BASE_URL'], relative_url)
+    else:
+        url = url_for(endpoint, **values, _external=True)
     return url
 
 

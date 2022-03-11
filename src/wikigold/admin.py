@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash
 
 from .auth import superuser
 from .db import get_db
+from .helper import absolute_url_for
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -56,7 +57,7 @@ def user_delete(id):
         finally:
             cursor.close()
 
-    return redirect(url_for('admin.users'))
+    return redirect(absolute_url_for('admin.users'))
 
 
 @bp.route('/user/<int:id>/update', methods=('POST', ))
@@ -75,4 +76,4 @@ def user_update(id):
         db.commit()
         cursor.close()
         flash('Password has been updated.', 'success')
-    return redirect(url_for('admin.users'))
+    return redirect(absolute_url_for('admin.users'))

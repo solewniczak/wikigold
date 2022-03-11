@@ -7,6 +7,7 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from .db import get_db
+from .helper import absolute_url_for
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -35,7 +36,7 @@ def register():
                 error = f'User {username} is already registered.'
             else:
                 flash('User registered.', 'success')
-                return redirect(url_for("auth.login"))
+                return redirect(absolute_url_for("auth.login"))
 
         flash(error, 'danger')
 
@@ -65,7 +66,7 @@ def login():
         if error is None:
             session.clear()
             session['user_id'] = user['id']
-            return redirect(url_for('index'))
+            return redirect(absolute_url_for('index'))
 
         flash(error, 'danger')
 
@@ -90,14 +91,14 @@ def load_logged_in_user():
 @bp.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('index'))
+    return redirect(absolute_url_for('index'))
 
 
 def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
-            return redirect(url_for('auth.login'))
+            return redirect(absolute_url_for('auth.login'))
 
         return view(**kwargs)
 
