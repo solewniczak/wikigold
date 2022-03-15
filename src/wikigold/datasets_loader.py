@@ -1,4 +1,5 @@
 import glob
+import json
 import os.path
 from datetime import datetime
 
@@ -95,8 +96,28 @@ def horne2017(path):
                 yield index, caption, metadata, lines
                 index += 1
 
-
-
+def fakenewsnet(path):
+    '''https://github.com/KaiDMML/FakeNewsNet'''
+    index = 0
+    labels = ['fake', 'real']
+    sources = ['politifact']
+    for source in sources:
+        for label in labels:
+            contents_path = os.path.join(path, source, label)
+            for content_dir in os.listdir(contents_path):
+                content_path = os.path.join(contents_path, content_dir, 'news content.json')
+                with open(content_path) as f:
+                    data = json.load(f)
+                caption = data['title']
+                metadata = {
+                    'id': content_dir,
+                    'label': label,
+                    'source': source,
+                }
+                lines = data['text'].split('\n')
+                lines = [line.strip() for line in lines if line.strip() != '']
+                yield index, caption, metadata, lines
+                index += 1
 
 def init_app(app):
     app.cli.add_command(load_dataset)
