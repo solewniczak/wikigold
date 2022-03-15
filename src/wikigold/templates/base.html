@@ -67,14 +67,17 @@
     <script>
       'use strict';
       window.addEventListener('load', (event) => {
-        const prefix = {{config.get('PREFIX')|tojson}};
-        const maxNgrams = {{config.get('MAX_NGRAMS')|tojson}};
+        const config = {
+            prefix: {{config.get('PREFIX')|tojson}},
+            maxNgrams: {{config.get('MAX_NGRAMS')|tojson}},
+            knowledgeBaseUrl: {{config.get('KNOWLEDGE_BASE_URL')|tojson}}
+        }
         const constructorMap = {
           'index': Index
         };
         const currentPageId = document.querySelector("body").id;
         if (currentPageId in constructorMap) {
-          new constructorMap[currentPageId](prefix, maxNgrams);
+          new constructorMap[currentPageId](config);
         }
       });
     </script>

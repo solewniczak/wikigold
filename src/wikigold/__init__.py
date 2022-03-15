@@ -32,6 +32,7 @@ app.config.from_mapping(
     BASE_URL=os.getenv('BASE_URL', default=''),
     PREFIX=os.getenv('PREFIX', default=''),
     KNOWLEDGE_BASE=os.getenv('KNOWLEDGE_BASE', default='1'),
+    KNOWLEDGE_BASE_URL=os.getenv('KNOWLEDGE_BASE_URL', default='https://en.wikipedia.org/wiki/'),
     MAX_NGRAMS=os.getenv('MAX_NGRAMS', default='5'),
     TOKENS_LIMIT=os.getenv('TOKENS_LIMIT', default='0')  # 0 means no limit
 )

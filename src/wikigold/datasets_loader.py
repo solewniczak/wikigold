@@ -1,6 +1,7 @@
 import glob
 import json
 import os.path
+from collections import defaultdict, Counter
 from datetime import datetime
 
 import pandas as pd
@@ -45,7 +46,7 @@ def load_dataset(name, path):
     sql = 'UPDATE `dumps` SET `articles_count`=(SELECT COUNT(*) FROM articles WHERE `dump_id`=%s) WHERE `id`=%s'
     cursor.execute(sql, (dump_id, dump_id))
 
-    db.commit()
+    # db.commit()
 
 
 def clmentbisaillon(path):
@@ -98,9 +99,9 @@ def horne2017(path):
 
 def fakenewsnet(path):
     '''https://github.com/KaiDMML/FakeNewsNet'''
-    index = 0
-    labels = ['fake', 'real']
     sources = ['politifact']
+    labels = ['fake', 'real']
+    counters = defaultdict(Counter)
     for source in sources:
         for label in labels:
             contents_path = os.path.join(path, source, label)
@@ -108,6 +109,7 @@ def fakenewsnet(path):
                 content_path = os.path.join(contents_path, content_dir, 'news content.json')
                 with open(content_path) as f:
                     data = json.load(f)
+                id = f'{source}_{label}_{counters[source][label]}'
                 caption = data['title']
                 metadata = {
                     'id': content_dir,
@@ -116,8 +118,8 @@ def fakenewsnet(path):
                 }
                 lines = data['text'].split('\n')
                 lines = [line.strip() for line in lines if line.strip() != '']
-                yield index, caption, metadata, lines
-                index += 1
+                yield id, caption, metadata, lines
+                counters[source][label] += 1
 
 def init_app(app):
     app.cli.add_command(load_dataset)

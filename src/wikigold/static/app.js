@@ -1,16 +1,15 @@
 class App {
-    constructor(prefix, maxNgrams) {
-        this.prefix = prefix;
-        this.maxNgrams = maxNgrams;
+    constructor(config) {
+        this.config = config;
         this.url =  new URL(document.location);
     }
 
     requestUrl(path, params) {
         if (params) {
             const searchParams = new URLSearchParams(params);
-            return this.prefix + path + '?' + searchParams
+            return this.config.prefix + path + '?' + searchParams
         } else {
-            return this.prefix + path
+            return this.config.prefix + path
         }
     }
 
@@ -23,8 +22,8 @@ class App {
 }
 
 class Index extends App {
-    constructor(baseUrl, maxNgrams) {
-        super(baseUrl, maxNgrams);
+    constructor(config) {
+        super(config);
         const that = this;
         const searchForm = document.querySelector("#search-form");
         const algorithmForm = document.querySelector("#algorithm-form");
@@ -186,7 +185,7 @@ class Index extends App {
             if (event.target.tagName === 'INPUT' ) {
                 return;
             }
-            for (let i = 0; i < that.maxNgrams; i++) {
+            for (let i = 0; i < that.config.maxNgrams; i++) {
                 if (event.code === "Digit" + (i+1)) {
                     ngramsDisplayCheckboxes[i].checked ^= 1;
                     that.applyNgramsDisplaySettings();
@@ -375,7 +374,7 @@ class Index extends App {
                     let span = document.createElement("span");
                     span.classList.add("space");
                     p.append(span);
-                    for (let i = 0; i < that.maxNgrams; i++) {
+                    for (let i = 0; i < that.config.maxNgrams; i++) {
                         let nextSpan = document.createElement("span");
                         span.append(nextSpan);
                         span = nextSpan;
@@ -394,7 +393,7 @@ class Index extends App {
                 span.classList.add("ngram");
                 char_spans[token_start].before(span);
 
-                for (let i = 0; i < that.maxNgrams; i++) {
+                for (let i = 0; i < that.config.maxNgrams; i++) {
                     let nextSpan = document.createElement("span");
                     span.append(nextSpan);
                     span = nextSpan;
@@ -646,9 +645,10 @@ class Index extends App {
                                 const articleId = parseInt(articleLabel.dataset.articleId);
                                 const title = result[articleId].title;
                                 const caption = result[articleId].caption;
+                                const lang = result[articleId].caption;
                                 const articleLink = document.createElement("a");
                                 articleLink.textContent = title;
-                                articleLink.href = "https://" + that.article.lang + ".wikipedia.org/wiki/" + title;
+                                articleLink.href = that.config.knowledgeBaseUrl + title;
                                 articleLink.target = "_blank";
                                 articleLink.dataset.bsToggle = "tooltip";
                                 articleLink.dataset.bsPlacement = "left";
