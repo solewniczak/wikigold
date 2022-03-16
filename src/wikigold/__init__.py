@@ -67,5 +67,5 @@ app.register_blueprint(api.bp)
 from . import admin
 app.register_blueprint(admin.bp)
 
-from . import datasets_loader
-datasets_loader.init_app(app)
+from . import datasets
+datasets.init_app(app)

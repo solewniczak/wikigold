@@ -9,7 +9,10 @@ def get_label_titles_dict(candidate_labels, min_label_count, min_label_articles_
     for label_name in candidate_labels_unique:
         label = get_cached_label(label_name)
         if label is not None:
-            label['link_probability'] = label['as_link_in']/label['appeared_in']
+            if label['appeared_in'] != 0:
+                label['link_probability'] = label['as_link_in']/label['appeared_in']
+            else:
+                label['link_probability'] = 0.0
             if label['label_counter'] >= min_label_count and label['link_probability'] >= min_link_probability:
                 label_articles_dict[label_name] = label
 

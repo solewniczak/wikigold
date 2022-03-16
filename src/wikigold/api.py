@@ -21,16 +21,20 @@ def search_article():
 
     if 'title' not in request.args:
         abort(400, "title parameter required")
+    title = request.args['title']
 
     cursor = db.cursor(dictionary=True)
 
     dump_id = int(request.args['article_source'])
 
     sql = 'SELECT `id` FROM `articles` WHERE `title`=%s AND `dump_id`=%s'
-    title = normalize_title(request.args['title'])
     data = (title, dump_id)
     cursor.execute(sql, data)
     article = cursor.fetchone()
+    if article is None:  # try with normalized title
+        data = (normalize_title(title), dump_id)
+        cursor.execute(sql, data)
+        article = cursor.fetchone()
     cursor.close()
 
     if article is None:

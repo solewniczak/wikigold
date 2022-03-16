@@ -287,5 +287,34 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
     cursor.close()
 
 
+@click.command('delete-dump')
+@click.argument('dump_id', type=int)
+@with_appcontext
+def delete_dump_command(dump_id):
+    db = get_db()
+
+    cursor = db.cursor(dictionary=True)
+    # delete lines
+    sql = '''DELETE `lines` FROM `lines` JOIN `articles` ON `lines`.`article_id`=`articles`.`id`
+                WHERE `articles`.`dump_id`=%s'''
+    cursor.execute(sql, (dump_id,))
+
+    # delete articles_metadata
+    sql = '''DELETE `articles_metadata` FROM `articles_metadata`
+            JOIN `articles` ON `articles_metadata`.`article_id`=`articles`.`id` WHERE `articles`.`dump_id`=%s'''
+    cursor.execute(sql, (dump_id,))
+
+    # delete articles
+    sql = 'DELETE FROM `articles` WHERE `dump_id`=%s'
+    cursor.execute(sql, (dump_id,))
+
+    # delete dumps
+    sql = 'DELETE FROM `dumps` WHERE `id`=%s'
+    cursor.execute(sql, (dump_id,))
+
+    cursor.close()
+    db.commit()
+
 def init_app(app):
     app.cli.add_command(import_dump_command)
+    app.cli.add_command(delete_dump_command)
