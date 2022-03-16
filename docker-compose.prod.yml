@@ -16,7 +16,7 @@ services:
       - BASE_URL=http://localhost  # might be required if application is behind proxy
       - PREFIX=/wikigold  # the path to application (must be the same as in proxy server)
       - KNOWLEDGE_BASE=1
-      - TOKENS_LIMIT=2000
+      - TOKENS_LIMIT=4000
     ports:
       - "8000:8000"
 

@@ -14,7 +14,7 @@ services:
       - BASE_URL=https://localhost
       - PREFIX=/wikigold
       - KNOWLEDGE_BASE=1
-      - TOKENS_LIMIT=2000
+      - TOKENS_LIMIT=4000
     ports:
       - "8000:8000"
     volumes:

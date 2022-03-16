@@ -55,25 +55,29 @@ def clmentbisaillon(path):
         'Fake': pd.read_csv(os.path.join(path, 'Fake.csv')),
         'True': pd.read_csv(os.path.join(path, 'True.csv'))
     }
+    counter = Counter()
     for label, df in dfs.items():
         for index, row in df.iterrows():
-            title = f'{label}_{index}'
             lines = row['text'].split('\n')
             lines = [line.strip() for line in lines if line.strip() != '']
-            metadata = {
-                'label': label,
-                'subject': row['subject'],
-                'date': row['date']
-            }
-            yield title, row['title'], metadata, lines
+            if len(lines) > 0:
+                metadata = {
+                    'index': index,
+                    'label': label,
+                    'seq': counter[label],
+                    'subject': row['subject'],
+                    'date': row['date']
+                }
+                counter[label] += 1
+                yield row['title'], lines[0], metadata, lines
 
 
 def horne2017(path):
     '''https://github.com/BenjaminDHorne/fakenewsdata1'''
-    index = 0
     path = os.path.join(path, 'Public Data')
     sources = ['Buzzfeed Political News Dataset', 'Random Poltical News Dataset']
     labels = ['Fake', 'Real', 'Satire']
+    counters = defaultdict(Counter)
     for source in sources:
         for label in labels:
             contents_path = os.path.join(path, source, label)
@@ -86,16 +90,17 @@ def horne2017(path):
                     content = file.read().splitlines()
                 lines = [line for line in content if line != '']
 
-                title_path = os.path.join(titles_path, content_file)
-                with open(title_path, encoding='iso-8859-1') as file:
-                    caption = file.readline()
-
-                metadata = {
-                    'label': label,
-                    'source': source,
-                }
-                yield index, caption, metadata, lines
-                index += 1
+                if len(lines) > 0:
+                    title_path = os.path.join(titles_path, content_file)
+                    with open(title_path, encoding='iso-8859-1') as file:
+                        title = file.readline()
+                    metadata = {
+                        'source': source,
+                        'label': label,
+                        'seq': counters[source][label],
+                    }
+                    counters[source][label] += 1
+                    yield title, lines[0], metadata, lines
 
 
 def fakenewsnet(path):
@@ -111,18 +116,17 @@ def fakenewsnet(path):
                 try:
                     with open(content_path) as f:
                         data = json.load(f)
-                    id = f'{source}_{label}_{counters[source][label]}'
-                    caption = data['title']
-                    metadata = {
-                        'id': content_dir,
-                        'label': label,
-                        'source': source,
-                    }
                     lines = data['text'].split('\n')
                     lines = [line.strip() for line in lines if line.strip() != '']
                     if len(lines) > 0:
-                        yield id, caption, metadata, lines
+                        metadata = {
+                            'id': content_dir,
+                            'source': source,
+                            'label': label,
+                            'seq': counters[source][label],
+                        }
                         counters[source][label] += 1
+                        yield data['title'], lines[0], metadata, lines
                 except (FileNotFoundError, json.decoder.JSONDecodeError):
                     pass
 
