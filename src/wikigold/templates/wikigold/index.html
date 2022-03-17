@@ -87,6 +87,16 @@
     .wikipedia-link-blue {
         background-color: rgba(0,0,255,0.3);
     }
+
+    #article-header {
+        font-size: 1.5rem;
+    }
+
+    #article-metadata {
+        font-weight:normal;
+        font-size: 1rem;
+        color:#6c757d;
+    }
 </style>
 {% endblock %}
 
@@ -94,6 +104,8 @@
 <div class="container">
     <div class="row">
       <div class="col-9">
+          <h1 id="article-header"></h1>
+          <h2 id="article-metadata"></h2>
           <article style="line-height:{{config.get('MAX_NGRAMS')*5 + 5}}px;"></article>
       </div>
       <div class="col">
@@ -111,14 +123,24 @@
                 </div>
                 <div class="row mb-2">
                     <div class="col-auto">
-                      <label for="title" class="col-form-label" title="When JSON object is passed (string starting with &quot;{&quot;) then the metadata search is performed. In other case we search by article's title." data-bs-toggle="tooltip">Title/Metadata</label>
+                      <label for="title" class="col-form-label">Title</label>
                     </div>
                     <div class="col-auto">
                       <input class="form-control" name="title" id="title">
                       <div class="invalid-feedback"></div>
                     </div>
               </div>
-              <button class="btn btn-outline-success" type="submit">Load content</button>
+              <div class="row mb-2">
+                    <div class="col-auto">
+                      <label for="metadata" class="col-form-label">Metadata</label>
+                    </div>
+                    <div class="col-auto">
+                      <input class="form-control" name="metadata" id="metadata">
+                      <div class="invalid-feedback"></div>
+                    </div>
+              </div>
+              <button class="btn btn-outline-success" name="action" value="title" type="submit">Search by title</button>
+              <button class="btn btn-outline-success" name="action" value="metadata" type="submit">Search by metadata</button>
               </form>
               <form class="mb-4" id="algorithm-form">
                   <fieldset class="mb-4">

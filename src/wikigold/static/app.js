@@ -33,7 +33,6 @@ class Index extends App {
             that.lockForms();
             that.loadArticleById(articleId)
                 .then(result => {
-                    searchForm.querySelector("input[name=title]").value = result.title;
                     searchForm.querySelector("select[name=article_source]").value = result['dump_id'];
                     if (that.url.searchParams.has('algorithm')) {
                         const algorithm = JSON.parse(that.url.searchParams.get('algorithm'));
@@ -46,12 +45,13 @@ class Index extends App {
             event.preventDefault();
 
             const formData = new FormData(searchForm);
-            const title = formData.get('title');
+            const key = event.submitter.value;
+            const value = formData.get(key);
             const article_source = formData.get('article_source');
 
             Array.from(searchForm.elements).forEach(element => element.classList.remove("is-invalid"));
             that.lockForms();
-            that.loadArticleByTitle(title, article_source)
+            that.loadArticleBySearch(key, value, article_source)
                 .then(result => {
                     that.url.searchParams.set('article', result.id);
                     that.url.searchParams.delete('algorithm');
@@ -327,10 +327,10 @@ class Index extends App {
         });
     }
 
-    loadArticleByTitle(title, article_source) {
+    loadArticleBySearch(key, value, article_source) {
         const that = this;
 
-        const requestUrl = that.requestUrl('/api/article', {'title': title, 'article_source': article_source})
+        const requestUrl = that.requestUrl('/api/article', {[key]: value, 'article_source': article_source})
         return fetch(requestUrl, {
             method: 'GET'
         }).then(async (response) => {
@@ -355,8 +355,12 @@ class Index extends App {
 
     loadArticleFromResult(result) {
         const that = this;
+        const header = document.getElementById("article-header");
+        const metadata = document.getElementById("article-metadata");
         const article = document.querySelector("article");
         that.article = result;
+        header.textContent = result.title;
+        metadata.textContent = result.metadata;
 
         article.replaceChildren(); // remove old paragraphs
         result.lines.forEach(line => {

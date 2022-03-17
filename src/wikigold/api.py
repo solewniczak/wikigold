@@ -49,10 +49,10 @@ def search_article_by_metadata(query, dump_id):
     cursor.execute(sql, data)
     articles = cursor.fetchall()
     if len(articles) > 1:
-        response = make_response(jsonify({'title': 'metadata query ambiguous'}), 400)
+        response = make_response(jsonify({'metadata': 'metadata query ambiguous'}), 400)
         abort(response)
     elif len(articles) == 0:
-        response = make_response(jsonify({'title': 'article not found'}), 404)
+        response = make_response(jsonify({'metadata': 'article not found'}), 404)
         abort(response)
     cursor.close()
     return redirect(absolute_url_for('api.get_article', id=articles[0]['article_id']))
@@ -60,28 +60,24 @@ def search_article_by_metadata(query, dump_id):
 
 @bp.route('/article', methods=('GET',))
 def search_article():
-    try:
-        title = request.args['title']
-    except KeyError:
-        abort(400, 'title parameter required')
-
-    try:
-        dump_id = int(request.args['article_source'])
-    except KeyError:
+    if 'article_source' not in request.args:
         abort(400, 'article_source parameter required')
+    dump_id = int(request.args['article_source'])
 
-    if len(title) > 0 and title[0] == '{':  # metadata search
+    if 'title' in request.args:
+        return search_article_by_title(request.args['title'], dump_id)
+    elif 'metadata' in request.args:
         try:
-            query = json.loads(title)
+            query = json.loads(request.args['metadata'])
+            if len(query) == 0:
+                response = make_response(jsonify({'metadata': 'metadata query can\'t be empty'}), 400)
+                abort(response)
+            return search_article_by_metadata(query, dump_id)
         except json.decoder.JSONDecodeError as e:
-            response = make_response(jsonify({'title': 'JSON parsing error: ' + e.msg}), 400)
+            response = make_response(jsonify({'metadata': 'JSON parsing error: ' + e.msg}), 400)
             abort(response)
-        if len(query) == 0:
-            response = make_response(jsonify({'title': 'metadata query can\'t be empty'}), 400)
-            abort(response)
-        return search_article_by_metadata(query, dump_id)
     else:
-        return search_article_by_title(title, dump_id)
+        abort(400, 'title or metadata parameter required')
 
 
 @bp.route('/article/<int:id>', methods=('GET',))
@@ -93,11 +89,18 @@ def get_article(id):
     data = (id,)
     cursor.execute(sql, data)
     article = cursor.fetchone()
+
+    # get article metadata
+    sql = 'SELECT `key`, `value` FROM `articles_metadata` WHERE `article_id`=%s'
+    data = (id,)
+    cursor.execute(sql, data)
+    metadata = {row['key']: row['value'].decode('utf-8') for row in cursor}
     cursor.close()
 
     if article is None:
         abort(404)
 
+    article['metadata'] = json.dumps(metadata)
     article['lines'] = get_lines(id)
     article['wikipedia_decisions'] = get_wikipedia_decisions(id)
 
