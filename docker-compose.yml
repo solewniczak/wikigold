@@ -14,10 +14,12 @@ services:
       - BASE_URL=https://localhost
       - PREFIX=/wikigold
       - KNOWLEDGE_BASE=1
-      - TOKENS_LIMIT=4000
+      - TOKENS_LIMIT=2000
     ports:
       - "8000:8000"
     volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
       - /home/szyolewn/wikigold_data:/root/wikigold_data
 
   db:
@@ -29,6 +31,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: changeme
     volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
       - /home/szyolewn/wikigold_dbdata:/var/lib/mysql
 
   redis:

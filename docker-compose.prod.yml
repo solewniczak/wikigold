@@ -19,6 +19,9 @@ services:
       - TOKENS_LIMIT=4000
     ports:
       - "8000:8000"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
 
   db:
     image: mariadb:10.6.2

@@ -44,7 +44,7 @@ def edls():
                             FROM `edls` JOIN articles ON `edls`.`article_id` = `articles`.`id`
                             JOIN dumps ON `articles`.`dump_id` = `dumps`.`id`
                             WHERE `edls`.`user_id`=%s AND `edls`.`knowledge_base_id`=%s
-                            ORDER BY `timestamp` DESC'''
+                            ORDER BY `edls`.`timestamp` DESC'''
     data_edls = (g.user['id'], current_app.config['KNOWLEDGE_BASE'])
     cursor.execute(sql_select_edls, data_edls)
     my_edls = cursor.fetchall()

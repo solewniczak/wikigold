@@ -544,9 +544,17 @@ class Index extends App {
                     let title = '<nav><div class="nav nav-tabs" id="nav-tab" role="tablist" style="padding: .5rem 1rem 0;">';
                     spanLabels.forEach((labelIndex, index) => {
                        const label = that.edl[labelIndex];
+                       const link_prob = (100*label.link_probability).toFixed(1);
                        title += '<button class="nav-link" data-bs-toggle="tab" data-bs-target="#label' + labelIndex + '" ' +
                            'type="button" role="tab">' +
-                           '<span class="ngram-tab ngram-tab-' + label.ngrams + '">' + label.name + '</span> (' + label.label_counter + ')' +
+                           '<span class="ngram-tab ngram-tab-' + label.ngrams + '">' +
+                                label.name + '</span> ' +
+                           '<span title="<p>Label Counter</p><p>How many times the label was used as a link.</p>" data-bs-toggle="tooltip">(' +
+                                label.label_counter +
+                           ')</span> ' +
+                           '<span title="<p>Link probability</p><p>The ratio of all the pages that anchoring this token to all the pages that contains this token.</p>" data-bs-toggle="tooltip">(' +
+                                link_prob + '%' +
+                           ')</span>' +
                            '</button>';
                     });
                     title += '</div></nav>';
