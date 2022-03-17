@@ -15,18 +15,9 @@ from .mediawikixml import normalize_title
 bp = Blueprint('api', __name__, url_prefix='/api')
 
 
-@bp.route('/article', methods=('GET',))
-def search_article():
+def search_article_by_title(title, dump_id):
     db = get_db()
-
-    if 'title' not in request.args:
-        abort(400, "title parameter required")
-    title = request.args['title']
-
     cursor = db.cursor(dictionary=True)
-
-    dump_id = int(request.args['article_source'])
-
     sql = 'SELECT `id` FROM `articles` WHERE `title`=%s AND `dump_id`=%s'
     data = (title, dump_id)
     cursor.execute(sql, data)
@@ -35,13 +26,62 @@ def search_article():
         data = (normalize_title(title), dump_id)
         cursor.execute(sql, data)
         article = cursor.fetchone()
-    cursor.close()
-
-    if article is None:
+    if article is None:  # normalized title doesn't work
         response = make_response(jsonify({'title': 'article not found'}), 404)
         abort(response)
-
+    cursor.close()
     return redirect(absolute_url_for('api.get_article', id=article['id']))
+
+
+def search_article_by_metadata(query, dump_id):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    sql = 'SELECT am0.article_id FROM articles_metadata am0 JOIN articles ON am0.article_id=articles.id '
+    for i in range(1, len(query)):
+        sql += f'JOIN articles_metadata am{i} ON am0.article_id=am{i}.article_id '
+    data = [dump_id]
+    where = ['articles.dump_id=%s']
+    for i, (key, value) in enumerate(query.items()):
+        where.extend([f'am{i}.key=%s', f'am{i}.value=%s'])
+        data.extend([key, value])
+    sql += 'WHERE ' + ' AND '.join(where)
+    cursor.execute(sql, data)
+    articles = cursor.fetchall()
+    if len(articles) > 1:
+        response = make_response(jsonify({'title': 'metadata query ambiguous'}), 400)
+        abort(response)
+    elif len(articles) == 0:
+        response = make_response(jsonify({'title': 'article not found'}), 404)
+        abort(response)
+    cursor.close()
+    return redirect(absolute_url_for('api.get_article', id=articles[0]['article_id']))
+
+
+@bp.route('/article', methods=('GET',))
+def search_article():
+    try:
+        title = request.args['title']
+    except KeyError:
+        abort(400, 'title parameter required')
+
+    try:
+        dump_id = int(request.args['article_source'])
+    except KeyError:
+        abort(400, 'article_source parameter required')
+
+    if len(title) > 0 and title[0] == '{':  # metadata search
+        try:
+            query = json.loads(title)
+        except json.decoder.JSONDecodeError as e:
+            response = make_response(jsonify({'title': 'JSON parsing error: ' + e.msg}), 400)
+            abort(response)
+        if len(query) == 0:
+            response = make_response(jsonify({'title': 'metadata query can\'t be empty'}), 400)
+            abort(response)
+        return search_article_by_metadata(query, dump_id)
+    else:
+        return search_article_by_title(title, dump_id)
 
 
 @bp.route('/article/<int:id>', methods=('GET',))
