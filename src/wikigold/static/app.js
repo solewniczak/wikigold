@@ -647,9 +647,13 @@ class Index extends App {
                             const articleId = parseInt(articleLabel.dataset.articleId);
                             articlesIds.push(articleId);
                         });
-                        const requestUrl = that.requestUrl('/api/articles', {'ids': JSON.stringify(articlesIds)});
+                        const requestUrl = that.requestUrl('/api/articles');
                         fetch(requestUrl, {
-                            method: 'GET'
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            method: 'POST',
+                            body: JSON.stringify(articlesIds)
                         })
                         .then(response => response.json())
                         .then(result => {

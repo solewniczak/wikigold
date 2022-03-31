@@ -107,12 +107,9 @@ def get_article(id):
     return jsonify(article)
 
 
-@bp.route('/articles', methods=('GET',))
+@bp.route('/articles', methods=('POST',))
 def get_articles():
-    if 'ids' not in request.args:
-        abort(400, "article ids not given")
-
-    articles_ids = json.loads(request.args['ids'])
+    articles_ids = request.get_json()
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
