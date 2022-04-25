@@ -446,8 +446,12 @@ class Index extends App {
 
         if (!articleId) return;
 
-        const requestUrl = that.requestUrl('/api/candidateLabels/' + articleId,
-            {'algorithm': JSON.stringify(algorithm)});
+        const params = {'algorithm': JSON.stringify(algorithm)};
+        if (that.url.searchParams.has('user_id')) {
+            params['user_id'] = parseInt(that.url.searchParams.get('user_id'));
+        }
+
+        const requestUrl = that.requestUrl('/api/candidateLabels/' + articleId, params);
         return fetch(requestUrl, {
             method: 'GET'
         })
@@ -569,6 +573,11 @@ class Index extends App {
                         '<th title="<p>Label-Article Counter</p><p>The number of Wikipedia links <b>with that label</b> that points to this article.</p>" data-bs-toggle="tooltip">L-A</th>' +
                         '<th></th></tr></thead>' +
                         '<tbody>';
+                        // block decisions modification while browsing
+                        let disabled = '';
+                        if (that.url.searchParams.has('user_id')) {
+                            disabled = 'disabled';
+                        }
                         label.articles.forEach(article => {
                             popoverHtml += '<tr>' +
                                 '<td class="align-middle"><label class="col-form-label" data-article-id="' + article.article_id + '">' +
@@ -576,7 +585,7 @@ class Index extends App {
                                 '<td>' + article.article_counter + '</td>' +
                                 '<td>' + article.label_article_counter + '</td>' +
                                 '<td class="align-middle">' +
-                                '<input type="checkbox" class="form-check-input" name="correct_' + labelIndex + '" ' +
+                                '<input ' + disabled + ' type="checkbox" class="form-check-input" name="correct_' + labelIndex + '" ' +
                                 'value="' + article.article_id + '" ' +
                                 'data-wikigold-label="' + labelIndex + '">' +
                                 '</td>' +

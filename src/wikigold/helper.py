@@ -114,10 +114,8 @@ def get_wikipedia_decisions(article_id):
     return decisions
 
 
-def get_user_decisions(article_id, algorithm_normalized_json_key):
+def get_user_decisions(article_id, algorithm_normalized_json_key, user_id):
     db = get_db()
-    user_id = g.user['id']
-
     cursor = db.cursor(dictionary=True)
 
     # check if EDL exists

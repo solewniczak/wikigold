@@ -134,6 +134,10 @@ def get_candidate_labels(article_id):
     if 'algorithm' not in request.args:
         abort(400, "retrieval algorithm not given")
 
+    user_id = g.user['id']
+    if 'user_id' in request.args and g.user['superuser']:
+        user_id = request.args['user_id']
+
     algorithm_normalized_json_key, algorithm_normalized_json = normalize_algorithm_json(request.args['algorithm'])
     lines = get_lines(article_id, algorithm_normalized_json['paragraphs_limit'])
 
@@ -166,7 +170,7 @@ def get_candidate_labels(article_id):
             label['decision'] = label['disambiguation']['article_id']
 
     # apply saved decisions
-    user_decisions_dict = get_user_decisions(article_id, algorithm_normalized_json_key)
+    user_decisions_dict = get_user_decisions(article_id, algorithm_normalized_json_key, user_id)
     for label in labels:
         if (label['line'], label['start'], label['ngrams']) in user_decisions_dict:
             label['decision'] = user_decisions_dict[(label['line'], label['start'], label['ngrams'])]

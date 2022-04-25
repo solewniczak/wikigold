@@ -3,9 +3,13 @@
 
 {% block content %}
 <div class="container">
+    {% if another_user_id is not none %}
+        <h3>EDLs for {{ another_username }}</h3>
+    {% endif %}
+
     <div class="list-group">
-        {% for edl in my_edls %}
-            <a href="{{ url_for('index', article=edl['article_id'], algorithm=edl['algorithm']) }}" class="list-group-item list-group-item-action">
+        {% for edl in edls %}
+            <a href="{{ url_for('index', article=edl['article_id'], algorithm=edl['algorithm'], user_id=another_user_id) }}" class="list-group-item list-group-item-action">
             <div class="d-flex w-100 justify-content-between">
               <h5 class="mb-1">{{ edl['title'] }}
                   <small style="font-weight:normal;font-size:60%;color:#6c757d;">{{ edl['name'] }} {{ edl['parser_name'] or '' }} {{ edl['parser_version'] or '' }}</small>

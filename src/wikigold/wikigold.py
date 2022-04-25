@@ -33,10 +33,15 @@ def index():
 
 
 @bp.route('/edls')
+@bp.route('/edls/<int:another_user_id>')
 @login_required
-def edls():
+def edls(another_user_id=None):
     db = get_db()
     cursor = db.cursor(dictionary=True)
+
+    if not g.user['superuser'] and another_user_id is not None \
+        or g.user['superuser'] and another_user_id == g.user['id']:
+        return redirect(absolute_url_for('wikigold.edls'))
 
     sql_select_edls = '''SELECT `edls`.`id`, `edls`.`algorithm`, `edls`.`timestamp`, `edls`.`article_id`,
                             `articles`.`title`, `articles`.`caption`,
@@ -45,18 +50,22 @@ def edls():
                             JOIN dumps ON `articles`.`dump_id` = `dumps`.`id`
                             WHERE `edls`.`user_id`=%s AND `edls`.`knowledge_base_id`=%s
                             ORDER BY `edls`.`timestamp` DESC'''
-    data_edls = (g.user['id'], current_app.config['KNOWLEDGE_BASE'])
+    data_edls = (g.user['id'] if another_user_id is None else another_user_id, current_app.config['KNOWLEDGE_BASE'])
     cursor.execute(sql_select_edls, data_edls)
-    my_edls = cursor.fetchall()
-    my_edls_decoded = []
-    for row in my_edls:
+    edls = cursor.fetchall()
+    edls_decoded = []
+    for row in edls:
         row['algorithm'] = row['algorithm'].decode('utf-8')
         row['caption'] = row['caption'].decode('utf-8')
         row['timedelta'] = humanize.naturaldelta(datetime.now() - row['timestamp'])
-        my_edls_decoded.append(row)
-    cursor.close()
+        edls_decoded.append(row)
 
-    return render_template('wikigold/edls.html', my_edls=my_edls_decoded)
+    another_username = None
+    if another_user_id is not None:
+        cursor.execute('SELECT username FROM users WHERE id=%s', (another_user_id, ))
+        another_username = cursor.fetchone()['username']
+    cursor.close()
+    return render_template('wikigold/edls.html', edls=edls_decoded, another_user_id=another_user_id, another_username=another_username)
 
 
 def get_edl(id, check_user=True):

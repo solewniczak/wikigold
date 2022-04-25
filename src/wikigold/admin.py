@@ -17,7 +17,8 @@ def users():
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
-    sql = 'SELECT id, username FROM users'
+    sql = '''SELECT `id`, `username`,
+    (SELECT COUNT(*) FROM `edls` WHERE `edls`.`user_id`=`users`.`id`) AS `edls` FROM users'''
     cursor.execute(sql)
     users = cursor.fetchall()
 
