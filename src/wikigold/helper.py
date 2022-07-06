@@ -153,11 +153,12 @@ def normalize_algorithm_json(algorithm):
         'paragraphs_limit': '',  # must be string because can be empty
         'retrieval': '',
         'skip_stop_words': False,
+        'rate_keywords_by': '',
+        'links_to_text_ratio': 0.12,
         'min_label_count': 1,
         'min_label_articles_count': 1,
         'disambiguation': '',
-        'links_to_text_ratio': 0.12,
-        'min_link_probability': 0.0,
+        'min_keyphraseness': 0.0,
         'max_context_terms': 20
     }
 
@@ -172,8 +173,8 @@ def normalize_algorithm_json(algorithm):
         algorithm_parsed['min_label_articles_count'] = int(algorithm_parsed['min_label_articles_count'])
     if 'links_to_text_ratio' in algorithm_parsed:
         algorithm_parsed['links_to_text_ratio'] = float(algorithm_parsed['links_to_text_ratio'])
-    if 'min_link_probability' in algorithm_parsed:
-        algorithm_parsed['min_link_probability'] = float(algorithm_parsed['min_link_probability'])
+    if 'min_keyphraseness' in algorithm_parsed:
+        algorithm_parsed['min_keyphraseness'] = float(algorithm_parsed['min_keyphraseness'])
     if 'max_context_terms' in algorithm_parsed:
         algorithm_parsed['max_context_terms'] = int(algorithm_parsed['max_context_terms'])
 

@@ -7,9 +7,9 @@ from flask import (
 )
 
 from .db import get_db
-from .disambiguation import rate_by_commonness, rate_by_topic_proximity, apply_links_to_text_ratio
+from .disambiguation import rate_by_commonness, rate_by_topic_proximity, resolve_overlap_best_match
 from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions, absolute_url_for
-from .labels import get_labels_exact
+from .retrieval import get_labels_exact
 from .mediawikixml import normalize_title
 
 bp = Blueprint('api', __name__, url_prefix='/api')
@@ -149,10 +149,7 @@ def get_candidate_labels(article_id):
             abort(response)
 
     if algorithm_normalized_json['retrieval'] == 'exact':
-        labels = get_labels_exact(lines, skip_stop_words=algorithm_normalized_json['skip_stop_words'],
-                                  min_label_count=algorithm_normalized_json['min_label_count'],
-                                  min_label_articles_count=algorithm_normalized_json['min_label_articles_count'],
-                                  min_link_probability=algorithm_normalized_json['min_link_probability'])
+        labels = get_labels_exact(lines, algorithm_normalized_json)
     else:
         response = make_response(jsonify({'retrieval': 'unknown retrieval algorithm'}), 400)
         abort(response)
@@ -163,7 +160,7 @@ def get_candidate_labels(article_id):
         rate_by_topic_proximity(labels, algorithm_normalized_json['max_context_terms'])
 
     if algorithm_normalized_json['disambiguation'] != '':
-        apply_links_to_text_ratio(labels, lines, algorithm_normalized_json['links_to_text_ratio'])
+        resolve_overlap_best_match(labels)
 
     for label in labels:
         if 'disambiguation' in label and 'article_id' in label['disambiguation']:

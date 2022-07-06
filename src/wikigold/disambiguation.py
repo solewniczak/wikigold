@@ -7,6 +7,29 @@ from .cache import get_cached_backlinks
 from .db import get_db
 
 
+def resolve_overlap_best_match(labels):
+    """Search for overlapping links and select only the one with the best rating from all overlaps.
+    The algorithm process the labels starting from the top-rated candidate,
+    so there is guarantee that in case of the overlap the best candidate will be selected.
+
+    The function adds 'article_id' attribute to label['disambiguation'] data structure, based on
+    label['disambiguation']['candidate_article_id'] and label['disambiguation']['rating'] attributes
+    that should be there."""
+
+    labels_sorted = sorted(labels, key=lambda label: label['disambiguation']['rating'], reverse=True)
+    labels_overlap = defaultdict(list)  # store information about labels overlapping
+    for label in labels_sorted:  # start from the best label
+        overlap = False
+        for ngram_idx in range(label['start'], label['start'] + label['ngrams']):
+            if len(labels_overlap[label['line'], ngram_idx]) > 0:
+                overlap = True
+
+            if not overlap:
+                label['disambiguation']['article_id'] = label['disambiguation']['candidate_article_id']
+                for ngram_idx in range(label['start'], label['start'] + label['ngrams']):
+                    labels_overlap[label['line'], ngram_idx].append(label)
+
+
 def add_commonness_to_articles(labels):
     for label in labels:
         article_counter_sum = sum([article['article_counter'] for article in label['articles']])
@@ -57,29 +80,6 @@ def avg_semantic_relatedness(backlinks, article_id, other_articles_ids, articles
     for other_article_id in other_articles_ids:
         sum_sr += semantic_relatedness(backlinks[article_id], backlinks[other_article_id], articles_count)
     return sum_sr/(len(backlinks)-1)
-
-
-def count_tokens_in_lines(lines):
-    return sum([len(line['tokens']) for line in lines])
-
-
-def apply_links_to_text_ratio(labels, lines, links_to_text_ratio=0.12):
-    tokens_in_text = count_tokens_in_lines(lines)
-    tokens_to_links = int(links_to_text_ratio * tokens_in_text)
-    labels_sorted = sorted(labels, key=lambda label: label['disambiguation']['rating'])
-    labels_overlap = defaultdict(list)  # store information about labels overlapping
-    while tokens_to_links > 0 and len(labels_sorted) > 0:
-        label = labels_sorted.pop()
-        overlap = False
-        for ngram_idx in range(label['start'], label['start'] + label['ngrams']):
-            if len(labels_overlap[label['line'], ngram_idx]) > 0:
-                overlap = True
-
-        if not overlap:
-            label['disambiguation']['article_id'] = label['disambiguation']['candidate_article_id']
-            tokens_to_links -= label['ngrams']
-            for ngram_idx in range(label['start'], label['start'] + label['ngrams']):
-                labels_overlap[label['line'], ngram_idx].append(label)
 
 
 def rate_by_topic_proximity(labels, max_context_terms=20):
