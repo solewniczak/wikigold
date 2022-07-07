@@ -94,7 +94,7 @@ CREATE TABLE `labels_articles` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
-CREATE TABLE `wikipedia_decisions` (
+CREATE TABLE `ground_truth_decisions` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `source_article_id` INT UNSIGNED NOT NULL,
     `source_line_id` INT UNSIGNED NOT NULL,
@@ -104,15 +104,24 @@ CREATE TABLE `wikipedia_decisions` (
     `label_id` INT UNSIGNED NULL,
     `destination_title` VARCHAR(255) NOT NULL,
     `destination_article_id` INT UNSIGNED NULL,
-    `dump_id` INT UNSIGNED NULL,
+    `ground_truth_id` INT UNSIGNED NOT NULL,
     FOREIGN KEY (`source_article_id`) REFERENCES `articles` (`id`),
     FOREIGN KEY (`source_line_id`) REFERENCES `lines` (`id`),
     FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`),
     FOREIGN KEY (`destination_article_id`) REFERENCES `articles` (`id`),
+    FOREIGN KEY (`ground_truth_id`) REFERENCES `ground_truth` (`id`),
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE TABLE `ground_truth` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `description` LONGTEXT NOT NULL,
+    `dump_id` INT UNSIGNED NOT NULL,
+    `knowledge_base_id` INT UNSIGNED NOT NULL,
     FOREIGN KEY (`dump_id`) REFERENCES `dumps` (`id`),
+    FOREIGN KEY (`knowledge_base_id`) REFERENCES `dumps` (`id`),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE INDEX articles_ix_title ON articles(title);
-
 CREATE INDEX labels_ix_label ON labels(label);

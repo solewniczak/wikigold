@@ -29,9 +29,10 @@ import mwparallelparser
 @click.option('--download/--no-download', default=False)
 @click.option('--decompress/--no-decompress', default=False)
 @click.option('-d', '--dump-id', type=int, default=-1, help='continue the import for a specified dump id')
+@click.option('-g', '--ground-truth-id', type=int, default=-1, help='continue the import for a specified ground truth')
 @click.option('-s', '--start-step', type=int, default=1, help='continue the import from a specified step')
 @with_appcontext
-def import_dump_command(lang, dump_date, early_stopping, mirror, download, decompress, dump_id, start_step):
+def import_dump_command(lang, dump_date, early_stopping, mirror, download, decompress, dump_id, ground_truth_id, start_step):
     mirror = mirror.rstrip('/')
 
     filename = f'{lang}wiki-{dump_date}-pages-meta-current.xml'
@@ -119,6 +120,12 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
         data_dump = (lang, name, parser_name, parser_version, datetime.now().isoformat())
         cursor.execute(sql_add_dump, data_dump)
         dump_id = cursor.lastrowid
+
+        sql = "INSERT INTO ground_truth (`description`, `dump_id`, `knowledge_base_id`) VALUES (%s, %s, %s)"
+        data = ("Links created by Wikipedia contributors", dump_id, dump_id)
+        cursor.execute(sql_add_dump, data_dump)
+        ground_truth_id = cursor.lastrowid
+
         db.commit()  # save dump into database
 
     def step_1():
@@ -206,25 +213,25 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
         print(f'{elapsed:.2f} s')
 
     def step_3():
-        print('step 3. updating wikipedia_decisions destination_ids...', end=' ')
+        print('step 3. updating ground_truth_decisions destination_ids...', end=' ')
         start = time.time_ns()
-        sql_update_wikipedia_decisions = '''
-        UPDATE `wikipedia_decisions` INNER JOIN `articles` ON `wikipedia_decisions`.`destination_title`=`articles`.`title`
-            SET `wikipedia_decisions`.`destination_article_id` = `articles`.`id`
-            WHERE `wikipedia_decisions`.`dump_id`=%s AND `articles`.`dump_id`=%s'''
-        cursor.execute(sql_update_wikipedia_decisions, (dump_id, dump_id))
+        sql_update_ground_truth_decisions= '''
+        UPDATE `ground_truth_decisions` INNER JOIN `articles` ON `ground_truth_decisions`.`destination_title`=`articles`.`title`
+            SET `ground_truth_decisions`.`destination_article_id` = `articles`.`id`
+            WHERE `ground_truth_decisions`.`ground_truth_id`=%s AND `articles`.`dump_id`=%s'''
+        cursor.execute(sql_update_ground_truth_decisions, (ground_truth_id, dump_id))
         db.commit()
         elapsed = (time.time_ns() - start) / 1e9
         print(f'{elapsed:.2f} s')
 
     def step_4():
-        print('step 4. updating wikipedia_decisions label_ids...', end=' ')
+        print('step 4. updating ground_truth_decisions label_ids...', end=' ')
         start = time.time_ns()
-        sql_update_wikipedia_decisions = '''
-            UPDATE `wikipedia_decisions` INNER JOIN `labels` ON `wikipedia_decisions`.`label`=`labels`.`label`
-                SET `wikipedia_decisions`.`label_id` = `labels`.`id`
-                WHERE `wikipedia_decisions`.`dump_id`=%s AND `labels`.`dump_id`=%s'''
-        cursor.execute(sql_update_wikipedia_decisions, (dump_id, dump_id))
+        sql_update_ground_truth_decisions = '''
+            UPDATE `ground_truth_decisions` INNER JOIN `labels` ON `ground_truth_decisions`.`label`=`labels`.`label`
+                SET `ground_truth_decisions`.`label_id` = `labels`.`id`
+                WHERE `ground_truth_decisions`.`ground_truth_id`=%s AND `labels`.`dump_id`=%s'''
+        cursor.execute(sql_update_ground_truth_decisions, (ground_truth_id, dump_id))
         db.commit()
         elapsed = (time.time_ns() - start) / 1e9
         print(f'{elapsed:.2f} s')
