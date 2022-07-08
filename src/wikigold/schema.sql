@@ -115,6 +115,7 @@ CREATE TABLE `ground_truth_decisions` (
 
 CREATE TABLE `ground_truth` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(255) NOT NULL,
     `description` LONGTEXT NOT NULL,
     `dump_id` INT UNSIGNED NOT NULL,
     `knowledge_base_id` INT UNSIGNED NOT NULL,

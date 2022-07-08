@@ -1,0 +1,15 @@
+algorithm:
+        #paragraphs_limit:   # we want all paragraphs
+        retrieval: exact
+        skip_stop_words: False
+        rate_keywords_by: keyphraseness
+        links_to_text_ratio: 0.06  # from (Michalcea and Csomani, 2007)  paper
+        min_label_count: 5 # from (Michalcea and Csomani, 2007) paper
+        min_label_articles_count: 1 # doesn't matter when commonness disambiguation is used
+        disambiguation: commonness
+        min_keyphraseness: 0.0  # we use links_to_text ratio instead
+        # max_context_terms: 20  # doesn't apply here
+articles:
+        dump_name: aquaint  # search by dump name
+ground_truth:
+        ground_truth_name: aquaint  # search by ground truth name

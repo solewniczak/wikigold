@@ -25,8 +25,8 @@ def load_dataset(name, path):
 
     knowledge_base_id = current_app.config['KNOWLEDGE_BASE']
 
-    sql = "INSERT INTO ground_truth (`description`, `dump_id`, `knowledge_base_id`) VALUES (%s, %s, %s)"
-    data = (dataset_iterator.__doc__, dump_id, knowledge_base_id)
+    sql = "INSERT INTO ground_truth (`name`, `description`, `dump_id`, `knowledge_base_id`) VALUES (%s, %s, %s, %s)"
+    data = (name, dataset_iterator.__doc__, dump_id, knowledge_base_id)
     cursor.execute(sql, data)
     ground_truth_id = cursor.lastrowid
 

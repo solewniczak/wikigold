@@ -121,8 +121,8 @@ def import_dump_command(lang, dump_date, early_stopping, mirror, download, decom
         cursor.execute(sql_add_dump, data_dump)
         dump_id = cursor.lastrowid
 
-        sql = "INSERT INTO ground_truth (`description`, `dump_id`, `knowledge_base_id`) VALUES (%s, %s, %s)"
-        data = ("Links created by Wikipedia contributors", dump_id, dump_id)
+        sql = "INSERT INTO ground_truth (`name`, `description`, `dump_id`, `knowledge_base_id`) VALUES (%s, %s, %s, %s)"
+        data = ("wikipedia", "Links created by Wikipedia contributors.", dump_id, dump_id)
         cursor.execute(sql_add_dump, data_dump)
         ground_truth_id = cursor.lastrowid
 

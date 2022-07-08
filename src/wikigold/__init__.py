@@ -69,3 +69,6 @@ app.register_blueprint(admin.bp)
 
 from . import datasets
 datasets.init_app(app)
+
+from . import evaluate
+evaluate.init_app(app)
