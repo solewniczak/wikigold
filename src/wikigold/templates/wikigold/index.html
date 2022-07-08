@@ -121,6 +121,21 @@
                         {% endfor %}
                       </select>
                 </div>
+                  <div class="row mb-2">
+                        <div class="col-auto">
+                          <label for="ground_truth" class="col-form-label">Ground truth</label>
+                        </div>
+                        <div class="col-auto">
+                          <select class="form-select form-select-sm" name="ground_truth" id="ground_truth">
+                            {% for ground_truth in ground_truths %}
+                              <option value="{{ ground_truth['id'] }}" data-dump-id="{{ ground_truth['dump_id']}}">
+                                {{ ground_truth['description'] }}
+                              </option>
+                            {% endfor %}
+                          </select>
+                          <div class="invalid-feedback"></div>
+                        </div>
+                  </div>
                 <div class="row mb-2">
                     <div class="col-auto">
                       <label for="title" class="col-form-label">Title</label>

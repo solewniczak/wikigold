@@ -21,6 +21,14 @@ def index():
     sql_select_dumps = "SELECT id, lang, name, parser_name, parser_version, timestamp FROM dumps ORDER BY id DESC"
     cursor.execute(sql_select_dumps)
     dumps = cursor.fetchall()
+
+    sql_select_ground_truths = "SELECT id, description, dump_id FROM ground_truth ORDER BY id DESC"
+    cursor.execute(sql_select_ground_truths)
+    ground_truths = []
+    for ground_truth in cursor:
+        ground_truth['description'] = ground_truth['description'].decode('utf-8')
+        ground_truths.append(ground_truth)
+
     cursor.close()
 
     try:
@@ -29,7 +37,7 @@ def index():
         algorithm = '{}'
 
     algorithm_key, algorithm_parsed = normalize_algorithm_json(algorithm)
-    return render_template('wikigold/index.html', algorithm=algorithm_parsed, dumps=dumps)
+    return render_template('wikigold/index.html', algorithm=algorithm_parsed, dumps=dumps, ground_truths=ground_truths)
 
 
 @bp.route('/edls')

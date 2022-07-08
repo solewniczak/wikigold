@@ -57,12 +57,14 @@ def load_dataset(name, path):
             cursor.execute(sql, data)
 
     # update destination ids
+    print('updating destination ids...')
     sql = '''UPDATE `ground_truth_decisions` INNER JOIN `articles` ON `ground_truth_decisions`.`destination_title`=`articles`.`title`
                 SET `ground_truth_decisions`.`destination_article_id` = `articles`.`id`
                 WHERE `ground_truth_decisions`.`ground_truth_id`=%s AND `articles`.`dump_id`=%s'''
     cursor.execute(sql, (ground_truth_id, knowledge_base_id))
 
     # update labels ids
+    print('updating labels ids...')
     sql = '''UPDATE `ground_truth_decisions` INNER JOIN `labels` ON `ground_truth_decisions`.`label`=`labels`.`label`
                     SET `ground_truth_decisions`.`label_id` = `labels`.`id`
                     WHERE `ground_truth_decisions`.`ground_truth_id`=%s AND `labels`.`dump_id`=%s'''
@@ -71,7 +73,7 @@ def load_dataset(name, path):
     sql = 'UPDATE `dumps` SET `articles_count`=(SELECT COUNT(*) FROM articles WHERE `dump_id`=%s) WHERE `id`=%s'
     cursor.execute(sql, (dump_id, dump_id))
 
-    # db.commit()
+    db.commit()
 
 
 def aquaint(path):

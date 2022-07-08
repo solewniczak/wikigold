@@ -8,14 +8,14 @@ from flask import (
 
 from .db import get_db
 from .disambiguation import rate_by_commonness, rate_by_topic_proximity, resolve_overlap_best_match
-from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_wikipedia_decisions, absolute_url_for
+from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_ground_truth_decisions, absolute_url_for
 from .retrieval import get_labels_exact
 from .mediawikixml import normalize_title
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
 
-def search_article_by_title(title, dump_id):
+def search_article_by_title(title, dump_id, ground_truth=None):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     sql = 'SELECT `id` FROM `articles` WHERE `title`=%s AND `dump_id`=%s'
@@ -30,10 +30,10 @@ def search_article_by_title(title, dump_id):
         response = make_response(jsonify({'title': 'article not found'}), 404)
         abort(response)
     cursor.close()
-    return redirect(absolute_url_for('api.get_article', id=article['id']))
+    return redirect(absolute_url_for('api.get_article', id=article['id'], ground_truth=ground_truth))
 
 
-def search_article_by_metadata(query, dump_id):
+def search_article_by_metadata(query, dump_id, ground_truth=None):
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
@@ -55,7 +55,7 @@ def search_article_by_metadata(query, dump_id):
         response = make_response(jsonify({'metadata': 'article not found'}), 404)
         abort(response)
     cursor.close()
-    return redirect(absolute_url_for('api.get_article', id=articles[0]['article_id']))
+    return redirect(absolute_url_for('api.get_article', id=articles[0]['article_id'], ground_truth=ground_truth))
 
 
 @bp.route('/article', methods=('GET',))
@@ -64,15 +64,19 @@ def search_article():
         abort(400, 'article_source parameter required')
     dump_id = int(request.args['article_source'])
 
+    ground_truth = None
+    if 'ground_truth' in request.args:
+        ground_truth = int(request.args['ground_truth'])
+
     if 'title' in request.args:
-        return search_article_by_title(request.args['title'], dump_id)
+        return search_article_by_title(request.args['title'], dump_id, ground_truth)
     elif 'metadata' in request.args:
         try:
             query = json.loads(request.args['metadata'])
             if len(query) == 0:
                 response = make_response(jsonify({'metadata': 'metadata query can\'t be empty'}), 400)
                 abort(response)
-            return search_article_by_metadata(query, dump_id)
+            return search_article_by_metadata(query, dump_id, ground_truth)
         except json.decoder.JSONDecodeError as e:
             response = make_response(jsonify({'metadata': 'JSON parsing error: ' + e.msg}), 400)
             abort(response)
@@ -82,6 +86,10 @@ def search_article():
 
 @bp.route('/article/<int:id>', methods=('GET',))
 def get_article(id):
+    ground_truth = None
+    if 'ground_truth' in request.args:
+        ground_truth = int(request.args['ground_truth'])
+
     db = get_db()
 
     cursor = db.cursor(dictionary=True)
@@ -102,7 +110,9 @@ def get_article(id):
 
     article['metadata'] = json.dumps(metadata)
     article['lines'] = get_lines(id)
-    article['wikipedia_decisions'] = get_wikipedia_decisions(id)
+    article['ground_truth_decisions'] = []
+    if ground_truth is not None:
+        article['ground_truth_decisions'] = get_ground_truth_decisions(id, ground_truth)
 
     return jsonify(article)
 

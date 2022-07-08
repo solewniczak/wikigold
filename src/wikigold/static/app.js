@@ -5,7 +5,7 @@ class App {
     }
 
     requestUrl(path, params) {
-        if (params) {
+        if (params && Object.keys(params).length > 0) {
             const searchParams = new URLSearchParams(params);
             return this.config.prefix + path + '?' + searchParams
         } else {
@@ -30,8 +30,9 @@ class Index extends App {
 
         if (that.url.searchParams.has('article')) {
             const articleId = that.url.searchParams.get('article');
+            const ground_truth = that.url.searchParams.get('ground_truth');
             that.lockForms();
-            that.loadArticleById(articleId)
+            that.loadArticleById(articleId, ground_truth)
                 .then(result => {
                     searchForm.querySelector("select[name=article_source]").value = result['dump_id'];
                     if (that.url.searchParams.has('algorithm')) {
@@ -41,6 +42,37 @@ class Index extends App {
                 }).then(that.unlockForms);
         }
 
+        // filter out ground_truths which don't apply to selected dump
+        const article_source_select = document.querySelector("#article_source");
+        const ground_truth_select = document.querySelector("#ground_truth");
+        // load options to array
+        const ground_truth_select_options = [];
+        ground_truth_select.querySelectorAll("option").forEach(option => {
+            ground_truth_select_options.push({
+                value: option.value,
+                textContent: option.textContent,
+                dumpId: option.dataset.dumpId
+            });
+        });
+        const filter_ground_truth_select = function() {
+            const article_source = article_source_select.value;
+            ground_truth_select.innerHTML = "";
+            ground_truth_select_options.forEach(option => {
+               if (option.dumpId === article_source) {
+                   const option_html = document.createElement("option");
+                   option_html.value = option.value;
+                   option_html.textContent = option.textContent;
+                   ground_truth_select.appendChild(option_html);
+               }
+            });
+            const empty_option = document.createElement("option");
+            empty_option.value = "";
+            empty_option.textContent = "-- no ground truth --";
+            ground_truth_select.appendChild(empty_option);
+        }
+        filter_ground_truth_select();
+        article_source_select.addEventListener('change', filter_ground_truth_select);
+
         searchForm.addEventListener("submit", event => {
             event.preventDefault();
 
@@ -48,10 +80,11 @@ class Index extends App {
             const key = event.submitter.value;
             const value = formData.get(key);
             const article_source = formData.get('article_source');
+            const ground_truth = formData.get('ground_truth');
 
             Array.from(searchForm.elements).forEach(element => element.classList.remove("is-invalid"));
             that.lockForms();
-            that.loadArticleBySearch(key, value, article_source)
+            that.loadArticleBySearch(key, value, article_source, ground_truth)
                 .then(result => {
                     that.url.searchParams.set('article', result.id);
                     that.url.searchParams.delete('algorithm');
@@ -327,10 +360,15 @@ class Index extends App {
         });
     }
 
-    loadArticleBySearch(key, value, article_source) {
+    loadArticleBySearch(key, value, article_source, ground_truth) {
         const that = this;
 
-        const requestUrl = that.requestUrl('/api/article', {[key]: value, 'article_source': article_source})
+        const params = {[key]: value, 'article_source': article_source};
+        if (ground_truth) {
+            params['ground_truth'] = ground_truth;
+        }
+
+        const requestUrl = that.requestUrl('/api/article', params);
         return fetch(requestUrl, {
             method: 'GET'
         }).then(async (response) => {
@@ -342,10 +380,14 @@ class Index extends App {
         }).then(result => that.loadArticleFromResult(result));
     }
 
-    loadArticleById(articleId) {
+    loadArticleById(articleId, ground_truth) {
         const that = this;
 
-        const requestUrl = that.requestUrl('/api/article/' + articleId);
+        const params = {};
+        if (ground_truth) {
+            params['ground_truth'] = ground_truth;
+        }
+        const requestUrl = that.requestUrl('/api/article/' + articleId, params);
         return fetch(requestUrl, {
             method: 'GET'
         })
@@ -410,8 +452,8 @@ class Index extends App {
             article.append(p);
         });
 
-        //apply wikipedia decisions
-        result.wikipedia_decisions.forEach(decision => {
+        //apply ground truth decisions
+        result.ground_truth_decisions.forEach(decision => {
             const line = article.querySelectorAll("p")[decision.line];
             const char_spans = line.querySelectorAll("span.char");
 

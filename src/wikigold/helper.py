@@ -79,18 +79,18 @@ def ngrams(lines):
                 }
 
 
-def get_wikipedia_decisions(article_id):
+def get_ground_truth_decisions(article_id, ground_truth_id):
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
-    sql = '''SELECT `lines`.`nr`, `wikipedia_decisions`.`start`, `wikipedia_decisions`.`length`,
-                `wikipedia_decisions`.`destination_title`, `wikipedia_decisions`.`destination_article_id`,
+    sql = '''SELECT `lines`.`nr`, `ground_truth_decisions`.`start`, `ground_truth_decisions`.`length`,
+                `ground_truth_decisions`.`destination_title`, `ground_truth_decisions`.`destination_article_id`,
                 `articles`.`caption`
-                FROM `wikipedia_decisions`
-                JOIN `lines` ON `wikipedia_decisions`.`source_line_id` = `lines`.`id`
-                LEFT JOIN `articles` ON `wikipedia_decisions`.`destination_article_id` = `articles`.`id`
-                WHERE `lines`.`article_id`=%s'''
-    data = (article_id,)
+                FROM `ground_truth_decisions`
+                JOIN `lines` ON `ground_truth_decisions`.`source_line_id` = `lines`.`id`
+                LEFT JOIN `articles` ON `ground_truth_decisions`.`destination_article_id` = `articles`.`id`
+                WHERE `lines`.`article_id`=%s AND `ground_truth_decisions`.`ground_truth_id`=%s'''
+    data = (article_id, ground_truth_id)
     cursor.execute(sql, data)
 
     decisions = []
@@ -112,6 +112,40 @@ def get_wikipedia_decisions(article_id):
 
     cursor.close()
     return decisions
+
+# def get_wikipedia_decisions(article_id):
+#     db = get_db()
+#     cursor = db.cursor(dictionary=True)
+#
+#     sql = '''SELECT `lines`.`nr`, `wikipedia_decisions`.`start`, `wikipedia_decisions`.`length`,
+#                 `wikipedia_decisions`.`destination_title`, `wikipedia_decisions`.`destination_article_id`,
+#                 `articles`.`caption`
+#                 FROM `wikipedia_decisions`
+#                 JOIN `lines` ON `wikipedia_decisions`.`source_line_id` = `lines`.`id`
+#                 LEFT JOIN `articles` ON `wikipedia_decisions`.`destination_article_id` = `articles`.`id`
+#                 WHERE `lines`.`article_id`=%s'''
+#     data = (article_id,)
+#     cursor.execute(sql, data)
+#
+#     decisions = []
+#     for row in cursor:
+#         try:
+#             caption = row['caption'].decode('utf-8')
+#         except AttributeError:
+#             caption = None
+#
+#         decision = {
+#             'line': row['nr'],
+#             'destination_title': row['destination_title'],
+#             'destination_article_id': row['destination_article_id'],
+#             'destination_caption': caption,
+#             'start': row['start'],
+#             'length': row['length']
+#         }
+#         decisions.append(decision)
+#
+#     cursor.close()
+#     return decisions
 
 
 def get_user_decisions(article_id, algorithm_normalized_json_key, user_id):
