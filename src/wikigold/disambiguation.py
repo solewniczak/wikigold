@@ -47,6 +47,23 @@ def rate_by_commonness(labels):
         }
 
 
+def add_la_commonness_to_articles(labels):
+    for label in labels:
+        article_counter_sum = sum([article['label_article_counter'] for article in label['articles']])
+        for article in label['articles']:
+            article['la_commonness'] = article['label_article_counter']/article_counter_sum
+
+
+def rate_by_la_commonness(labels):
+    add_la_commonness_to_articles(labels)
+    for label in labels:
+        most_common_article = max(label['articles'], key=lambda article: article['la_commonness'])
+        label['disambiguation'] = {
+            'candidate_article_id': most_common_article['article_id'],
+            'rating': most_common_article['la_commonness'],
+        }
+
+
 def get_context_terms(labels, commonness_threshold=0.9):
     """Assumes that labels has commonness calculated already"""
     context_terms = [label for label in labels if label['disambiguation']['rating'] >= commonness_threshold]

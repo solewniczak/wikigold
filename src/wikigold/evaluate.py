@@ -4,8 +4,17 @@ from flask.cli import with_appcontext
 
 @click.command('evaluate')
 @click.argument('evaluate_config_path')
+@click.option("-i", "--individual", is_flag=True,
+              help="Show individual precision/recall for each ground truth article.")
+@click.option("-u", "--unknown-labels", is_flag=True, help="Show unknown labels.")
+@click.option("-d", "--disambiguation-errors", is_flag=True,
+              help="Show disambiguation errors. The disambiguation error is when the "
+                   "algorithm decision and ground truth links to same label but with"
+                   " different destination title.")
 @with_appcontext
-def evaluate(evaluate_config_path):
+def evaluate(evaluate_config_path, individual, unknown_labels, disambiguation_errors):
+    # TODO: the algorithm should consider redirects for ground truth validation! -> maybe it should be moved
+    # to loading ground truth phrase
     import yaml
 
     from .db import get_db
@@ -20,7 +29,7 @@ def evaluate(evaluate_config_path):
     if 'ground_truth_name' in run_config['ground_truth']:
         ground_truth_name = run_config['ground_truth']['ground_truth_name']
         sql = 'SELECT `id` FROM `ground_truth` WHERE `name`=%s'
-        data = (ground_truth_name, )
+        data = (ground_truth_name,)
         cursor.execute(sql, data)
         results = cursor.fetchall()
         if len(results) == 0:
@@ -44,10 +53,10 @@ def evaluate(evaluate_config_path):
             raise Exception(f'dump name "{dump_name}" ambiguous')
         dump_id = results[0]['id']
 
-        sql = 'SELECT `id` FROM `articles` WHERE dump_id=%s'
+        sql = 'SELECT `id`, `title` FROM `articles` WHERE dump_id=%s'
         data = (dump_id,)
         cursor.execute(sql, data)
-        articles_ids = [row['id'] for row in cursor]
+        articles = cursor.fetchall()
     else:
         raise Exception('cannot find specified dump')
 
@@ -55,31 +64,67 @@ def evaluate(evaluate_config_path):
     avg_precision = 0.0
     avg_recall = 0.0
     avg_fscore = 0.0
-    for article_id in articles_ids:
-        lines = get_lines(article_id)
-        labels = wikification(lines, algorithm_normalized_json)
-        labels_decisions_ids = {label['decision'] for label in labels if 'decision' in label}
+    for article in articles:
+        lines = get_lines(article['id'])
 
-        ground_truth_decisions = get_ground_truth_decisions(article_id, ground_truth_id)
+        # run algorithm
+        algorithm_decisions = wikification(lines, algorithm_normalized_json)
+        algorithm_decisions_articles_ids = {algorithm_decision['decision']
+                                            for algorithm_decision in algorithm_decisions
+                                            if 'decision' in algorithm_decision}
+        # get algorithm's decisions titles
+        articles_ids_str = ','.join(map(str, algorithm_decisions_articles_ids))
+        sql = f'SELECT `id`, `title` FROM `articles` WHERE `id` IN ({articles_ids_str})'
+        cursor.execute(sql)
+        algorithm_decisions_id_title = {row['id']: row['title'] for row in cursor}
+
+        # map algorithms decisions ids to titles
+        algorithm_decisions_label_title = {algorithm_decision['name']:
+                                               algorithm_decisions_id_title[algorithm_decision['decision']]
+                                           for algorithm_decision in algorithm_decisions
+                                           if 'decision' in algorithm_decision}
+
+        ground_truth_decisions = get_ground_truth_decisions(article['id'], ground_truth_id)
         ground_truth_decisions_ids = {ground_truth_decision['destination_article_id']
                                       for ground_truth_decision in ground_truth_decisions
                                       if 'destination_article_id' in ground_truth_decision}
 
-        true_positives = len(labels_decisions_ids & ground_truth_decisions_ids)
-        precision = true_positives/len(labels_decisions_ids)
-        recall = true_positives/len(ground_truth_decisions_ids)
-        fscore = 2 * precision * recall / (precision+recall)
-        print(f'precision: {precision} recall: {recall} fscore: {fscore}')
+        # map ground truth labels decisions to titles
+        ground_truth_label_title = {ground_truth_decision['label']: ground_truth_decision['destination_title']
+                                    for ground_truth_decision in ground_truth_decisions
+                                    if 'destination_article_id' in ground_truth_decision}
+        true_positives = len(algorithm_decisions_articles_ids & ground_truth_decisions_ids)
+        precision = true_positives / len(algorithm_decisions_articles_ids)
+        recall = true_positives / len(ground_truth_decisions_ids)
+        fscore = 2 * precision * recall / (precision + recall)
 
         avg_precision += precision
         avg_recall += recall
         avg_fscore += fscore
 
-    avg_precision /= len(articles_ids)
-    avg_recall /= len(articles_ids)
-    avg_fscore /= len(articles_ids)
+        if individual:
+            print(article['title'])
+            print(f'precision: {precision} recall: {recall} fscore: {fscore}')
+
+        if unknown_labels:  # show unknown labels
+            unknown_labels = [ground_truth_decision['label']
+                              for ground_truth_decision in ground_truth_decisions
+                              if ground_truth_decision['label_id'] is None]
+            print('unknown labels', unknown_labels)
+
+        if disambiguation_errors:
+            for ground_truth_label, groud_truth_title in ground_truth_label_title.items():
+                if ground_truth_label in algorithm_decisions_label_title and \
+                        algorithm_decisions_label_title[ground_truth_label] != groud_truth_title:
+                    algorithm_decision_title = algorithm_decisions_label_title[ground_truth_label]
+                    print(f'{ground_truth_label} -> is "{algorithm_decision_title}", should be "{groud_truth_title}"')
+
+    avg_precision /= len(articles)
+    avg_recall /= len(articles)
+    avg_fscore /= len(articles)
 
     print(f'avg precision: {avg_precision} avg recall: {avg_recall} avg fscore: {avg_fscore}')
+
 
 def init_app(app):
     app.cli.add_command(evaluate)

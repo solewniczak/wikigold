@@ -84,6 +84,7 @@ def get_ground_truth_decisions(article_id, ground_truth_id):
     cursor = db.cursor(dictionary=True)
 
     sql = '''SELECT `lines`.`nr`, `ground_truth_decisions`.`start`, `ground_truth_decisions`.`length`,
+                `ground_truth_decisions`.`label`, `ground_truth_decisions`.`label_id`,
                 `ground_truth_decisions`.`destination_title`, `ground_truth_decisions`.`destination_article_id`,
                 `articles`.`caption`
                 FROM `ground_truth_decisions`
@@ -102,11 +103,13 @@ def get_ground_truth_decisions(article_id, ground_truth_id):
 
         decision = {
             'line': row['nr'],
+            'start': row['start'],
+            'length': row['length'],
+            'label': row['label'],
+            'label_id': row['label_id'],
             'destination_title': row['destination_title'],
             'destination_article_id': row['destination_article_id'],
-            'destination_caption': caption,
-            'start': row['start'],
-            'length': row['length']
+            'destination_caption': caption
         }
         decisions.append(decision)
 
@@ -195,7 +198,7 @@ def normalize_algorithm_json(algorithm):
 
 def wikification(lines, algorithm_normalized_json):
     from .retrieval import get_labels_exact
-    from .disambiguation import rate_by_commonness, rate_by_topic_proximity, resolve_overlap_best_match
+    from .disambiguation import rate_by_commonness, rate_by_la_commonness, rate_by_topic_proximity, resolve_overlap_best_match
 
     if algorithm_normalized_json['retrieval'] == 'exact':
         labels = get_labels_exact(lines, algorithm_normalized_json)
@@ -204,6 +207,8 @@ def wikification(lines, algorithm_normalized_json):
 
     if algorithm_normalized_json['disambiguation'] == 'commonness':
         rate_by_commonness(labels)
+    elif algorithm_normalized_json['disambiguation'] == 'la_commonness':
+        rate_by_la_commonness(labels)
     elif algorithm_normalized_json['disambiguation'] == 'topic_proximity':
         rate_by_topic_proximity(labels, algorithm_normalized_json['max_context_terms'])
 
