@@ -7,9 +7,7 @@ from flask import (
 )
 
 from .db import get_db
-from .disambiguation import rate_by_commonness, rate_by_topic_proximity, resolve_overlap_best_match
 from .helper import get_lines, normalize_algorithm_json, get_user_decisions, get_ground_truth_decisions, absolute_url_for
-from .retrieval import get_labels_exact
 from .mediawikixml import normalize_title
 
 bp = Blueprint('api', __name__, url_prefix='/api')
@@ -141,6 +139,8 @@ def get_articles():
 
 @bp.route('/candidateLabels/<int:article_id>', methods=('GET',))
 def get_candidate_labels(article_id):
+    from .helper import wikification
+
     if 'algorithm' not in request.args:
         abort(400, "retrieval algorithm not given")
 
@@ -158,23 +158,11 @@ def get_candidate_labels(article_id):
             response = make_response(jsonify({'paragraphs_limit': f'tokens limit ({tokens_limit}) exceeded'}), 400)
             abort(response)
 
-    if algorithm_normalized_json['retrieval'] == 'exact':
-        labels = get_labels_exact(lines, algorithm_normalized_json)
-    else:
+    try:
+        labels = wikification(lines, algorithm_normalized_json)
+    except Exception:
         response = make_response(jsonify({'retrieval': 'unknown retrieval algorithm'}), 400)
         abort(response)
-
-    if algorithm_normalized_json['disambiguation'] == 'commonness':
-        rate_by_commonness(labels)
-    elif algorithm_normalized_json['disambiguation'] == 'topic_proximity':
-        rate_by_topic_proximity(labels, algorithm_normalized_json['max_context_terms'])
-
-    if algorithm_normalized_json['disambiguation'] != '':
-        resolve_overlap_best_match(labels)
-
-    for label in labels:
-        if 'disambiguation' in label and 'article_id' in label['disambiguation']:
-            label['decision'] = label['disambiguation']['article_id']
 
     # apply saved decisions
     user_decisions_dict = get_user_decisions(article_id, algorithm_normalized_json_key, user_id)

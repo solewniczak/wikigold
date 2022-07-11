@@ -26,7 +26,7 @@ def word_tokenize_spans(text, language="english"):
         sentence = text[sentence_span_start:sentence_span_end]
         word_spans = word_tokenizer.span_tokenize(sentence)
         for (token_span_start, token_span_end) in word_spans:
-            yield sentence_span_start+token_span_start, sentence_span_start+token_span_end
+            yield sentence_span_start + token_span_start, sentence_span_start + token_span_end
 
 
 def get_lines(article_id, limit=None):
@@ -162,7 +162,10 @@ def normalize_algorithm_json(algorithm):
         'max_context_terms': 20
     }
 
-    algorithm_parsed = json.loads(algorithm)
+    if type(algorithm) == str:
+        algorithm_parsed = json.loads(algorithm)
+    else:
+        algorithm_parsed = algorithm
 
     # Parse parameters
     if 'skip_stop_words' in algorithm_parsed:
@@ -184,6 +187,31 @@ def normalize_algorithm_json(algorithm):
             algorithm_parsed[default_key] = default_value
 
     # Algorithm key omits default values
-    algorithm_key = {key: value for key, value in algorithm_parsed.items() if algorithm_parsed[key] != algorithm_defaults[key]}
+    algorithm_key = {key: value for key, value in algorithm_parsed.items() if
+                     algorithm_parsed[key] != algorithm_defaults[key]}
 
     return json.dumps(algorithm_key, sort_keys=True), algorithm_parsed
+
+
+def wikification(lines, algorithm_normalized_json):
+    from .retrieval import get_labels_exact
+    from .disambiguation import rate_by_commonness, rate_by_topic_proximity, resolve_overlap_best_match
+
+    if algorithm_normalized_json['retrieval'] == 'exact':
+        labels = get_labels_exact(lines, algorithm_normalized_json)
+    else:
+        raise Exception("unknown retrieval algorithm")
+
+    if algorithm_normalized_json['disambiguation'] == 'commonness':
+        rate_by_commonness(labels)
+    elif algorithm_normalized_json['disambiguation'] == 'topic_proximity':
+        rate_by_topic_proximity(labels, algorithm_normalized_json['max_context_terms'])
+
+    if algorithm_normalized_json['disambiguation'] != '':
+        resolve_overlap_best_match(labels)
+
+    for label in labels:
+        if 'disambiguation' in label and 'article_id' in label['disambiguation']:
+            label['decision'] = label['disambiguation']['article_id']
+
+    return labels
