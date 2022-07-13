@@ -40,17 +40,39 @@ def get_label_titles_dict(candidate_labels, algorithm_normalized_json):
         label = get_cached_label(label_name)
         if label is not None:
             if label['appeared_in'] != 0:
-                label['keyphraseness'] = label['as_link_in']/label['appeared_in']
+                label['keyphraseness'] = label['as_link_in'] / label['appeared_in']
             else:
                 label['keyphraseness'] = 0.0
             if label['label_counter'] >= algorithm_normalized_json['min_label_count'] and \
                     label['keyphraseness'] >= algorithm_normalized_json['min_keyphraseness']:
                 label_articles_dict[label_name] = label
 
+            # calculate sense probability for articles
+            article_counter_sum = sum([article['article_counter'] for article in label['articles'].values()])
+            for article in label['articles'].values():
+                article['sense_probability'] = article['article_counter'] / article_counter_sum
+
+            # calculate label sense probability for articles
+            label_article_counter_sum = sum([article['label_article_counter'] for article in label['articles'].values()])
+            for article in label['articles'].values():
+                article['label_sense_probability'] = article['label_article_counter'] / label_article_counter_sum
+
     # apply filter on min L-A counter
     for label in label_articles_dict.values():
         label['articles'] = {article_id: article for article_id, article in label['articles'].items()
-                             if article['label_article_counter'] >= algorithm_normalized_json['min_label_articles_count']}
+                             if
+                             article['label_article_counter'] >= algorithm_normalized_json['min_label_articles_count']}
+
+    # apply filter on min sense probability
+    for label in label_articles_dict.values():
+        label['articles'] = {article_id: article for article_id, article in label['articles'].items()
+                             if article['sense_probability'] >= algorithm_normalized_json['min_sense_probability']}
+
+    # apply filter on min label sense probability
+    for label in label_articles_dict.values():
+        label['articles'] = {article_id: article for article_id, article in label['articles'].items()
+                             if article['label_sense_probability'] >= algorithm_normalized_json[
+                                 'min_label_sense_probability']}
 
     # Remove labels with empty titles
     label_articles_dict = {label_name: label for label_name, label in label_articles_dict.items()
@@ -61,6 +83,8 @@ def get_label_titles_dict(candidate_labels, algorithm_normalized_json):
         label['articles'] = [{'article_id': article_id,
                               'article_counter': article['article_counter'],
                               'label_article_counter': article['label_article_counter'],
+                              'sense_probability': article['sense_probability'],
+                              'label_sense_probability': article['label_sense_probability'],
                               } for article_id, article in label['articles'].items()]
 
     return label_articles_dict
@@ -101,12 +125,13 @@ def get_labels_exact(lines, algorithm_normalized_json):
         if label_name in label_titles_dict:
             candidate_label['label_counter'] = label_titles_dict[label_name]['label_counter']
             candidate_label['articles'] = label_titles_dict[label_name]['articles']
-            # put here label from the labels dictionary to all lables
+            # copy label metadata from the labels dictionary to all lables
             candidate_label['keyphraseness'] = label_titles_dict[label_name]['keyphraseness']
             labels.append(candidate_label)
 
     # Apply keyword ratings if specified
     if algorithm_normalized_json['rate_keywords_by'] != '':
-        labels = apply_links_to_text_ratio(lines, labels, algorithm_normalized_json['rate_keywords_by'], algorithm_normalized_json['links_to_text_ratio'])
+        labels = apply_links_to_text_ratio(lines, labels, algorithm_normalized_json['rate_keywords_by'],
+                                           algorithm_normalized_json['links_to_text_ratio'])
 
     return labels

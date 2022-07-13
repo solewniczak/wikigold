@@ -240,6 +240,24 @@
                                  name="min_keyphraseness" id="min_keyphraseness" value="{{ algorithm['min_keyphraseness'] }}">
                         </div>
                     </div>
+                    <div class="row mb-2">
+                        <div class="col-auto">
+                          <label for="min_sense_probability" class="col-form-label">Min. sense probability</label>
+                        </div>
+                        <div class="col-auto">
+                          <input type="number" step="0.01" min="0" max="1" style="width: 5em" class="form-control"
+                                 name="min_sense_probability" id="min_sense_probability" value="{{ algorithm['min_sense_probability'] }}">
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-auto">
+                          <label for="min_label_sense_probability" class="col-form-label">Min. label sense probability</label>
+                        </div>
+                        <div class="col-auto">
+                          <input type="number" step="0.01" min="0" max="1" style="width: 5em" class="form-control"
+                                 name="min_label_sense_probability" id="min_label_sense_probability" value="{{ algorithm['min_label_sense_probability'] }}">
+                        </div>
+                    </div>
                 </fieldset>
                 <fieldset class="mb-2">
                     <h5>Entity disambiguation</h5>

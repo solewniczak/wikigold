@@ -157,11 +157,13 @@ def normalize_algorithm_json(algorithm):
         'retrieval': '',
         'skip_stop_words': False,
         'rate_keywords_by': '',
-        'links_to_text_ratio': 0.12,
-        'min_label_count': 1,
-        'min_label_articles_count': 1,
-        'disambiguation': '',
-        'min_keyphraseness': 0.0,
+        'links_to_text_ratio': 0.12,  # only apply if rate_keywords_by is not empty
+        'min_label_count': 1,  # get only labels that are used n times in Wikipedia
+        'min_label_articles_count': 1,  # get only senses that link to the specific label n times in wikipedia
+        'disambiguation': '',  # disambiguation algorith
+        'min_keyphraseness': 0.0,  # get only keywords with given a priori probability
+        'min_sense_probability': 0.0,  # consider only senses with given a priori probability
+        'min_label_sense_probability': 0.0,  # use per label sense probability rather than global sense probability
         'max_context_terms': 20
     }
 
@@ -181,6 +183,10 @@ def normalize_algorithm_json(algorithm):
         algorithm_parsed['links_to_text_ratio'] = float(algorithm_parsed['links_to_text_ratio'])
     if 'min_keyphraseness' in algorithm_parsed:
         algorithm_parsed['min_keyphraseness'] = float(algorithm_parsed['min_keyphraseness'])
+    if 'min_sense_probability' in algorithm_parsed:
+        algorithm_parsed['min_sense_probability'] = float(algorithm_parsed['min_sense_probability'])
+    if 'min_label_sense_probability' in algorithm_parsed:
+        algorithm_parsed['min_label_sense_probability'] = float(algorithm_parsed['min_sense_probability'])
     if 'max_context_terms' in algorithm_parsed:
         algorithm_parsed['max_context_terms'] = int(algorithm_parsed['max_context_terms'])
 
@@ -198,7 +204,7 @@ def normalize_algorithm_json(algorithm):
 
 def wikification(lines, algorithm_normalized_json):
     from .retrieval import get_labels_exact
-    from .disambiguation import rate_by_commonness, rate_by_la_commonness, rate_by_topic_proximity, resolve_overlap_best_match
+    from .disambiguation import rate_by, rate_by_topic_proximity, resolve_overlap_best_match
 
     if algorithm_normalized_json['retrieval'] == 'exact':
         labels = get_labels_exact(lines, algorithm_normalized_json)
@@ -206,9 +212,9 @@ def wikification(lines, algorithm_normalized_json):
         raise Exception("unknown retrieval algorithm")
 
     if algorithm_normalized_json['disambiguation'] == 'commonness':
-        rate_by_commonness(labels)
+        rate_by(labels, 'sense_probability')
     elif algorithm_normalized_json['disambiguation'] == 'la_commonness':
-        rate_by_la_commonness(labels)
+        rate_by(labels, 'label_sense_probability')
     elif algorithm_normalized_json['disambiguation'] == 'topic_proximity':
         rate_by_topic_proximity(labels, algorithm_normalized_json['max_context_terms'])
 

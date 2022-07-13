@@ -2,6 +2,29 @@ import click
 from flask.cli import with_appcontext
 
 
+def ground_truth_resolve_redirects(ground_truth_decisions):
+    from .db import get_db
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    for ground_truth_decision in ground_truth_decisions:
+        id = ground_truth_decision['destination_article_id']
+        title = ground_truth_decision['destination_title']
+        while True:
+            sql = 'SELECT `redirect_to_id`, `redirect_to_title` FROM `articles` WHERE `id`=%s'
+            data = (id, )
+            cursor.execute(sql, data)
+            result = cursor.fetchone()
+            if result['redirect_to_id'] is None:
+                break
+            id = result['redirect_to_id']
+            title = result['redirect_to_title']
+        ground_truth_decision['destination_article_id'] = id
+        ground_truth_decision['destination_title'] = title
+
+    return ground_truth_decisions
+
 @click.command('evaluate')
 @click.argument('evaluate_config_path')
 @click.option("-i", "--individual", is_flag=True,
@@ -11,10 +34,9 @@ from flask.cli import with_appcontext
               help="Show disambiguation errors. The disambiguation error is when the "
                    "algorithm decision and ground truth links to same label but with"
                    " different destination title.")
+@click.option("-r", "--resolve-redirects", is_flag=True, help="Resolve redirects for ground truth links.")
 @with_appcontext
-def evaluate(evaluate_config_path, individual, unknown_labels, disambiguation_errors):
-    # TODO: the algorithm should consider redirects for ground truth validation! -> maybe it should be moved
-    # to loading ground truth phrase
+def evaluate(evaluate_config_path, individual, unknown_labels, disambiguation_errors, resolve_redirects):
     import yaml
 
     from .db import get_db
@@ -85,6 +107,8 @@ def evaluate(evaluate_config_path, individual, unknown_labels, disambiguation_er
                                            if 'decision' in algorithm_decision}
 
         ground_truth_decisions = get_ground_truth_decisions(article['id'], ground_truth_id)
+        if resolve_redirects:
+            ground_truth_resolve_redirects(ground_truth_decisions)
         ground_truth_decisions_ids = {ground_truth_decision['destination_article_id']
                                       for ground_truth_decision in ground_truth_decisions
                                       if 'destination_article_id' in ground_truth_decision}
