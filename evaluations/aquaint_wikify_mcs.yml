@@ -8,7 +8,6 @@ algorithm:
         min_label_articles_count: 1 # doesn't matter when commonness disambiguation is used
         disambiguation: la_commonness
         min_keyphraseness: 0.0  # we use links_to_text ratio instead
-        # max_context_terms: 20  # doesn't apply here
 articles:
         dump_name: aquaint  # search by dump name
 ground_truth:

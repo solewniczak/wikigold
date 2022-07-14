@@ -1,0 +1,19 @@
+# Context terms relatedness algorithm from (Milne and Witten, 2008).
+# We check here only the relatedness as the rating factor. We don't use any machine learning or links detection phrases.
+algorithm:
+        #paragraphs_limit:   # we want all paragraphs
+        retrieval: exact
+        skip_stop_words: False
+#        rate_keywords_by: # doesn't apply here
+#        links_to_text_ratio: 0.12  # doesn't apply here
+#        min_label_count: 1 # default
+#        min_label_articles_count: 1 # default
+        min_keyphraseness: 0.005  # 0.065 for (Milne and Witten, 2008)
+        min_sense_probability: 0.01 # 0.02 for (Milne and Witten, 2008)
+        resolve_overlaps: longest # probably this was assumed by (Milne and Witten, 2008)
+        disambiguation: la_commonness
+
+articles:
+        dump_name: aquaint  # search by dump name
+ground_truth:
+        ground_truth_name: aquaint  # search by ground_truth name

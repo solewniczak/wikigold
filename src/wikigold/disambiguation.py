@@ -102,25 +102,25 @@ def add_relatedness_to_labels_dict(labels_dict):
                 context_term_avg_relatedness += semantic_relatedness(context_terms_backlinks[context_term_article_id],
                                                                      context_terms_backlinks[ctx_to_ctx_article_id],
                                                                      articles_count)
-        context_term_avg_relatedness /= len(context_terms)-1
+        if len(context_terms) > 1:
+            context_term_avg_relatedness /= len(context_terms)-1
         context_term_link_probability = context_term_label['keyphraseness']
 
         # update context terms statistics
         context_term_label['context_term_weight'] = (context_term_avg_relatedness+context_term_link_probability)/2
-        context_term_label['articles'][0]['relatedness'] = 1.0  # since this is the only article relatedness = 1.0
 
     for label_name, label in labels_dict.items():
-        if label_name not in context_terms: # ignore context terms
-            for article in label['articles']:
-                article_id = article['article_id']
-                article_backlinks = get_cached_backlinks(article_id)
-                article['relatedness'] = 0.0
-                for context_term_label_name, context_term_label in context_terms.items():
-                    article['relatedness'] += context_term_label['context_term_weight'] *\
-                                              semantic_relatedness(context_terms_backlinks[context_term_article_id],
-                                                                   article_backlinks, articles_count)
+        for article in label['articles']:
+            article_id = article['article_id']
+            article_backlinks = get_cached_backlinks(article_id)
+            article['relatedness'] = 0.0
+            for context_term_label_name, context_term_label in context_terms.items():
+                context_term_article_id = context_term_label['articles'][0]['article_id']
+                article['relatedness'] += context_term_label['context_term_weight'] *\
+                                          semantic_relatedness(context_terms_backlinks[context_term_article_id],
+                                                               article_backlinks, articles_count)
 
-                article['relatedness'] /= len(context_terms)
+            article['relatedness'] /= len(context_terms)
 
 
 def backlinks(article_ids):
