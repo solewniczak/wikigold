@@ -258,6 +258,17 @@
                                  name="min_label_sense_probability" id="min_label_sense_probability" value="{{ algorithm['min_label_sense_probability'] }}">
                         </div>
                     </div>
+                    <div class="row mb-2">
+                        <div class="col-auto">
+                                <label for="resolve_overlaps" class="col-form-label">Resolve overlaps</label>
+                        </div>
+                        <div class="col-auto">
+                            <select class="form-select" name="resolve_overlaps" id="resolve_overlaps">
+                              <option value="" {{ 'selected' if algorithm['resolve_overlaps'] == '' }}></option>
+                              <option value="longest" {{ 'selected' if algorithm['resolve_overlaps'] == 'longest' }}>longest first</option>
+                            </select>
+                        </div>
+                    </div>
                 </fieldset>
                 <fieldset class="mb-2">
                     <h5>Entity disambiguation</h5>

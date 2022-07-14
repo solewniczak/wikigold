@@ -3,6 +3,29 @@ from flask import current_app
 from nltk.corpus import stopwords
 
 
+def resolve_overlap_longest(labels):
+    """Search for overlapping links and select only the longest ones.
+    The algorithm process the labels starting from the longest candidates,
+    so there is guarantee that in case of the overlap the longest candidate will be selected.
+    If two overlapping labels has the same length, first one is returned."""
+
+    labels_sorted = sorted(labels, key=lambda label: label['ngrams'], reverse=True)
+    labels_overlap = {}  # store information about labels overlapping
+    not_overlapping_labels = []
+    for label in labels_sorted:  # start from the best label
+        overlap = False
+        for ngram_idx in range(label['start'], label['start'] + label['ngrams']):
+            if (label['line'], ngram_idx) in labels_overlap:
+                overlap = True
+
+            if not overlap:
+                not_overlapping_labels.append(label)
+                for ngram_idx in range(label['start'], label['start'] + label['ngrams']):
+                    labels_overlap[label['line'], ngram_idx] = True
+
+    return not_overlapping_labels
+
+
 def count_tokens_in_lines(lines):
     return sum([len(line['tokens']) for line in lines])
 

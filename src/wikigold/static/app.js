@@ -608,12 +608,18 @@ class Index extends App {
                     let popoverHtml = '<div style="min-width: 576px;" class="tab-content" id="nav-tabContent">';
                     spanLabels.forEach((labelIndex, index) => {
                         const label = that.edl[labelIndex];
+                        // console.log(label.articles[0].);
                         popoverHtml += '<div class="tab-pane fade" id="label' + labelIndex + '" role="tabpanel">' +
                         '<table class="table table-sm">' +
                         '<thead><tr><th>Title</th>' +
                         '<th title="<p>Article Counter</p><p>Number of Wikipedia links that points to this article.</p>" data-bs-toggle="tooltip">A</th>' +
                         '<th title="<p>Label-Article Counter</p><p>The number of Wikipedia links <b>with that label</b> that points to this article.</p>" data-bs-toggle="tooltip">L-A</th>' +
-                        '<th></th></tr></thead>' +
+                        '<th title="<p>Sense probability</p><p>How common is that sense for the given article.</p>" data-bs-toggle="tooltip">SP</th>' +
+                        '<th title="<p>Label Sense probability</p><p>How common is that sense for the given label.</p>" data-bs-toggle="tooltip">LSP</th>';
+                        if ('relatedness' in label.articles[0]) {
+                            popoverHtml += '<th title="<p>Relatedness</p><p>How relevant is the term to the context terms.</p>" data-bs-toggle="tooltip">R</th>';
+                        }
+                        popoverHtml += '<th></th></tr></thead>' +
                         '<tbody>';
                         // block decisions modification while browsing
                         let disabled = '';
@@ -621,12 +627,20 @@ class Index extends App {
                             disabled = 'disabled';
                         }
                         label.articles.forEach(article => {
+                            const sense_probability = (100*article.sense_probability).toFixed(1);
+                            const label_sense_probability = (100*article.label_sense_probability).toFixed(1);
                             popoverHtml += '<tr>' +
                                 '<td class="align-middle"><label class="col-form-label" data-article-id="' + article.article_id + '">' +
                                 '</label></td>' +
                                 '<td>' + article.article_counter + '</td>' +
                                 '<td>' + article.label_article_counter + '</td>' +
-                                '<td class="align-middle">' +
+                                '<td>' + sense_probability + '%</td>' +
+                                '<td>' + label_sense_probability + '%</td>';
+                            if ('relatedness' in article) {
+                                const relatedness = (100*article.relatedness).toFixed(1);
+                                popoverHtml += '<td>' + relatedness + '%</td>';
+                            }
+                            popoverHtml += '<td class="align-middle">' +
                                 '<input ' + disabled + ' type="checkbox" class="form-check-input" name="correct_' + labelIndex + '" ' +
                                 'value="' + article.article_id + '" ' +
                                 'data-wikigold-label="' + labelIndex + '">' +
@@ -750,7 +764,7 @@ class Index extends App {
                             // creating DataTable must go after selecting input value
                             jQuery(popoverElement).find("table").DataTable({
                                 columnDefs: [
-                                    {orderable: false, targets: 3},
+                                    {orderable: false, targets: -1},
                                     {orderSequence: ["desc", "asc"], targets: [1, 2]}
                                 ]
                             });

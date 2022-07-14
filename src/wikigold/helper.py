@@ -164,6 +164,7 @@ def normalize_algorithm_json(algorithm):
         'min_keyphraseness': 0.0,  # get only keywords with given a priori probability
         'min_sense_probability': 0.0,  # consider only senses with given a priori probability
         'min_label_sense_probability': 0.0,  # use per label sense probability rather than global sense probability
+        'resolve_overlaps': '' # how to deal with overlapping keywords. By default keep them to the disambiguation phrase.
     }
 
     if type(algorithm) == str:
@@ -200,13 +201,16 @@ def normalize_algorithm_json(algorithm):
 
 
 def wikification(lines, algorithm_normalized_json):
-    from .retrieval import get_labels_exact
+    from .retrieval import get_labels_exact, resolve_overlap_longest
     from .disambiguation import rate_by, rate_by_relatedness, resolve_overlap_best_match
 
     if algorithm_normalized_json['retrieval'] == 'exact':
         labels = get_labels_exact(lines, algorithm_normalized_json)
     else:
         raise Exception("unknown retrieval algorithm")
+
+    if algorithm_normalized_json['resolve_overlaps'] == 'longest':
+        labels = resolve_overlap_longest(labels)
 
     if algorithm_normalized_json['disambiguation'] == 'commonness':
         rate_by(labels, 'sense_probability')
@@ -215,6 +219,8 @@ def wikification(lines, algorithm_normalized_json):
     elif algorithm_normalized_json['disambiguation'] == 'context_terms_relatedness':
         rate_by_relatedness(labels)
 
+    # when there is no overlaps the function simpy assignes candidate_article_id to final "article_id" which is
+    # algorithm decisions, in other case we select the candidates with the best 'rating' property.
     if algorithm_normalized_json['disambiguation'] != '':
         resolve_overlap_best_match(labels)
 
