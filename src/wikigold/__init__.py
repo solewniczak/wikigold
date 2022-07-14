@@ -72,3 +72,6 @@ datasets.init_app(app)
 
 from . import evaluate
 evaluate.init_app(app)
+
+from . import train
+train.init_app(app)

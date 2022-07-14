@@ -46,10 +46,81 @@ def lesk(labels):
     pass # Not implemented yet.
 
 
-def get_context_terms(labels, commonness_threshold=0.9):
-    """Assumes that labels has commonness calculated already"""
-    context_terms = [label for label in labels if label['disambiguation']['rating'] >= commonness_threshold]
-    return context_terms
+def rate_by_relatedness(labels):
+    lables_dict = get_labels_dict(labels)
+    add_relatedness_to_labels_dict(lables_dict)
+    for label in labels:
+        label_name = label['name']
+        if label_name in lables_dict:
+            # apply relatedness to articles
+            label['articles'] = lables_dict[label_name]['articles']
+    rate_by(labels, 'relatedness')
+
+
+def get_labels_dict(labels):
+    """Remove position from labels and transform it to dictionary label_name:articles.
+    This function assumes that each label in document has identical meaning which may not be true for all wikification
+    algorithms."""
+    import copy
+
+    labels_dict = {}
+    for label in labels:
+        if label['name'] not in labels_dict:
+            labels_dict[label['name']] = {
+                'articles': copy.copy(label['articles']),
+                'keyphraseness': label['keyphraseness']
+            }
+
+    return labels_dict
+
+
+def add_relatedness_to_labels_dict(labels_dict):
+    """@param label_articles_dict is the output of the get_label_titles_dict from the retrieval phrase.
+    (Milne and Witten, 2008)"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    sql_select_articles_count = 'SELECT `articles_count` FROM dumps WHERE id=%s'
+    cursor.execute(sql_select_articles_count, (current_app.config['KNOWLEDGE_BASE'],))
+    articles_count = cursor.fetchone()['articles_count']
+
+    # context terms
+    context_terms = {label_name: label
+                      for label_name, label in labels_dict.items()
+                      if len(label['articles']) == 1}
+    context_terms_articles_ids = [label['articles'][0]['article_id'] for label in context_terms.values()]
+    context_terms_backlinks = backlinks(context_terms_articles_ids)
+
+    if len(context_terms) == 0:
+        raise Exception('cannot apply relatedness: no context terms available')
+
+    for context_term_label_name, context_term_label in context_terms.items():
+        context_term_article_id = context_term_label['articles'][0]['article_id']
+        context_term_avg_relatedness = 0
+        for ctx_to_ctx_label_name, ctx_to_ctx_label in context_terms.items():
+            ctx_to_ctx_article_id = ctx_to_ctx_label['articles'][0]['article_id']
+            if context_term_article_id != ctx_to_ctx_article_id:
+                context_term_avg_relatedness += semantic_relatedness(context_terms_backlinks[context_term_article_id],
+                                                                     context_terms_backlinks[ctx_to_ctx_article_id],
+                                                                     articles_count)
+        context_term_avg_relatedness /= len(context_terms)-1
+        context_term_link_probability = context_term_label['keyphraseness']
+
+        # update context terms statistics
+        context_term_label['context_term_weight'] = (context_term_avg_relatedness+context_term_link_probability)/2
+        context_term_label['articles'][0]['relatedness'] = 1.0  # since this is the only article relatedness = 1.0
+
+    for label_name, label in labels_dict.items():
+        if label_name not in context_terms: # ignore context terms
+            for article in label['articles']:
+                article_id = article['article_id']
+                article_backlinks = get_cached_backlinks(article_id)
+                article['relatedness'] = 0.0
+                for context_term_label_name, context_term_label in context_terms.items():
+                    article['relatedness'] += context_term_label['context_term_weight'] *\
+                                              semantic_relatedness(context_terms_backlinks[context_term_article_id],
+                                                                   article_backlinks, articles_count)
+
+                article['relatedness'] /= len(context_terms)
 
 
 def backlinks(article_ids):
@@ -72,66 +143,3 @@ def semantic_relatedness(article_a_backlinks, article_b_backlinks, articles_coun
 
     sr = (log2(max(aN, bN)) - log2(abN))/(log2(N) - log2(min(aN,bN)))
     return sr
-
-
-def avg_semantic_relatedness(backlinks, article_id, other_articles_ids, articles_count):
-    sum_sr = 0.0
-    for other_article_id in other_articles_ids:
-        sum_sr += semantic_relatedness(backlinks[article_id], backlinks[other_article_id], articles_count)
-    return sum_sr/(len(backlinks)-1)
-
-
-def rate_by_topic_proximity(labels, max_context_terms=20):
-    unique_articles_ids = set()
-    for label in labels:
-        unique_articles_ids.update([article['article_id'] for article in label['articles']])
-    articles_backlinks = backlinks(unique_articles_ids)
-
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    sql_select_articles_count = 'SELECT `articles_count` FROM dumps WHERE id=%s'
-    cursor.execute(sql_select_articles_count, (current_app.config['KNOWLEDGE_BASE'], ))
-    articles_count = cursor.fetchone()['articles_count']
-
-    rate_by_commonness(labels)
-    context_terms = get_context_terms(labels)
-
-    sr_for_context_terms = {}
-    sum_sr_for_context_terms = 0.0
-    unique_context_terms_articles_ids = set([label['disambiguation']['candidate_article_id'] for label in context_terms])
-    for context_term_article_id in unique_context_terms_articles_ids:
-        other_articles_ids = [article_id for article_id in unique_context_terms_articles_ids if article_id != context_term_article_id]
-        sr_for_context_term = avg_semantic_relatedness(articles_backlinks, context_term_article_id, other_articles_ids, articles_count)
-        sr_for_context_terms[context_term_article_id] = sr_for_context_term
-        sum_sr_for_context_terms += sr_for_context_term
-
-    avg_sr_for_context_terms = sum_sr_for_context_terms/len(context_terms) # TODO: what if len(context_terms) == 0?
-
-    for label in context_terms:
-        context_term_article_id = label['disambiguation']['candidate_article_id']
-        context_term_sr = sr_for_context_terms[context_term_article_id]
-        if context_term_sr >= avg_sr_for_context_terms:
-            label['disambiguation']['context_term_sr'] = context_term_sr
-
-    context_terms = [label for label in context_terms if 'context_term_sr' in label['disambiguation']]
-    context_terms.sort(key=lambda label: label['disambiguation']['context_term_sr'], reverse=True)
-    context_terms = context_terms[:max_context_terms]  # filter out the worst context terms
-
-    unique_context_terms_articles_ids = set([label['disambiguation']['candidate_article_id'] for label in context_terms
-                                             if 'context_term' in label['disambiguation']]) # update context terms articles ids
-
-    for label in context_terms:
-        label['disambiguation']['rating'] = 1.0  # context terms always included
-
-    for label in labels:
-        if 'context_term' not in label['disambiguation']:
-            for article in label['articles']:
-                article_id = article['article_id']
-                sr_for_meaning = avg_semantic_relatedness(articles_backlinks, article_id,
-                                                          unique_context_terms_articles_ids, articles_count)
-                article['semantic_relatedness'] = sr_for_meaning
-            article_with_max_sr = max(label['articles'], key=lambda article: article['semantic_relatedness'])
-            label['disambiguation']['candidate_article_id'] = article_with_max_sr['article_id']
-            label['disambiguation']['rating'] = article_with_max_sr['semantic_relatedness']
-
-

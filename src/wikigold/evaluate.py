@@ -25,6 +25,7 @@ def ground_truth_resolve_redirects(ground_truth_decisions):
 
     return ground_truth_decisions
 
+
 @click.command('evaluate')
 @click.argument('evaluate_config_path')
 @click.option("-i", "--individual", is_flag=True,

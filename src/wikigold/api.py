@@ -160,8 +160,8 @@ def get_candidate_labels(article_id):
 
     try:
         labels = wikification(lines, algorithm_normalized_json)
-    except Exception:
-        response = make_response(jsonify({'retrieval': 'unknown retrieval algorithm'}), 400)
+    except Exception as e:
+        response = make_response(jsonify({'retrieval': str(e)}), 400)
         abort(response)
 
     # apply saved decisions

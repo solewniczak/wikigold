@@ -164,7 +164,6 @@ def normalize_algorithm_json(algorithm):
         'min_keyphraseness': 0.0,  # get only keywords with given a priori probability
         'min_sense_probability': 0.0,  # consider only senses with given a priori probability
         'min_label_sense_probability': 0.0,  # use per label sense probability rather than global sense probability
-        'max_context_terms': 20
     }
 
     if type(algorithm) == str:
@@ -186,9 +185,7 @@ def normalize_algorithm_json(algorithm):
     if 'min_sense_probability' in algorithm_parsed:
         algorithm_parsed['min_sense_probability'] = float(algorithm_parsed['min_sense_probability'])
     if 'min_label_sense_probability' in algorithm_parsed:
-        algorithm_parsed['min_label_sense_probability'] = float(algorithm_parsed['min_sense_probability'])
-    if 'max_context_terms' in algorithm_parsed:
-        algorithm_parsed['max_context_terms'] = int(algorithm_parsed['max_context_terms'])
+        algorithm_parsed['min_label_sense_probability'] = float(algorithm_parsed['min_label_sense_probability'])
 
     # Apply default values
     for default_key, default_value in algorithm_defaults.items():
@@ -204,7 +201,7 @@ def normalize_algorithm_json(algorithm):
 
 def wikification(lines, algorithm_normalized_json):
     from .retrieval import get_labels_exact
-    from .disambiguation import rate_by, rate_by_topic_proximity, resolve_overlap_best_match
+    from .disambiguation import rate_by, rate_by_relatedness, resolve_overlap_best_match
 
     if algorithm_normalized_json['retrieval'] == 'exact':
         labels = get_labels_exact(lines, algorithm_normalized_json)
@@ -215,8 +212,8 @@ def wikification(lines, algorithm_normalized_json):
         rate_by(labels, 'sense_probability')
     elif algorithm_normalized_json['disambiguation'] == 'la_commonness':
         rate_by(labels, 'label_sense_probability')
-    elif algorithm_normalized_json['disambiguation'] == 'topic_proximity':
-        rate_by_topic_proximity(labels, algorithm_normalized_json['max_context_terms'])
+    elif algorithm_normalized_json['disambiguation'] == 'context_terms_relatedness':
+        rate_by_relatedness(labels)
 
     if algorithm_normalized_json['disambiguation'] != '':
         resolve_overlap_best_match(labels)

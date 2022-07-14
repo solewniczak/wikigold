@@ -123,9 +123,9 @@ def get_labels_exact(lines, algorithm_normalized_json):
     for candidate_label in candidate_labels:
         label_name = candidate_label['name']
         if label_name in label_titles_dict:
+            # copy label metadata from the labels' dictionary to all labels
             candidate_label['label_counter'] = label_titles_dict[label_name]['label_counter']
             candidate_label['articles'] = label_titles_dict[label_name]['articles']
-            # copy label metadata from the labels dictionary to all lables
             candidate_label['keyphraseness'] = label_titles_dict[label_name]['keyphraseness']
             labels.append(candidate_label)
 
