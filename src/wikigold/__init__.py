@@ -51,6 +51,9 @@ db.init_app(app)
 from . import dump
 dump.init_app(app)
 
+from . import enterprisedump
+enterprisedump.init_app(app)
+
 from . import cache
 cache.init_app(app)
 

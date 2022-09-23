@@ -1,3 +1,12 @@
+"""
+Caches labels and corresponding articles in redis for fast EL.
+
+The cache commands should be run in the following order:
+1. cache-labels
+2. cache-backlinks
+3. cache-labels-counters (optional)
+"""
+
 import pickle
 
 import redis
@@ -212,33 +221,33 @@ def cache_labels_counters_command(dump_id):
 
 
 @click.command('cache-backlinks')
-@click.argument('dump_id', type=int)
+@click.argument('ground_truth_id', type=int)
 @click.option('-p', '--page-size', type=int, default=500000)
 @click.option('-s', '--start-page', type=int, default=0)
 @with_appcontext
-def cache_backlinks_command(dump_id, page_size, start_page):
+def cache_backlinks_command(ground_truth_id, page_size, start_page):
     db = get_db()
 
     cursor = db.cursor(dictionary=True)
-    sql = 'SELECT COUNT(*) AS `wikipedia_decisions_count` FROM `wikipedia_decisions` WHERE `dump_id`=%s'
-    cursor.execute(sql, (dump_id, ))
-    wikipedia_decisions_count = cursor.fetchone()['wikipedia_decisions_count']
-    print(f'wikipedia decisions count: {wikipedia_decisions_count}')
+    sql = 'SELECT COUNT(*) AS `ground_truth_decisions_count` FROM `ground_truth_decisions` WHERE `ground_truth_id`=%s'
+    cursor.execute(sql, (ground_truth_id, ))
+    ground_truth_decisions_count = cursor.fetchone()['ground_truth_decisions_count']
+    print(f'wikipedia decisions count: {ground_truth_decisions_count}')
 
-    sql = 'SELECT MIN(`id`) AS `first_id` FROM `wikipedia_decisions` WHERE `dump_id`=%s'
-    cursor.execute(sql, (dump_id,))
+    sql = 'SELECT MIN(`id`) AS `first_id` FROM `ground_truth_decisions` WHERE `ground_truth_id`=%s'
+    cursor.execute(sql, (ground_truth_id,))
     first_id = cursor.fetchone()['first_id']
 
     print(f'first id: {first_id}')
-    steps = -(-wikipedia_decisions_count//page_size) - start_page
+    steps = -(-ground_truth_decisions_count//page_size) - start_page
     with tqdm(total=steps) as pbar:
-        for i in range(start_page*page_size, wikipedia_decisions_count, page_size):
+        for i in range(start_page*page_size, ground_truth_decisions_count, page_size):
             start_id = first_id + i
-            end_id = min(start_id+page_size-1, wikipedia_decisions_count)
+            end_id = min(start_id+page_size-1, ground_truth_decisions_count)
 
             pbar.set_description(f'processing ids from {start_id} to {end_id}')
 
-            sql = f'SELECT `destination_article_id`, `source_article_id`  FROM `wikipedia_decisions`' \
+            sql = f'SELECT `destination_article_id`, `source_article_id`  FROM `ground_truth_decisions`' \
                   f'WHERE `destination_article_id` IS NOT NULL AND `id` BETWEEN %s AND %s'
             data = (start_id, end_id)
             cursor.execute(sql, data)

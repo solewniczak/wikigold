@@ -62,13 +62,16 @@ def get_label_titles_dict(candidate_labels, algorithm_normalized_json):
     for label_name in candidate_labels_unique:
         label = get_cached_label(label_name)
         if label is not None:
-            if label['appeared_in'] != 0:
-                label['keyphraseness'] = label['as_link_in'] / label['appeared_in']
-            else:
-                label['keyphraseness'] = 0.0
-            if label['label_counter'] >= algorithm_normalized_json['min_label_count'] and \
-                    label['keyphraseness'] >= algorithm_normalized_json['min_keyphraseness']:
-                label_articles_dict[label_name] = label
+            if label['label_counter'] >= algorithm_normalized_json['min_label_count']:
+                if 'as_link_in' in label and 'appeared_in' in label:  # we have 'as_link_in' and 'appeared_in' cached
+                    if label['appeared_in'] != 0:
+                        label['keyphraseness'] = label['as_link_in'] / label['appeared_in']
+                    else:
+                        label['keyphraseness'] = 0.0
+                    if label['keyphraseness'] >= algorithm_normalized_json['min_keyphraseness']:
+                        label_articles_dict[label_name] = label
+                else:
+                    label_articles_dict[label_name] = label
 
             # calculate sense probability for articles
             article_counter_sum = sum([article['article_counter'] for article in label['articles'].values()])
@@ -149,7 +152,8 @@ def get_labels_exact(lines, algorithm_normalized_json):
             # copy label metadata from the labels' dictionary to all labels
             candidate_label['label_counter'] = label_titles_dict[label_name]['label_counter']
             candidate_label['articles'] = label_titles_dict[label_name]['articles']
-            candidate_label['keyphraseness'] = label_titles_dict[label_name]['keyphraseness']
+            if 'keyphraseness' in label_titles_dict[label_name]:
+                candidate_label['keyphraseness'] = label_titles_dict[label_name]['keyphraseness']
             labels.append(candidate_label)
 
     # Apply keyword ratings if specified

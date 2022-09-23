@@ -33,7 +33,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - /home/szyolewn/wikigold_data_db_enwiki20211001_mwparallelparser:/var/lib/mysql
+      - /home/szyolewn/wikigold_data_db_enwiki20220901_enterprise:/var/lib/mysql
 
   redis:
     image: redis:6.2.6
@@ -43,7 +43,7 @@ services:
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     volumes:
-      - /home/szyolewn/wikigold_data_redis_enwiki20211001_mwparallelparser:/data
+      - /home/szyolewn/wikigold_data_redis_enwiki20220901_enterprise:/data
 
   adminer:
     image: adminer

@@ -11,7 +11,8 @@ algorithm:
         min_keyphraseness: 0.005  # 0.065 for (Milne and Witten, 2008)
         min_sense_probability: 0.01 # 0.02 for (Milne and Witten, 2008)
         resolve_overlaps: longest # probably this was assumed by (Milne and Witten, 2008)
-        disambiguation: la_commonness
+        disambiguation: context_terms_relatedness # it seems that without machine learning simple most common sense is
+        # better than relatedness
 
 articles:
         dump_name: aquaint  # search by dump name
